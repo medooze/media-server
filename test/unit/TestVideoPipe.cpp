@@ -659,3 +659,50 @@ TEST(TestVideoPipe, setMaxDelayWithExistingDataThenOverflows)
     }
 
 }
+
+TEST(TestVideoPipe, timestampJumps)
+{
+    int infps = 50;
+    int outfps = 50;
+    int clockrate = 1000;
+
+    int width = 640;
+    int height = 480;
+
+    VideoPipe vidPipe;
+    vidPipe.Init();
+    vidPipe.StartVideoCapture(width, height, outfps);
+
+
+    //First  frame with a bad TS
+    {
+        VideoBuffer::shared sharedVidBuffer = std::make_shared<VideoBuffer>(width, height);
+        sharedVidBuffer->SetClockRate(clockrate);
+        sharedVidBuffer->SetTimestamp(86000);
+        auto queued = vidPipe.NextFrame(sharedVidBuffer);
+        ASSERT_EQ(queued, 1);
+    }
+
+    // Enqueue a few frames with normal TS
+    for (int i = 0; i < 2; ++i)
+    {
+        VideoBuffer::shared sharedVidBuffer = std::make_shared<VideoBuffer>(width, height);
+        sharedVidBuffer->SetClockRate(clockrate);
+        sharedVidBuffer->SetTimestamp(i * (double)clockrate / infps);
+        auto queued = vidPipe.NextFrame(sharedVidBuffer);
+        ASSERT_EQ(queued, i + 2);
+    }
+
+    {
+        auto pic = vidPipe.GrabFrame(0);
+        ASSERT_NE(pic, nullptr);
+        ASSERT_EQ(pic->GetTimestamp(), 86000);
+    }
+
+    for (int i = 0; i < 2; ++i)
+    {
+        auto pic = vidPipe.GrabFrame(0);
+        ASSERT_NE(pic, nullptr);
+        ASSERT_EQ(pic->GetTimestamp(), (int)(i * (double)clockrate / outfps));
+    }
+}

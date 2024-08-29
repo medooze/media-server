@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <sstream>
+#include <cstdint>
 
 class SpliceInfoSection
 {

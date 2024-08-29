@@ -19,7 +19,10 @@ jobs:
     - name: Install pre-requisite package
       run: |
         sudo apt-get update
-        sudo apt-get install --fix-missing -y libavcodec-dev libx264-dev libx265-dev libavutil-dev libvpx-dev libswscale-dev libswresample-dev libavformat-dev libssl-dev libavfilter-dev
+        sudo apt-get install --fix-missing -y libavcodec-dev libx264-dev libx265-dev libavutil-dev libvpx-dev libswscale-dev libswresample-dev libavformat-dev libssl-dev libavfilter-dev libfftw3-dev libgsm1-dev libopus-dev libmp3lame-dev libspeex-dev
+        sudo wget https://ftp.debian.org/debian/pool/main/a/aom/libaom3_3.9.1-1_amd64.deb
+        sudo wget https://ftp.debian.org/debian/pool/main/a/aom/libaom-dev_3.9.1-1_amd64.deb
+        sudo dpkg -i libaom3_3.9.1-1_amd64.deb libaom-dev_3.9.1-1_amd64.deb
     - name: Configure
       run: mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release ..
     - name: Get number of CPU cores

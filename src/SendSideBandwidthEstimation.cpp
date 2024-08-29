@@ -165,6 +165,23 @@ void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const st
 			//Dump stats
 			//Log("recv #%u sent:%.8lu (+%.6ld) recv:%.8lu (+%.6ld) delta:%.6ld fb:%u, size:%u, bwe:%lu rtt:%lld rttMin:%lld acuDelta:%lld acuDeltaMin:%lld)\n",transportSeqNum,sent,deltaSent,recv,deltaRecv,delta,feedbackNum, stat->size, bandwidthEstimation, rttEstimated, rttMin, accumulatedDelta/1000, accumulatedDeltaMin/1000);
 			
+			//Check if we've written more than max size and if so, create a new file to write
+			if (bweStatsFileSizeLimit > 0 && bweStatsBytesWritten > bweStatsFileSizeLimit)
+			{
+				//Close file
+				if (fd != FD_INVALID)
+				{
+					close(fd);
+					//Open a new file with a count appended for the same ID. Cron job will take care of cleanup
+					std::string newFile = bweStatsFileName + "." + std::to_string(bweStatsFileCount++);
+					if ((fd = open(newFile.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0600))<0)
+					{
+						Error("-SendSideBandwidthEstimation::ReceivedFeedback() Failed to create updated BWE stats file %s : reason %s\n",newFile.c_str(),strerror(errno));
+						fd = FD_INVALID;
+					}
+					bweStatsBytesWritten = 0;
+				}
+			}
 			//If dumping to file
 			if (fd!=FD_INVALID)
 			{
@@ -172,7 +189,17 @@ void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const st
 				//Create log
 				int len = snprintf(msg, 1024, "%.8lu|%u|%hhu|%u|%lu|%lu|%lu|%lu|%ld|%ld|%ld|%u|%u|%u|%u|%u|%d|%d|%d|%d|%d\n", fb, transportSeqNum, feedbackNum, stat->size, sent, recv, deltaSent, deltaRecv, delta, accumulatedDelta/1000, accumulatedDeltaMin/1000, GetEstimatedBitrate(), GetTargetBitrate(), GetAvailableBitrate(), rtt, rttMin, rttEstimated, stat->mark, stat->rtx, stat->probing, state);
 				//Write it
-				[[maybe_unused]] ssize_t written = write(fd,msg,len);
+				ssize_t written = write(fd,msg,len);
+				if (written < 0)
+				{
+					Error("-SendSideBandwidthEstimation::ReceivedFeedback() Failed writing to BWE log : reason %s\n",strerror(errno));
+					close(fd);
+					fd = FD_INVALID;
+				}
+				else
+				{
+					bweStatsBytesWritten  += written;
+				}
 			}
 			
 			//Check if it was not lost
@@ -500,7 +527,7 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 	}
 }
 
-int SendSideBandwidthEstimation::Dump(const char* filename) 
+int SendSideBandwidthEstimation::Dump(const char* filename, size_t fileSizeLimit) 
 {
 	//If already dumping
 	if (fd!=FD_INVALID)
@@ -512,8 +539,10 @@ int SendSideBandwidthEstimation::Dump(const char* filename)
 	//Open file
 	if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0600))<0)
 		//Error
-		return false; //Error("Could not open file [err:%d]\n",errno);
-
+		return Error("Could not open file [file:%s,err:%d:%s]\n",filename,errno,strerror(errno));
+	bweStatsFileName = filename;
+	bweStatsFileSizeLimit = fileSizeLimit;
+	
 	//Done
 	return 1;
 }

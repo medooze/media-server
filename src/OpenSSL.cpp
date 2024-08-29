@@ -10,6 +10,9 @@ bool OpenSSL::ClassInit()
 	// First initialize OpenSSL stuff.
 	SSL_load_error_strings();
 	SSL_library_init();
+	
+	OpenSSL_add_all_algorithms();
+	ERR_load_crypto_strings();
 
 	// Then set the stuff to make OpenSSL thread-safe.
 	if (!SetThreadSafe())

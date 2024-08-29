@@ -3,82 +3,84 @@
 
 #include <optional>
  	
-DWORD ObuHeader::Serialize(BYTE* buffer,DWORD bufferLength) const
+DWORD ObuHeader::Serialize(BufferWritter& writter) const
 {
-	if (bufferLength < 1) return 0;
 	
-	BitWritter writter(buffer, bufferLength);
-	writter.Put(1, 0);
-	writter.Put(4, type);
-	writter.Put(1, extensionFlag);
-	writter.Put(1, hasSizeField);
-	writter.Put(1, 0);
-	
-	if (extensionFlag && writter.Left() > 0)
+	if (!writter.Assert(GetSize())) return 0;
+
+	auto mark = writter.Mark();
+
+	BitWritter bitwritter(writter, extension.has_value() ? 2 : 1);
+	bitwritter.Put(1, 0); //forbidden
+	bitwritter.Put(4, type);
+	bitwritter.Put(1, extension.has_value());
+	bitwritter.Put(1, length.has_value());
+	bitwritter.Put(1, 0); //reserved
+
+	if (extension.has_value())
 	{
-		writter.Put(3, temporalId);
-		writter.Put(2, spatialId);
+		bitwritter.Put(3, extension->layerInfo.temporalLayerId);
+		bitwritter.Put(2, extension->layerInfo.spatialLayerId);
+		bitwritter.Put(3, 0); //extended reserved
 	}
-	
-	auto written = bufferLength - writter.Left();
-	return written;
+
+	bitwritter.Flush();
+
+	if (length.has_value())
+		writter.EncodeLeb128(length.value());
+
+	//Return consumed bytes
+	return writter.GetOffset(mark);
 }
 
 size_t ObuHeader::GetSize() const
 {
 	size_t sz = 1;
-	if (extensionFlag) sz++;
-	
+	if (extension.has_value()) sz++;
+	//Leb128 size
+	if (length.has_value())
+	{
+		auto value = length.value();
+		while (value >= 0x80)
+		{
+			value >>= 7;
+			++sz;
+		}
+		++sz;
+	}
 	return sz;
 }
 
-bool ObuHeader::Parse(const BYTE* data, DWORD size)
+
+bool ObuHeader::Parse(BufferReader& reader)
 {
-	if (size < 1) return false;
+	if (!reader.Assert(1)) return false;
 	
-	BitReader reader(data, size);
+	BitReader bitreader(reader.PeekData(),reader.GetLeft());
 	
-	auto forbiddenBit = reader.Get(1);
+	auto forbiddenBit = bitreader.Get(1);
 	if (forbiddenBit != 0) return false;
 	
-	type = reader.Get(4);
-	extensionFlag = reader.Get(1);
-	hasSizeField = reader.Get(1);		
-	(void) reader.Get(1);
+	type = bitreader.Get(4);
+	bool extensionFlag = bitreader.Get(1);
+	bool hasSizeField = bitreader.Get(1);
+	bitreader.Skip(1);
 	
-	size--;
-	
-	if (extensionFlag)
+	if (extensionFlag && bitreader.Left()>5)
 	{
-		if (size < 1) return false;
-		
-		temporalId = reader.Get(3);
-		spatialId = reader.Get(2);
+		extension = Extension{
+			LayerInfo{
+				static_cast<uint8_t>(bitreader.Get(3)),
+				static_cast<uint8_t>(bitreader.Get(2))
+			}
+		};
+		bitreader.Skip(3);
 	}
-			
+
+	reader.Skip(bitreader.Flush());
+
+	if (hasSizeField)
+		length = reader.DecodeLev128();
+
 	return true;
-}
- 
-std::optional<ObuInfo> GetObuInfo(const BYTE* data, DWORD size)
-{
-	ObuHeader header;
-	if (!header.Parse(data, size)) return std::nullopt;
-	
-	size_t headerSize = header.GetSize();
-	
-	size_t payloadSize = 0;		
-	BufferReader reader(data + headerSize, size - headerSize);
-	if (header.hasSizeField)
-	{
-		payloadSize = reader.DecodeLev128();			
-	}
-	else
-	{
-		payloadSize = reader.GetLeft();
-	}
-	
-	auto* payload = reader.GetData(payloadSize);
-	ObuInfo info {(payload - data) + payloadSize, header.type, headerSize, payload, payloadSize};
-	
-	return info;
 }

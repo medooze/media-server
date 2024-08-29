@@ -17,6 +17,7 @@
 #include <arpa/inet.h>
 #include <list>
 
+#include "FecProbeGenerator.h"
 #include "config.h"
 #include "stunmessage.h"
 #include "dtls.h"
@@ -82,7 +83,7 @@ public:
 	int Dump(const char* filename, bool inbound = true, bool outbound = true, bool rtcp = true, bool rtpHeadersOnly = false);
 	int Dump(UDPDumper* dumper, bool inbound = true, bool outbound = true, bool rtcp = true, bool rtpHeadersOnly = false);
 	int StopDump();
-        int DumpBWEStats(const char* filename);
+	int DumpBWEStats(const char* filename, size_t fileSizeLimit=0);
 	int StopDumpBWEStats();
 	void Reset();
 	
@@ -139,6 +140,7 @@ private:
 	void ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq);
 	DWORD SendProbe(const RTPPacket::shared& packet);
 	DWORD SendProbe(RTPOutgoingSourceGroup *group,BYTE padding);
+	DWORD SendFecProbe(const RTPPacket::shared& packet, DWORD protectedSsrc);
 	void SendTransportWideFeedbackMessage(DWORD ssrc);
 	
 	int SetLocalCryptoSDES(const char* suite, const BYTE* key, const DWORD len);
@@ -182,6 +184,7 @@ private:
 	std::map<std::string,RTPIncomingSourceGroup*> rids;
 	std::map<std::string,std::set<RTPIncomingSourceGroup*>> mids;
 	CircularQueue<RTPPacket::shared> history;
+	FecProbeGenerator fecProbeGenerator;
 	
 	DWORD	mainSSRC		= 1;
 	DWORD   lastMediaSSRC		= 0;

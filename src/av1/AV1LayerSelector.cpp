@@ -21,35 +21,34 @@ std::vector<LayerInfo> AV1LayerSelector::GetLayerIds(const RTPPacket::shared& pa
 	BufferReader reader(packet->GetMediaData(), packet->GetMediaLength());
 
 	// Get aggregation header
-	BYTE aggregationHeader = reader.Get1();
+	RtpAv1AggreationHeader header;
 
-	const RtpAv1AggreationHeader* header = reinterpret_cast<const RtpAv1AggreationHeader*>(&aggregationHeader);
+	if (!header.Parse(reader)) return {};
 
 	//If startsNewCodedVideoSequence
-	if (header->N)
+	if (header.field.N)
 		//It is intra
 		packet->SetKeyFrame(true);
 
 	// Skip fragmented first element
-	if (header->Z) return infos;
+	if (header.field.Z) return infos;
 	
 	// We only parse the first OBU. The size field would not present when only one element in the packet
 	uint32_t obuSize = reader.GetLeft();
-	if (header->W != 1)
+	if (header.field.W != 1)
 	{
 		obuSize = reader.DecodeLev128();
 	}
 	
 	// Not enough data
-	if (obuSize > reader.GetLeft()) return infos;
+	if (!reader.Assert(obuSize)) return infos;
 	
-	auto info = GetObuInfo(reader.PeekData(), obuSize);
-	// The sequence header is always the first element in the packet if present, so we just need to check
-	// the first one.
-	if (info && info->obuType == ObuType::ObuSequenceHeader && info->obuSize == obuSize)
+	// The sequence header is always the first element in the packet if present, so we just need to check the first one.
+	ObuHeader obuHeader;
+	if (obuHeader.Parse(reader) && obuHeader.type == ObuType::ObuSequenceHeader)
 	{
 		SequenceHeaderObu sho;
-		if (sho.Parse(info->payload, info->payloadSize))
+		if (sho.Parse(reader))
 		{
 			//Set dimensions
 			packet->SetWidth(sho.max_frame_width_minus_1 + 1);

@@ -994,11 +994,10 @@ void RTMPConnection::ProcessCommandMessage(DWORD streamId,RTMPCommandMessage* cm
 			//Get object encoding used by client
 			objectEncoding = (double)obj->GetProperty(L"objectEncoding");
 		//Check fourCcList
-		AMFStrictArray fourCcList;
-		if (obj->HasProperty(L"fourCcList"))
+		if (obj->HasProperty(L"fourCcList") )
 		{
-			//Get fourCcList supported by client
-			fourCcList = static_cast<AMFStrictArray&>(obj->GetProperty(L"fourCcList"));
+			// Note: Unlike other params above we do not actually use the fourCcList here, so just assert the type is correct
+			obj->GetProperty(L"fourCcList").AssertType(AMFData::ValueType::StrictArray);
 		}
 
 		//Call listener

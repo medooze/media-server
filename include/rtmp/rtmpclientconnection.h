@@ -8,10 +8,15 @@
 #include "rtmpmessage.h"
 #include "rtmpstream.h"
 #include "rtmpapplication.h"
+#include "EventLoop.h"
+
 #include <pthread.h>
 #include <map>
+#include <functional>
+#include <optional>
 
 class RTMPClientConnection :
+	public EventLoop,
 	public RTMPMediaStream::Listener
 {
 public:
@@ -27,7 +32,11 @@ public:
 		FailedToParseData = 6,
 		PeerClosed = 7,
 		ReadError = 8,
-		PollError = 9
+		PollError = 9,
+		TlsInitError = 10,
+		TlsHandshakeError = 11,
+		TlsDecryptError = 12,
+		TlsEncryptError = 13
 	};
 
 	class Listener
@@ -46,8 +55,10 @@ public:
 	virtual ~RTMPClientConnection();
 
 	ErrorCode Connect(const char* server, int port, const char* app, RTMPClientConnection::Listener* listener);
-	DWORD SendCommand(DWORD streamId, const wchar_t* name, AMFData* params, AMFData* extra, std::function<void(bool, AMFData*, const std::vector<AMFData*>&)> callback);
-	DWORD SendCommand(DWORD streamId, const wchar_t* name, AMFData* params, AMFData* extra);
+	DWORD SendCommand(DWORD streamId, const wchar_t* name, AMFData* params, AMFData* extra)
+		{ return SendCommandInternal(streamId, name, params, extra, std::nullopt); }
+	DWORD SendCommand(DWORD streamId, const wchar_t* name, AMFData* params, AMFData* extra, std::function<void(bool, AMFData*, const std::vector<AMFData*>&)> callback)
+		{ return SendCommandInternal(streamId, name, params, extra, std::optional(callback)); }
 	int Disconnect();
 
 	void  SetUserData(DWORD data) { this->data = data; }
@@ -68,15 +79,23 @@ public:
 	QWORD GetOutBytes() const	{ return outBytes;	}
 
 protected:
-	void Start();
-	void Stop();
-	int Run();
+	
+	virtual RTMPClientConnection::ErrorCode Start();
+	virtual void Stop();
+	virtual bool IsConnectionReady() { return inited; };
+	virtual void OnReadyToTransfer() {};
+	virtual void ProcessReceivedData(const uint8_t* data, size_t size);
+	virtual void AddPendingRtmpData(const uint8_t* data, size_t size);
+	
+	inline Listener* GetListener() { return listener; }
+	int WriteData(const BYTE* data, const DWORD size);
+	void ParseData(const BYTE* data, const DWORD size);
 private:
+	
+	int Run();
 
 	static  void* run(void* par);
-	void ParseData(BYTE* data, const DWORD size);
 	DWORD SerializeChunkData(BYTE* data, const DWORD size);
-	int WriteData(BYTE* data, const DWORD size);
 
 	void ProcessControlMessage(DWORD streamId, BYTE type, RTMPObject* msg);
 	void ProcessCommandMessage(DWORD streamId, RTMPCommandMessage* cmd);
@@ -89,6 +108,7 @@ private:
 
 
 	void SendControlMessage(RTMPMessage::Type type, RTMPObject* msg);
+	DWORD SendCommandInternal(DWORD streamId, const wchar_t* name, AMFData* params, AMFData* extra, std::optional<std::function<void(bool, AMFData*, const std::vector<AMFData*>&)>> callback);
 
 	void SignalWriteNeeded();
 private:
@@ -100,9 +120,8 @@ private:
 	typedef std::map<DWORD, std::function<void(bool, AMFData*, const std::vector<AMFData*>&)>> Transactions;
 private:
 	int fd = FD_INVALID;
-	pollfd ufds[1] = {};
+	pollfd ufds[2] = {};
 	bool inited = false;
-	bool running = false;
 	State state = State::NONE;
 
 	RTMPHandshake01 c01;
@@ -132,7 +151,6 @@ private:
 	DWORD maxChunkSize = 128;
 	DWORD maxOutChunkSize = 512;
 
-	pthread_t thread;
 	pthread_mutex_t mutex;
 
 	std::wstring	 appName;
