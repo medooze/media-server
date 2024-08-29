@@ -123,7 +123,7 @@ public:
 		}
 		catch (std::exception& e) 
 		{
-			return 0;
+			return Warning("-AACSpecificConfig:Serialize() | Could not serialize aac config\n");
 		}
 	}
 	
