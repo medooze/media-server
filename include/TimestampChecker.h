@@ -128,6 +128,21 @@ public:
 		return lhs > rhs ? (lhs - rhs) : (rhs - lhs);
 	}
 	
+	static constexpr const char* CheckResultToString(CheckResult result)
+	{
+		switch (result)
+		{
+		case CheckResult::Valid:
+			return "Valid";
+		case CheckResult::Invalid:
+			return "Invalid";
+		case CheckResult::Reset:
+			return "Reset";
+		default:
+			return "Unknown";
+		}
+	}
+	
 private:
 	uint32_t maxDurationDiffMs = 0;
 	uint32_t maxContinousInvalidFrames = 0;
