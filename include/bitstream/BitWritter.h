@@ -104,6 +104,7 @@ public:
 
 	inline DWORD Put(BYTE n,DWORD v)
 	{
+		assert(n<=32);
 		
 		//Nothing to do
 		if (!n) return v;
@@ -154,6 +155,8 @@ public:
 
 	inline bool WriteNonSymmetric(uint32_t num,uint32_t val) 
 	{
+		assert(num);
+		
   		if (num == 1)
 			// When there is only one possible value, it requires zero bits to store it.
 			return true;
