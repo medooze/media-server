@@ -173,6 +173,7 @@ struct SequenceHeaderObu
 				{
 					decoder_model_present_for_this_op[i] = r.Get(1);
 					if (decoder_model_present_for_this_op[i]) {
+						//operating_parameters_info( i )
 						int n = buffer_delay_length_minus_1 + 1;
 						decoder_buffer_delay[i] = r.Get(n);
 						encoder_buffer_delay[i] = r.Get(n);
@@ -190,7 +191,6 @@ struct SequenceHeaderObu
 				}
 			}
 		}
-
 		auto frame_width_bits_minus_1 = r.Get(4);
 		auto frame_height_bits_minus_1 = r.Get(4);
 		max_frame_width_minus_1 = r.Get(frame_width_bits_minus_1 + 1);
@@ -264,6 +264,64 @@ struct SequenceHeaderObu
 		return true;
 	}
 
+
+	inline void Dump()
+	{
+		Debug("[SequenceHeaderObu \n");
+		Debug("\tseq_profile=%u\n", seq_profile);
+		Debug("\tstill_picture=%u\n", still_picture);
+		Debug("\treduced_still_picture_header=%u\n", reduced_still_picture_header);
+		Debug("\ttiming_info_present_flag=%u\n", timing_info_present_flag);
+		Debug("\tdecoder_model_info_present_flag=%u\n", decoder_model_info_present_flag);
+		Debug("\tinitial_display_delay_present_flag=%u\n", initial_display_delay_present_flag);
+		Debug("\toperating_points_cnt_minus_1=%u\n", operating_points_cnt_minus_1);
+
+		for (auto [k, v] : operating_point_idc)				Debug("\toperating_point_idc[%u]=%u\n",k,v);
+		for (auto [k, v] : seq_level_idx)				Debug("\tseq_level_idx[%u]=%u\n", k, v);
+		for (auto [k, v] : seq_tier)					Debug("\tseq_tier[%u]=%u\n", k, v);
+		for (auto [k, v] : decoder_model_present_for_this_op)		Debug("\tdecoder_model_present_for_this_op[%u]=%u\n", k, v);
+		for (auto [k, v] : initial_display_delay_present_for_this_op)	Debug("\tinitial_display_delay_present_for_this_op[%u]=%u\n", k, v);
+		for (auto [k, v] : initial_display_delay_minus_1)		Debug("\tinitial_display_delay_minus_1[%u]=%u\n", k, v);
+
+		Debug("\tmax_frame_width_minus_1=%u\n", max_frame_width_minus_1);
+		Debug("\tmax_frame_height_minus_1=%u\n", max_frame_height_minus_1);
+		Debug("\tframe_id_numbers_present_flag=%u\n", frame_id_numbers_present_flag);
+		Debug("\tdelta_frame_id_length_minus_2=%u\n", delta_frame_id_length_minus_2);
+		Debug("\tadditional_frame_id_length_minus_1=%u\n", additional_frame_id_length_minus_1);
+		Debug("\tuse_128x128_superblock=%u\n", use_128x128_superblock);
+		Debug("\tenable_filter_intra=%u\n", enable_filter_intra);
+		Debug("\tenable_intra_edge_filter=%u\n", enable_intra_edge_filter);
+		Debug("\tenable_interintra_compound=%u\n", enable_interintra_compound);
+		Debug("\tenable_masked_compound=%u\n", enable_masked_compound);
+		Debug("\tenable_warped_motion=%u\n", enable_warped_motion);
+		Debug("\tenable_dual_filter=%u\n", enable_dual_filter);
+		Debug("\tenable_order_hint=%u\n", enable_order_hint);
+		Debug("\tenable_jnt_comp=%u\n", enable_jnt_comp);
+		Debug("\tenable_ref_frame_mvs=%u\n", enable_ref_frame_mvs);
+		Debug("\tseq_force_screen_content_tools=%u\n", seq_force_screen_content_tools);
+		Debug("\tseq_force_integer_mv=%u\n", seq_force_integer_mv);
+		Debug("\tenable_superres=%u\n", enable_superres);
+		Debug("\tenable_cdef=%u\n", enable_cdef);
+		Debug("\tenable_restoration=%u\n", enable_restoration);
+		Debug("\tfilm_grain_params_present=%u\n", film_grain_params_present);
+		Debug("\tseq_choose_screen_content_tools=%u\n",seq_choose_screen_content_tools);
+		Debug("\tseq_choose_integer_mv=%u\n", seq_choose_integer_mv);
+		Debug("\torder_hint_bits_minus_1=%u\n", order_hint_bits_minus_1);
+
+		for (auto [k, v] : decoder_buffer_delay)	Debug("\tdecoder_buffer_delay[%u]=%u\n", k, v);
+		for (auto [k, v] : decoder_buffer_delay)	Debug("\tdecoder_buffer_delay[%u]=%u\n", k, v);
+		for (auto [k, v] : encoder_buffer_delay)	Debug("\tencoder_buffer_delay[%u]=%u\n", k, v);
+
+		Debug("\tnum_units_in_display_tick=%u\n", num_units_in_display_tick);
+		Debug("\ttime_scale=%u\n", time_scale);
+		Debug("\tequal_picture_interval=%u\n", equal_picture_interval);
+		Debug("\tnum_ticks_per_picture_minus_1=%u\n", num_ticks_per_picture_minus_1);
+		Debug("\tbuffer_delay_length_minus_1=%u\n", buffer_delay_length_minus_1);
+		Debug("\tnum_units_in_decoding_tick=%u\n", num_units_in_decoding_tick);
+		Debug("\tbuffer_removal_time_length_minus_1=%u\n", buffer_removal_time_length_minus_1);
+		Debug("\tframe_presentation_time_length_minus_1=%u\n", frame_presentation_time_length_minus_1);
+		Debug("/]\n");
+	}
 
 };
 

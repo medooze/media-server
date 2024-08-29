@@ -31,7 +31,6 @@
 RTMPClientConnection::RTMPClientConnection(const std::wstring& tag) :
 	tag(tag)
 {
-	setZeroThread(&thread);
 	//Set initial time
 	gettimeofday(&startTime, 0);
 	//Init mutex
@@ -132,22 +131,21 @@ RTMPClientConnection::ErrorCode RTMPClientConnection::Connect(const char* server
 
 RTMPClientConnection::ErrorCode RTMPClientConnection::Start()
 {
-	//We are running
-	running = true;
-
-	//Create thread
-	createPriorityThread(&thread, run, this, 0);
+	
+	EventLoop::Start([&]() {
+		run(this);
+	});
 	
 	return RTMPClientConnection::ErrorCode::NoError;
 }
 
 void RTMPClientConnection::Stop()
 {
+	EventLoop::Stop();
+	
 	//If got socket
 	if (fd != FD_INVALID)
 	{
-		//Not running;
-		running = false;
 		//Close socket
 		shutdown(fd, SHUT_RDWR);
 		//Will cause poll to return
@@ -172,14 +170,6 @@ int RTMPClientConnection::Disconnect()
 	//Stop just in case
 	Stop();
 
-	//If running
-	if (!isZeroThread(thread))
-	{
-		//Wait for server thread to close
-		pthread_join(thread, NULL);
-		//No thread
-		setZeroThread(&thread);
-	}
 
 	//If got application
 	if (listener)
@@ -229,12 +219,22 @@ int RTMPClientConnection::Run()
 	//Set values for polling
 	ufds[0].fd = fd;
 	ufds[0].events = POLLOUT | POLLIN | POLLERR | POLLHUP;
+	ufds[1].fd = GetPipe()[0];
+	//Set to wait also for write events on pipe for signaling
+	ufds[1].events = POLLIN | POLLERR | POLLHUP;
 
+	//Catch all IO errors and do nothing
+	signal(SIGIO,[](int){});
+	
+	auto now = Now();
+		
 	//Run until ended
-	while (running)
+	while (EventLoop::IsRunning())
 	{
+		int timeout = GetNextTimeout(10E3);
+		
 		//Wait for events
-		if (poll(ufds, 1, -1) < 0)
+		if (poll(ufds, 2, timeout) < 0)
 			//Check again
 			continue;
 
@@ -343,8 +343,28 @@ int RTMPClientConnection::Run()
 			//Exit
 			break;
 		}
+		
+		//Read first from signal pipe
+		if (ufds[1].revents & POLLIN)
+			//Clear signal flag
+			ClearSignal();
+			
+		now = Now();
+			
+		//Process pending tasks
+		ProcessTasks(now);
+
+		//Timers triggered
+		ProcessTriggers(now);
 	}
 
+			
+	//Process pending tasks
+	ProcessTasks(now);
+
+	//Timers triggered
+	ProcessTriggers(now);
+	
 	Log("<RTMPClientConnection::Run() completed.\n");
 
 	//Done
@@ -362,10 +382,8 @@ void RTMPClientConnection::SignalWriteNeeded()
 	//Unlock
 	pthread_mutex_unlock(&mutex);
 
-	//Check thred
-	if (!isZeroThread(thread))
-		//Signal the pthread this will cause the poll call to exit
-		pthread_kill(thread, SIGIO);
+	//Signal will cause the poll call to exit
+	Signal();
 }
 
 DWORD RTMPClientConnection::SerializeChunkData(BYTE* data, DWORD size)
