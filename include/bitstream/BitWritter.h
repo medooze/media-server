@@ -110,7 +110,7 @@ public:
 
 		//Check we have enougth space for writting n bits
 		if (n>Left())
-			throw std::range_error("not enougth buffer");
+			throw std::range_error("not enough buffer");
 
 		if (n+cached>32)
 		{
