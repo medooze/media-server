@@ -57,8 +57,7 @@ static void HMACsha256(const uint8_t *message, size_t messageLen, const uint8_t 
 	
 #if OPENSSL_VERSION_NUMBER > 0x30000000L
 	HMAC(EVP_sha256(), key, keylen, message, messageLen, digest, &digestLen);
-#else
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#elsif OPENSSL_VERSION_NUMBER < 0x10100000L
 	HMAC_CTX ctx;
 	HMAC_CTX_init(&ctx); 
 	HMAC_Init_ex(&ctx, key, keylen, EVP_sha256(), 0);
@@ -71,7 +70,6 @@ static void HMACsha256(const uint8_t *message, size_t messageLen, const uint8_t 
 	HMAC_Update(ctx, message, messageLen);
 	HMAC_Final(ctx, digest, &digestLen);
 	HMAC_CTX_free(ctx);
-#endif
 #endif
 
 }
