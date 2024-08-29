@@ -1,6 +1,9 @@
 #include "mpegts/psi.h"
 #include "log.h"
 #include "bitstream.h"
+
+#include "crc32c/crc32c.h"
+
 namespace mpegts
 {
 namespace psi
@@ -8,7 +11,32 @@ namespace psi
 
 void SyntaxData::Encode(BufferWritter& writer)
 {
+	auto mark = writer.Mark();
 	
+	writer.Set2(tableIdExtension);
+	
+	BitWritter bitwritter(writer, Size() - 2);
+	bitwritter.Put(2, _reserved1);
+	bitwritter.Put(5, versionNumber);
+	bitwritter.Put(1, isCurrent);
+	bitwritter.Put(8, sectionNumber);
+	bitwritter.Put(8, lastSectionNumber);
+	
+	auto encodable = std::get_if<std::unique_ptr<mpegts::psi::Encodable>>(data);
+	if (encodable)
+		encodable->Encode(writer);
+	
+	uint32_t crc32 = crc32c::Crc32c(writer.GetData() + mark, writer.GetLength() - mark);
+	writer.Set4(crc32);
+}
+
+size_t SyntaxData::Size() const
+{
+	auto encodable = std::get_if<std::unique_ptr<mpegts::psi::Encodable>>(data);
+	if (encodable)
+		encodable->Encode(writer);
+		
+	return 5 + encodable.size() + 4;
 }
 
 

@@ -39,6 +39,7 @@ struct SyntaxData : public Encodable
 	uint32_t crc32;
 
 	void Encode(BufferWritter& writer) override;
+	size_t Size() const;
 	
 	static std::unique_ptr<SyntaxData> Parse(BufferReader& reader);
 };
