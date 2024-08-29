@@ -28,15 +28,25 @@ public:
 	std::chrono::milliseconds OnFrame(uint64_t streamIdentifier, std::chrono::milliseconds now, uint64_t ts, uint64_t clockRate);
 
 private:
-
-	union alignas (16) Reference
+	
+	class Reference
 	{
-		__uint128_t value;
-		struct
+	public:
+		std::pair<int64_t, uint64_t> Get();
+		void Set(int64_t refTime, uint64_t refTimestamp);
+		
+	private:
+		union alignas (16) ReferenceField
 		{
-			int64_t refTime;
-			uint64_t refTimestamp;
-		} content;
+			__uint128_t value;
+			struct
+			{
+				int64_t refTime;
+				uint64_t refTimestamp;
+			} content;
+		};
+		
+		__uint128_t field = 0;
 	};
 	
 	/**
@@ -65,7 +75,7 @@ private:
 	std::chrono::milliseconds updateRefsStepPacketEarlyMs {0};
 	
 	// Time reference
-	Reference reference = {0};
+	Reference reference;
 
 	// The start time when all streams arrive early. If packets become late, this time will be reset.
 	std::optional<std::chrono::milliseconds> allEarlyStartTimeMs;

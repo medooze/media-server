@@ -66,8 +66,7 @@ void TestFrameDelayCalculator::TestDelayCalculator(const std::vector<std::tuple<
 		auto delayMs = calculator->OnFrame(ssrc, now, std::get<2>(f), std::get<3>(f));
 		delays.emplace_back(ssrc, delayMs.count());
 		
-		auto refTime = calculator->reference.content.refTime;
-		auto refTs = calculator->reference.content.refTimestamp;
+		auto [refTime, refTs] = calculator->reference.Get();
 		
 		if (references.empty())
 		{

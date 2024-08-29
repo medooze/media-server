@@ -24,23 +24,6 @@ static constexpr T ConvertTimestampClockRate(T ts, uint64_t originalRate, uint64
 	return originalRate == targetRate ? ts : (ts * T(targetRate) / T(originalRate));
 }
 
-/**
- * Atomatically write a 128bit integer to an address
- */
-void SyncWriteUint128(__uint128_t *dst, __uint128_t value)
-{
-    __uint128_t dstval = 0;
-    __uint128_t olddst = 0;
-    
-    dstval = *dst;
-    do
-    {
-        olddst = dstval;
-        dstval = __sync_val_compare_and_swap(dst, dstval, value);
-    }
-    while(dstval != olddst);
-}
-
 static constexpr uint64_t UnifiedClockRate = 90 * 1000;
 
 }
@@ -51,8 +34,6 @@ FrameDelayCalculator::FrameDelayCalculator(int aUpdateRefsPacketLateThresholdMs,
 	updateRefsStepPacketEarlyMs(aUpdateRefsStepPacketEarlyMs),
 	timeService(timeService)
 {
-	static_assert(sizeof(Reference) == 16);
-	static_assert(sizeof(reference.content) == 16);
 }
 
 std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifier, std::chrono::milliseconds now, uint64_t ts, uint64_t clockRate)
@@ -63,20 +44,18 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 	
 	auto unifiedTs = ConvertTimestampClockRate(ts, clockRate, UnifiedClockRate);
 	
-	Reference currentRef;
-	currentRef.value = __sync_fetch_and_add(&reference.value, 0);
+	auto [refTime, refTimestamp] = reference.Get();
 	
-	if (currentRef.value == 0)
+	if (refTime == 0)
 	{
-		currentRef.content = { now.count(), unifiedTs };
-		SyncWriteUint128(&reference.value, currentRef.value);
+		reference.Set(now.count(), unifiedTs);
 		
 		return std::chrono::milliseconds(0);
 	}
 			
 	// Note the lateMs could be negative when the frame arrives earlier than scheduled	
 	auto lateMs = GetFrameArrivalDelayMs(now, unifiedTs,
-				std::chrono::milliseconds(currentRef.content.refTime), currentRef.content.refTimestamp);
+				std::chrono::milliseconds(refTime), refTimestamp);
 	
 	// We would delay the early arrived frame
 	std::chrono::milliseconds delayMs(-lateMs);
@@ -85,8 +64,7 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 	bool early = false;
 	if (lateMs > updateRefsPacketLateThresholdMs)  // Packet late
 	{
-		currentRef.content = { now.count(), unifiedTs };
-		SyncWriteUint128(&reference.value, currentRef.value);
+		reference.Set(now.count(), unifiedTs);
 		
 		delayMs = std::chrono::milliseconds(0);
 	}
@@ -96,7 +74,7 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 	}
 	
 	// Asynchronously check if we can reduce latency if all frames comes early
-	timeService.Async([selfWeak = weak_from_this(), early, now, unifiedTs, currentRef, 
+	timeService.Async([selfWeak = weak_from_this(), early, now, unifiedTs, refTime, refTimestamp, 
 				streamIdentifier, updateRefsPacketEarlyThresholdMs](std::chrono::milliseconds) {
 		
 		auto self = selfWeak.lock();
@@ -110,16 +88,13 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 			return;
 		}
 		
-		auto ref = currentRef;
-		
 		// Loop to see if all the streams have arrived earlier
 		bool allEarly = std::all_of(self->frameArrivalInfo.begin(), self->frameArrivalInfo.end(), 
 			[&](const auto& info) {
 				if (info.first == streamIdentifier) return true;
 							
 				auto [time, timestamp] = info.second;
-				auto frameLateMs = GetFrameArrivalDelayMs(time, timestamp, std::chrono::milliseconds(ref.content.refTime),
-									ref.content.refTimestamp);
+				auto frameLateMs = GetFrameArrivalDelayMs(time, timestamp, std::chrono::milliseconds(refTime), refTimestamp);
 				
 				return frameLateMs < updateRefsPacketEarlyThresholdMs;
 			});
@@ -134,8 +109,7 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 			{
 				// Make reference time earlier for same time stamp, which means
 				// frames will be dispatched ealier.
-				ref.content.refTime -= self->updateRefsStepPacketEarlyMs.count();
-				SyncWriteUint128(&self->reference.value, ref.value);
+				self->reference.Set(refTime - self->updateRefsStepPacketEarlyMs.count(), refTimestamp);
 
 				// Restart the latency reduction process to have a max reduction rate
 				// at 20ms per second as we don't expect the latency would be too large,
@@ -160,3 +134,24 @@ int64_t FrameDelayCalculator::GetFrameArrivalDelayMs(std::chrono::milliseconds n
 
 	return actualTimeMs - scheduledMs;
 }
+
+std::pair<int64_t, uint64_t> FrameDelayCalculator::Reference::Get()
+{
+	static_assert(sizeof(ReferenceField) == 16);
+	static_assert(sizeof(ReferenceField::value) == 16);
+	static_assert(sizeof(ReferenceField::content) == 16);
+	
+	ReferenceField currentRef;
+	currentRef.value = __sync_fetch_and_add(&field, 0);
+	
+	return { currentRef.content.refTime, currentRef.content.refTimestamp };
+}
+
+void FrameDelayCalculator::Reference::Set(int64_t refTime, uint64_t refTimestamp)
+{
+	ReferenceField newRef;
+	newRef.content = {refTime, refTimestamp};
+	
+	SyncWriteUint128(&field, newRef.value);
+}
+		
