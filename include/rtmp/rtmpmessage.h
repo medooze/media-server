@@ -224,10 +224,10 @@ public:
 
 	void		SetVideoCodec(VideoCodec codec)		{ this->codec = codec;		}
 	void		SetFrameType(FrameType frameType)	{ this->frameType = frameType;	}
-	VideoCodec	GetVideoCodec()				const { return codec;		}
-	FrameType	GetFrameType()				const { return frameType;	}
-	BYTE		GetAVCType()				const { return extraData[0];	}
-	DWORD		GetAVCTS()				const { return ((DWORD)extraData[1]) << 16 | ((DWORD)extraData[2]) << 8 | extraData[3]; }
+	VideoCodec	GetVideoCodec()	const			{ return codec;		}
+	FrameType	GetFrameType() const			{ return frameType;	}
+	BYTE		GetAVCType() const			{ return extraData[0];	}
+	DWORD		GetAVCTS() const			{ return ((DWORD)extraData[1]) << 16 | ((DWORD)extraData[2]) << 8 | extraData[3]; }
 	
 	DWORD		SetVideoFrame(BYTE* data,DWORD size);
 	void		SetAVCType(BYTE type)			{ extraData[0] = type;		}
@@ -249,7 +249,7 @@ public:
 		return GetPacketType() == RTMPVideoFrame::SequenceStart;
 	}
 	
-	virtual bool IsCodedFrames()
+	virtual bool IsCodedFrames() const
 	{
 		if (!isExtended)
 		{
@@ -259,6 +259,8 @@ public:
 		return GetPacketType() == RTMPVideoFrame::CodedFrames ||
 			GetPacketType() == RTMPVideoFrame::CodedFramesX;
 	}
+
+	BYTE GetTrackId() const { return trackId; }
 	
 private:
 	
@@ -309,10 +311,10 @@ public:
 	virtual DWORD	Serialize(BYTE* buffer,DWORD size);
 	virtual DWORD	GetSize();
 
-	AudioCodec	GetAudioCodec()			{ return codec;			}
-	SoundRate	GetSoundRate()			{ return rate;			}
-	bool		IsSamples18Bits()		{ return sample16bits;		}
-	bool		IsStereo()			{ return stereo;		}
+	AudioCodec	GetAudioCodec()	const		{ return codec;			}
+	SoundRate	GetSoundRate()	const		{ return rate;			}
+	bool		IsSamples18Bits() const		{ return sample16bits;		}
+	bool		IsStereo() const		{ return stereo;		}
 	void		SetAudioCodec(AudioCodec codec)	{ this->codec = codec;		}
 	void		SetSoundRate(SoundRate rate)	{ this->rate = rate;		}
 	void		SetSamples16Bits(bool sample16bits) { this->sample16bits = sample16bits; }
@@ -320,7 +322,7 @@ public:
 	DWORD		SetAudioFrame(const BYTE* data,DWORD size);
 
 	void		SetAACPacketType(AACPacketType type)	{ extraData[0] = type;	}
-	AACPacketType   GetAACPacketType()			{ return (AACPacketType) extraData[0]; }
+	AACPacketType   GetAACPacketType() const		{ return (AACPacketType) extraData[0]; }
 
 	virtual void	Dump();
 private:
@@ -344,14 +346,14 @@ public:
 	DWORD Serialize(BYTE* buffer,DWORD size);
 	DWORD GetSize();
 
-	std::wstring 	GetName() 		{ return name->GetWString(); 	}
-	std::string 	GetNameUTF8() 		{ return name->GetUTF8String();	}
-	double		GetTransId()		{ return transId->GetNumber(); 	}
-	bool		HasName()		{ return name;			}
-	bool		HasTransId()		{ return transId;		}
-	bool		HasParams()  		{ return params; 		}
+	std::wstring 	GetName() const		{ return name->GetWString(); 	}
+	std::string 	GetNameUTF8() const	{ return name->GetUTF8String();	}
+	double		GetTransId() const	{ return transId->GetNumber(); 	}
+	bool		HasName() const		{ return name;			}
+	bool		HasTransId() const	{ return transId;		}
+	bool		HasParams() const	{ return params; 		}
 	AMFData*	GetParams()  		{ return params; 		}
-	DWORD		GetExtraLength() 	{ return extra.size(); 		}
+	DWORD		GetExtraLength() const	{ return extra.size(); 		}
 	AMFData*	GetExtra(DWORD i) 	{ return extra[i]; 		}
 	const std::vector<AMFData*>& GetExtra() { return extra;			}
 	void		Dump();
@@ -375,9 +377,9 @@ public:
 		AddProperty(L"description",description);
 	};
 
-	const std::wstring GetCode()		{ return HasProperty(L"code") ? (std::wstring)GetProperty(L"code") : L"";		}
-	const std::wstring GetLevel()		{ return HasProperty(L"level") ? (std::wstring)GetProperty(L"level") : L"";		}
-	const std::wstring GetDescription()	{ return HasProperty(L"description") ? (std::wstring)GetProperty(L"description") : L"";	}
+	const std::wstring GetCode() 		{ return HasProperty(L"code") ? (std::wstring)GetProperty(L"code") : L"";		}
+	const std::wstring GetLevel() 		{ return HasProperty(L"level") ? (std::wstring)GetProperty(L"level") : L"";		}
+	const std::wstring GetDescription() 	{ return HasProperty(L"description") ? (std::wstring)GetProperty(L"description") : L"";	}
 };
 
 class RTMPMetaData

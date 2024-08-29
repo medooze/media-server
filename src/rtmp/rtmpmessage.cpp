@@ -1029,6 +1029,7 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 				usedBytes = 1;
 				break;
 			case ParsingState::VideoTagHeaderMultiTrack:
+				packetType = PacketType(buffer[0] & 0x0f);
 				parsingState = ParsingState::VideoTagHeaderFourCc;
 				usedBytes = 1;
 				break;
@@ -1116,10 +1117,22 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 					else
 						return size;
 				}
-				else
+				else if (codecEx == H264)
 				{
-					// Not implemented for other codecs
-					return size;
+					if (packetType == SequenceStart)
+					{
+						parsingState = ParsingState::VideoTagData;
+					}
+					else if (packetType == CodedFrames)
+					{
+						bufferWritter = std::make_unique<BufferWritter>(extraData, 3);
+
+						parsingState = ParsingState::VideoTagHevcCompositionTime;
+					}
+					else if (packetType == CodedFramesX)
+					{
+						parsingState = ParsingState::VideoTagData;
+					};
 				}
 			
 				break;

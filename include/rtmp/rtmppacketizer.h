@@ -12,6 +12,7 @@
 #include <memory>
 
 VideoCodec::Type GetRtmpFrameVideoCodec(const RTMPVideoFrame& videoFrame);
+AudioCodec::Type GetRtmpFrameAudioCodec(const RTMPAudioFrame& audioFrame);
 
 class RTMPAudioPacketizer
 {
