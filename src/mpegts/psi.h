@@ -20,6 +20,7 @@ class Encodable
 public:
 	virtual ~Encodable() = default;
 	virtual void Encode(BufferWritter& writer) = 0;	
+	virtual size_t Size() const = 0;
 };
 
 /** PSI syntax section, optionally surrounding table data */
@@ -39,7 +40,7 @@ struct SyntaxData : public Encodable
 	uint32_t crc32;
 
 	void Encode(BufferWritter& writer) override;
-	size_t Size() const;
+	size_t Size() const override;
 	
 	static std::unique_ptr<SyntaxData> Parse(BufferReader& reader);
 };
@@ -56,6 +57,8 @@ struct Table : public Encodable
 	std::variant<BufferReader, std::unique_ptr<Encodable>> data;
 	
 	void Encode(BufferWritter& writer) override;
+	size_t Size() const override;
+	
 	static std::unique_ptr<Table> Parse(BufferReader& reader);
 };
 

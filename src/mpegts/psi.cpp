@@ -22,9 +22,9 @@ void SyntaxData::Encode(BufferWritter& writer)
 	bitwritter.Put(8, sectionNumber);
 	bitwritter.Put(8, lastSectionNumber);
 	
-	auto encodable = std::get_if<std::unique_ptr<mpegts::psi::Encodable>>(data);
+	auto encodable = std::get_if<std::unique_ptr<Encodable>>(&data);
 	if (encodable)
-		encodable->Encode(writer);
+		(*encodable)->Encode(writer);
 	
 	uint32_t crc32 = crc32c::Crc32c(writer.GetData() + mark, writer.GetLength() - mark);
 	writer.Set4(crc32);
@@ -32,11 +32,25 @@ void SyntaxData::Encode(BufferWritter& writer)
 
 size_t SyntaxData::Size() const
 {
-	auto encodable = std::get_if<std::unique_ptr<mpegts::psi::Encodable>>(data);
-	if (encodable)
-		encodable->Encode(writer);
+	size_t totalSize = 5 + 4;
 		
-	return 5 + encodable.size() + 4;
+	std::visit([&totalSize](auto&& arg){
+		using T = std::decay_t<decltype(arg)>;
+		if constexpr (std::is_same_v<T, std::unique_ptr<Encodable>>)
+		{
+			totalSize += arg->Size();
+		}
+		else if constexpr (std::is_same_v<T, BufferReader>)
+		{
+			totalSize += arg.GetLeft();
+		}
+		else
+		{
+
+		}
+	}, data);
+		
+	return totalSize;
 }
 
 
@@ -81,6 +95,28 @@ std::unique_ptr<SyntaxData> SyntaxData::Parse(BufferReader& reader)
 void Table::Encode(BufferWritter& writer)
 {
 	
+}
+
+size_t Table::Size() const
+{
+	size_t totalSize = 3;
+	
+	std::visit([&totalSize](auto&& arg){
+		using T = std::decay_t<decltype(arg)>;
+		if constexpr (std::is_same_v<T, std::unique_ptr<Encodable>>)
+		{
+			totalSize += arg->Size();
+		}
+		else if constexpr (std::is_same_v<T, BufferReader>)
+		{
+			totalSize += arg.GetLeft();
+		}
+		else
+		{
+		}
+	}, data);
+	
+	return totalSize;
 }
 
 std::unique_ptr<Table> Table::Parse(BufferReader& reader)

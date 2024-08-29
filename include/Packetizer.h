@@ -2,11 +2,8 @@
 #define PACKETIZER_H
 
 #include "Buffer.h"
-#include "media.h"
-#include "psi.h"
+#include "BufferWritter.h"
 
-#include <vector>
-#include <map>
 #include <stdint.h>
 #include <list>
 
@@ -30,12 +27,12 @@ public:
 		return buffer && pos < buffer->GetSize();
 	}
 	
-	virtual void GetNextPacket(BufferWritter& writter)
+	virtual void GetNextPacket(BufferWritter& writer)
 	{
 		if (maxPacketSize == 0)
 			throw std::runtime_error("max packet size is not set");
 			
-		if (writter.GetLeft() < maxPacketSize)
+		if (writer.GetLeft() < maxPacketSize)
 			throw std::runtime_error("Not enough buffer for generating packet.");
 		
 		while (true)
@@ -48,15 +45,22 @@ public:
 				// check force sperate flag
 				if (messages.begin()->second)
 					return;
-					
-				buffer = messages.begin()->first->Encode();
+				
+				auto& encodable = messages.begin()->first;
+				
+				buffer = std::make_unique<Buffer>(encodable->Size());
+				
+				BufferWritter awriter(*buffer);
+				encodable->Encode(awriter);
+				
+				buffer->SetSize(awriter.GetLength());
 				pos = 0;
 				
-				messages.erase(message.begin());
+				messages.erase(messages.begin());
 			}
 			
 			auto len = std::min(buffer->GetSize() - pos, maxPacketSize);
-			writter.SetN(pos, buffer, len);
+			writer.SetN(pos, *buffer, len);
 			
 			pos += len;
 		}
