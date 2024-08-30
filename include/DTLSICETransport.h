@@ -59,6 +59,7 @@ public:
 		virtual void onICETimeout() = 0;
 		virtual void onDTLSStateChanged(const DTLSState) = 0;
 		virtual void onRemoteICECandidateActivated(const std::string& ip, uint16_t port, uint32_t priority) = 0;
+		virtual void onUnsignaledIncomingSourceGroup(const RTPIncomingSourceGroup::shared& group) = 0;
 		virtual ~Listener() = default;
 	};
 	class Sender
@@ -137,17 +138,17 @@ private:
 	int Send(const RTCPCompoundPacket::shared& rtcp);
 	void SetRTT(DWORD rtt,QWORD now);
 	void onRTCP(const RTCPCompoundPacket::shared &rtcp);
-	void ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq);
+	void ReSendPacket(RTPOutgoingSourceGroup* group,WORD seq);
 	DWORD SendProbe(const RTPPacket::shared& packet);
-	DWORD SendProbe(RTPOutgoingSourceGroup *group,BYTE padding);
+	DWORD SendProbe(RTPOutgoingSourceGroup* group,BYTE padding);
 	DWORD SendFecProbe(const RTPPacket::shared& packet, DWORD protectedSsrc);
 	void SendTransportWideFeedbackMessage(DWORD ssrc);
 	
 	int SetLocalCryptoSDES(const char* suite, const BYTE* key, const DWORD len);
 	int SetRemoteCryptoSDES(const char* suite, const BYTE* key, const DWORD len);
 	//Helpers
-	RTPIncomingSourceGroup* GetIncomingSourceGroup(DWORD ssrc);
-	RTPOutgoingSourceGroup* GetOutgoingSourceGroup(DWORD ssrc);
+	RTPIncomingSourceGroup*	GetIncomingSourceGroup(DWORD ssrc);
+	RTPOutgoingSourceGroup*	GetOutgoingSourceGroup(DWORD ssrc);
 	RTPIncomingSource*	GetIncomingSource(DWORD ssrc);
 	RTPOutgoingSource*	GetOutgoingSource(DWORD ssrc);
 
@@ -179,10 +180,10 @@ private:
 	WORD		feedbackCycles			= 0;
 
 	//TODO: change by shared pointers
-	std::map<DWORD, RTPOutgoingSourceGroup*> outgoing;
-	std::map<DWORD, RTPIncomingSourceGroup*> incoming;
-	std::map<std::string,RTPIncomingSourceGroup*> rids;
-	std::map<std::string,std::set<RTPIncomingSourceGroup*>> mids;
+	std::map<DWORD, RTPOutgoingSourceGroup::shared> outgoing;
+	std::map<DWORD, RTPIncomingSourceGroup::shared> incoming;
+	std::map<std::string,RTPIncomingSourceGroup::shared> rids;
+	std::map<std::string,std::set<RTPIncomingSourceGroup::shared>> mids;
 	CircularQueue<RTPPacket::shared> history;
 	FecProbeGenerator fecProbeGenerator;
 	
