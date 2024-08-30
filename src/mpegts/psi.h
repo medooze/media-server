@@ -63,7 +63,7 @@ struct Table : public Encodable
 };
 
 /** PSI table data for a Program Association Table */
-struct ProgramAssociation
+struct ProgramAssociation : public Encodable
 {
 	static const uint16_t PID = 0x0000;
 	static const uint8_t TABLE_ID = 0x00;
@@ -71,14 +71,15 @@ struct ProgramAssociation
 	uint16_t programNum = 0;
 	uint16_t pmtPid = 0;
 
-	void Encode(BufferWritter& writer);
+	void Encode(BufferWritter& writer) override;
+	size_t Size() const override { return 4; };
 	
 	/** parse a single PAT entry */
 	static ProgramAssociation Parse(BufferReader& reader);
 };
 
 /** PSI table data for a Program Map Table */
-struct ProgramMap
+struct ProgramMap : public Encodable
 {
 	static const uint8_t TABLE_ID = 0x02;
 
@@ -99,6 +100,8 @@ struct ProgramMap
 	std::vector<ElementaryStream> streams;
 
 	void Encode(BufferWritter& writer);
+	size_t Size() const override { return 4 + piLength; };
+	
 	static ProgramMap Parse(BufferReader& reader);
 };
 

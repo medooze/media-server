@@ -16,7 +16,24 @@ enum AdaptationFieldControl
 	AdaptationFiedlAndPayload = 3
 };
 
-struct Header
+class Encodable
+{
+public:
+	virtual ~Encodable() = default;
+	
+	/**
+	 * Encode the content
+	 */
+	virtual void Encode(BufferWritter& writer) = 0;	
+	
+	/**
+	 * The memory size needed for encoding. It must match
+	 * the exact buffer used after encoding the content.
+	 */
+	virtual size_t Size() const = 0;
+};
+
+struct Header : public Encodable
  {
 	uint8_t  syncByte = 0;
 	bool	 transportErrorIndication = false;
@@ -27,17 +44,17 @@ struct Header
 	AdaptationFieldControl adaptationFieldControl = AdaptationFieldControl::Reserved;
 	uint8_t  continuityCounter = 0;
 
-	void Encode(BufferWritter& writer);
+	// Encodable overrides
+	void Encode(BufferWritter& writer) override;
+	size_t Size() const override { return 4; }
+	
 	static Header Parse(BufferReader& reader);
 	
 	void Dump() const;
 };
 
-struct AdaptationField
+struct AdaptationField : public Encodable
 {
-	void Encode(BufferWritter& writer);
-	static AdaptationField Parse(BufferReader& reader);
-
 	uint8_t adaptationFieldLength = 0;
 	bool discontinuityIndicator = false;
 	bool randomAccessIndicator = false;
@@ -47,7 +64,12 @@ struct AdaptationField
 	bool splicingPointFlag = false;
 	bool transportPrivateDataFlag = false;
 	bool adaptationFieldExtensionFlag = false;
-
+	
+	// Encodable overrides
+	void Encode(BufferWritter& writer) override;
+	size_t Size() const override { return 1 + adaptationFieldLength; }
+	
+	static AdaptationField Parse(BufferReader& reader);
 };
 
 struct Packet
@@ -57,8 +79,7 @@ struct Packet
 	Header header;
 	std::optional<AdaptationField> adaptationField = {};
 	std::optional<uint8_t> payloadPointer = {};
-
-	void Encode(BufferWritter& writer);
+	
 	static Packet Parse(BufferReader& reader);
 };
 
@@ -86,19 +107,21 @@ enum PTSDTSIndicator
 	Both = 3
 };
 
-struct Header
+struct Header : public Encodable
 {
 	uint32_t packetStartCodePrefix = 0x000001;
 	uint8_t  streamId = 0;
 	uint16_t packetLength = 0;
 
-	void Encode(BufferWritter& writer);
+	// Encodable overrides
+	void Encode(BufferWritter& writer) override;
+	size_t Size() const override { return 6; }
+	
 	static Header Parse(BufferReader& reader);
 };
 
-struct HeaderExtension
+struct HeaderExtension : public Encodable
 {
-
 	uint8_t markerBits = 0x10;
 	uint8_t scramblingControl = 0;
 	bool	priority = false;
@@ -117,7 +140,10 @@ struct HeaderExtension
 	std::optional<uint64_t> pts = {};
 	std::optional<uint64_t> dts = {};
 
-	void Encode(BufferWritter& writer);
+	// Encodable overrides
+	void Encode(BufferWritter& writer) override;
+	size_t Size() const override { return 0; }
+	
 	static HeaderExtension Parse(BufferReader& reader);
 };
 
@@ -126,7 +152,6 @@ struct Packet
 	Header	header;
 	std::optional<HeaderExtension> headerExtension = {};
 
-	void Encode(BufferWritter& writer);
 	static Packet Parse(BufferReader& reader);
 	static StreamType GetStreamType(const uint8_t& streamId);
 };
@@ -134,7 +159,7 @@ struct Packet
 namespace adts 
 {
 
-struct Header
+struct Header : public Encodable
 {
 	uint16_t syncWord = 0xfff;
 	bool     version = false;
@@ -153,7 +178,10 @@ struct Header
 	uint8_t  numberOfFrames = 0;
 	uint16_t crc = 0;
 
-	void Encode(BufferWritter& writer);
+	// Encodable overrides
+	void Encode(BufferWritter& writer) override;
+	size_t Size() const override { return 7; }
+	
 	static Header Parse(BufferReader& reader);
 };
 }; //namespace mpegts::pes::adts

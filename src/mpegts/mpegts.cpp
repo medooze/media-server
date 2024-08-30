@@ -153,14 +153,6 @@ AdaptationField AdaptationField::Parse(BufferReader& reader)
 	return adaptationField;
 }
 
-
-void Packet::Encode(BufferWritter& writer)
-{
-	header.Encode(writer);
-	if (adaptationField) adaptationField->Encode(writer);
-	if (payloadPointer) writer.Set1(*payloadPointer);
-}
-
 Packet Packet::Parse(BufferReader& reader)
 {
 
@@ -395,12 +387,6 @@ StreamType GetStreamType(const uint8_t& streamId)
 		return VideoStream;
 	else
 		return Invalid;
-}
-
-void Packet::Encode(BufferWritter& writer)
-{
-	header.Encode(writer);
-	if (headerExtension) headerExtension->Encode(writer);
 }
 
 Packet Packet::Parse(BufferReader& reader)
