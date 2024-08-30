@@ -11,7 +11,7 @@ template<typename T>
 class Packetizer
 {
 public:
-	Packetizer(size_t maxPacketSize) : maxPacketSize(maxPacketSize)
+	Packetizer()
 	{
 	}
 	
@@ -29,37 +29,35 @@ public:
 	
 	virtual void GetNextPacket(BufferWritter& writer)
 	{
-		if (maxPacketSize == 0)
-			throw std::runtime_error("max packet size is not set");
-			
-		if (writer.GetLeft() < maxPacketSize)
-			throw std::runtime_error("Not enough buffer for generating packet.");
-		
-		while (true)
+		while (writer.GetLeft())
 		{
 			if (!buffer || pos >= buffer->GetSize())
 			{
 				if (messages.empty())
 					return;
 				
+				// Grap the first message
+				auto& msg = messages.begin();
+				auto [encodable, forceSeparate] = msg;
+				
 				// check force sperate flag
-				if (messages.begin()->second)
+				if (forceSeparate)
 					return;
 				
-				auto& encodable = messages.begin()->first;
-				
+				// Create a new buffer for the message
 				buffer = std::make_unique<Buffer>(encodable->Size());
-				
 				BufferWritter awriter(*buffer);
 				encodable->Encode(awriter);
 				
 				buffer->SetSize(awriter.GetLength());
 				pos = 0;
 				
+				// Remove the message
 				messages.erase(messages.begin());
 			}
 			
-			auto len = std::min(buffer->GetSize() - pos, maxPacketSize);
+			// Fill the writer as much as possible
+			auto len = std::min(buffer->GetSize() - pos, writer.GetLeft());
 			writer.SetN(pos, *buffer, len);
 			
 			pos += len;
@@ -67,8 +65,6 @@ public:
 	}
 	
 private:
-	size_t maxPacketSize = 0;
-	
 	std::list<std::pair<T, bool>> messages;
 	
 	std::unique_ptr<Buffer> buffer;
