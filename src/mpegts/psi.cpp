@@ -11,6 +11,9 @@ namespace psi
 
 void SyntaxData::Encode(BufferWritter& writer)
 {
+	if (writer.GetLeft() < Size())
+		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
+		
 	auto mark = writer.Mark();
 	
 	writer.Set2(tableIdExtension);
@@ -43,10 +46,6 @@ size_t SyntaxData::Size() const
 		else if constexpr (std::is_same_v<T, BufferReader>)
 		{
 			totalSize += arg.GetLeft();
-		}
-		else
-		{
-
 		}
 	}, data);
 		
@@ -94,6 +93,9 @@ std::unique_ptr<SyntaxData> SyntaxData::Parse(BufferReader& reader)
 
 void Table::Encode(BufferWritter& writer)
 {
+	if (writer.GetLeft() < Size())
+		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
+		
 	writer.Set1(tableId);
 	
 	BitWritter bitwriter(writer, 2);
@@ -121,9 +123,6 @@ size_t Table::Size() const
 		else if constexpr (std::is_same_v<T, BufferReader>)
 		{
 			totalSize += arg.GetLeft();
-		}
-		else
-		{
 		}
 	}, data);
 	
@@ -183,12 +182,20 @@ std::unique_ptr<Table> Table::Parse(BufferReader& reader)
 
 void ProgramAssociation::Encode(BufferWritter& writer)
 {
+	if (writer.GetLeft() < Size())
+		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
+		
 	writer.Set2(programNum);
 	
-	BitWritter bitwriter(writer, 5);
+	BitWritter bitwriter(writer, 2);
 	
 	bitwriter.Put(3, 0x7); //reserved
 	bitwriter.Put(13, pmtPid);
+}
+
+size_t ProgramAssociation::Size() const
+{ 
+	return 4;
 }
 
 ProgramAssociation ProgramAssociation::Parse(BufferReader& reader)
@@ -231,7 +238,6 @@ void ProgramMap::ElementaryStream::Encode(BufferWritter& writer)
 		writer.Set(0, buffer);
 	}
 }
-
 
 size_t ProgramMap::ElementaryStream::Size() const
 {
@@ -279,9 +285,9 @@ void ProgramMap::Encode(BufferWritter& writer)
 {
 	BitWritter bitwriter(writer, 4);
 	
-	bitwriter.Put(3, 0x7);	// Reserved
+	bitwriter.Put(3, 0x7);		// Reserved
 	bitwriter.Put(13, pcrPid);	// PCR_PID, no PCR
-	bitwriter.Put(4, 0xf);	// reserved
+	bitwriter.Put(4, 0xf);		// reserved
 	bitwriter.Put(12, piLength);	// program info length
 	
 	for (auto& es : streams) 
@@ -292,7 +298,14 @@ void ProgramMap::Encode(BufferWritter& writer)
 
 size_t ProgramMap::Size() const
 { 
-	return 4 + piLength; 
+	size_t totalSize = 4;
+	
+	for (auto& es : streams) 
+	{
+		totalSize  += es.Size();
+	}
+	
+	return totalSize;
 }
 
 ProgramMap ProgramMap::Parse(BufferReader& reader)

@@ -70,7 +70,7 @@ add_library(MediaServerLib
     ${CMAKE_CURRENT_LIST_DIR}/src/av1/Obu.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/mpegts/SpliceInfoSection.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/mpegts/mpegts.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/mpegts/mpegtsenc.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/mpegts/psi.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtmp/rtmpserver.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtmp/amf.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtmp/rtmpclientconnection.cpp

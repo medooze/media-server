@@ -64,7 +64,7 @@ struct ProgramAssociation : public Encodable
 	uint16_t pmtPid = 0;
 
 	void Encode(BufferWritter& writer) override;
-	size_t Size() const override { return 4; };
+	size_t Size() const override;
 	
 	/** parse a single PAT entry */
 	static ProgramAssociation Parse(BufferReader& reader);

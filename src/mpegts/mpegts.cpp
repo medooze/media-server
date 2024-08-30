@@ -6,8 +6,8 @@ namespace mpegts
 
 void Header::Encode(BufferWritter& writer)
 {
-	if (writer.GetLeft()<4)
-		throw std::runtime_error("Not enought data to write mpegts packet header");
+	if (writer.GetLeft() < Size())
+		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
 		
 	BitWritter bitwriter(writer, 4);
 	bitwriter.Put(8, syncByte);
@@ -89,7 +89,7 @@ void Header::Dump() const
 void AdaptationField::Encode(BufferWritter& writer)
 {
 	if (writer.GetLeft() < Size())
-		throw std::runtime_error("Not enought data to write mpegts adaptation field");
+		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
 	
 	writer.Set1(adaptationFieldLength);
 	
@@ -211,8 +211,8 @@ namespace pes
 
 void Header::Encode(BufferWritter& writer)
 {
-	if (writer.GetLeft() < 6)
-		throw std::runtime_error("Not enought data to write mpegtsp pes header");
+	if (writer.GetLeft() < Size())
+		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
 	
 	writer.Set3(packetStartCodePrefix);
 	writer.Set1(streamId);
@@ -249,7 +249,7 @@ Header Header::Parse(BufferReader& reader)
 void HeaderExtension::Encode(BufferWritter& writer)
 {
 	if (writer.GetLeft() < Size())
-		throw std::runtime_error("Not enought data to write mpegtsp pes extension header");
+		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
 	
 	BitWritter bitwriter(writer, 3);
 	
@@ -440,8 +440,8 @@ namespace adts
 {
 	void Header::Encode(BufferWritter& writer)
 	{
-		if (writer.GetLeft() < 7)
-			throw std::runtime_error("Not enought data to write mpegtsp pes adts header");
+		if (writer.GetLeft() < Size())
+			throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
 		
 		BitWritter bitwriter(writer, 7);
 		
