@@ -17,7 +17,6 @@ constexpr double   LoosRateThreshold		= 0.35;		// 35% packet loss before moving 
 
 
 SendSideBandwidthEstimation::SendSideBandwidthEstimation(const std::string& logId) : 
-		logId(logId),
 		rttMin(kLongTermDuration),
 		accumulatedDeltaMinCounter(kLongTermDuration),
 		totalSentAcumulator(kMonitorDuration, 1E6, 500),

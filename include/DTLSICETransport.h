@@ -160,7 +160,6 @@ private:
 	};
 	
 private:
-	std::string logId;
 	std::string logPrefix;
 	Sender*		sender = nullptr;
 	TimeService&	timeService;

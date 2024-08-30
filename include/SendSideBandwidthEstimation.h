@@ -56,7 +56,6 @@ private:
 		bool  probing = false;
 	};
 private:
-	std::string logId;
 	std::string logPrefix;
 	CircularBuffer<Stats, uint16_t, 32768> transportWideSentPacketsStats;
 	uint64_t bandwidthEstimation = 0;

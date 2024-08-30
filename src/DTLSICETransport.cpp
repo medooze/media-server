@@ -51,7 +51,6 @@ constexpr auto MaxProbingHistorySize		= 50;
 constexpr auto RtxRttThresholdMs 		= 300;
 
 DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService, ObjectPool<Packet>& packetPool, const std::string& logId) :
-	logId(logId),
 	sender(sender),
 	timeService(timeService),
 	packetPool(packetPool),
@@ -3024,7 +3023,7 @@ void DTLSICETransport::Probe(QWORD now)
 		//Check if flexfec - 03 codec is available
 		bool useFecForProbing = sendMaps.rtp.HasCodec(VideoCodec::FLEXFEC03) && recvMaps.rtp.HasCodec(VideoCodec::FLEXFEC03);
 
-		//Log("%s>DTLSICETransport::Probe() | [target:%ubps,bitrate:%ubps,probing:%ubps,history:%d,probingBitrateLimit=%ubps,maxProbingBitrate=%ubps,useFecForProbing=%d]\n",logId.c_str(),this,target,bitrate,probing,history.size(),probingBitrateLimit,maxProbingBitrate,useFecForProbing);
+		//Log("%s>DTLSICETransport::Probe() | [target:%ubps,bitrate:%ubps,probing:%ubps,history:%d,probingBitrateLimit=%ubps,maxProbingBitrate=%ubps,useFecForProbing=%d]\n",logPrefix.c_str(),target,bitrate,probing,history.size(),probingBitrateLimit,maxProbingBitrate,useFecForProbing);
 			
 		//If we can still send more
 		if (bitrate<limit && probing<maxProbingBitrate)
