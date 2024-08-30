@@ -94,7 +94,18 @@ std::unique_ptr<SyntaxData> SyntaxData::Parse(BufferReader& reader)
 
 void Table::Encode(BufferWritter& writer)
 {
+	writer.Set1(tableId);
 	
+	BitWritter bitwriter(writer, 2);
+	
+	bitwriter.Put(1, sectionSyntaxIndicator);
+	bitwriter.Put(1, privateBit);
+	bitwriter.Put(2, _reserved1);
+	bitwriter.Put(12, sectionLength);
+	
+	auto encodable = std::get_if<std::unique_ptr<Encodable>>(&data);
+	if (encodable)
+		(*encodable)->Encode(writer);
 }
 
 size_t Table::Size() const
@@ -172,7 +183,12 @@ std::unique_ptr<Table> Table::Parse(BufferReader& reader)
 
 void ProgramAssociation::Encode(BufferWritter& writer)
 {
+	writer.Set2(programNum);
 	
+	BitWritter bitwriter(writer, 5);
+	
+	bitwriter.Put(3, 0x7); //reserved
+	bitwriter.Put(13, pmtPid);
 }
 
 ProgramAssociation ProgramAssociation::Parse(BufferReader& reader)
@@ -195,6 +211,33 @@ ProgramAssociation ProgramAssociation::Parse(BufferReader& reader)
 	programAssociation.pmtPid	= bitreader.Get(13);
 
 	return programAssociation;
+}
+
+void ProgramMap::ElementaryStream::Encode(BufferWritter& writer)
+{
+	BitWritter bitwriter(writer, 4);
+	
+	bitwriter.Put(8, streamType);
+	bitwriter.Put(3, 0x7);	// reserved
+	bitwriter.Put(13, pid);
+	bitwriter.Put(4, 0xf); // reserved
+	bitwriter.Put(12, pid);
+	
+	if (descriptor.GetLeft() > 0)
+	{
+		auto reader = descriptor;
+		auto buffer = reader.GetBuffer(reader.GetLeft());
+	
+		writer.Set(0, buffer);
+	}
+}
+
+
+size_t ProgramMap::ElementaryStream::Size() const
+{
+	size_t totalSize = 5;
+		
+	return totalSize + descriptor.GetLeft();
 }
 
 ProgramMap::ElementaryStream ProgramMap::ElementaryStream::Parse(BufferReader& reader)
@@ -234,7 +277,22 @@ ProgramMap::ElementaryStream ProgramMap::ElementaryStream::Parse(BufferReader& r
 
 void ProgramMap::Encode(BufferWritter& writer)
 {
+	BitWritter bitwriter(writer, 4);
 	
+	bitwriter.Put(3, 0x7);	// Reserved
+	bitwriter.Put(13, pcrPid);	// PCR_PID, no PCR
+	bitwriter.Put(4, 0xf);	// reserved
+	bitwriter.Put(12, piLength);	// program info length
+	
+	for (auto& es : streams) 
+	{
+		es.Encode(writer);
+	}
+}
+
+size_t ProgramMap::Size() const
+{ 
+	return 4 + piLength; 
 }
 
 ProgramMap ProgramMap::Parse(BufferReader& reader)

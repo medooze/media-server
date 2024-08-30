@@ -15,14 +15,6 @@ namespace mpegts
 namespace psi
 {
 
-class Encodable
-{
-public:
-	virtual ~Encodable() = default;
-	virtual void Encode(BufferWritter& writer) = 0;	
-	virtual size_t Size() const = 0;
-};
-
 /** PSI syntax section, optionally surrounding table data */
 struct SyntaxData : public Encodable
 {
@@ -84,23 +76,26 @@ struct ProgramMap : public Encodable
 	static const uint8_t TABLE_ID = 0x02;
 
 	/** data for an Elementary Stream entry in a PMT */
-	struct ElementaryStream
+	struct ElementaryStream : public Encodable
 	{
 		uint8_t streamType = 0;
 		uint16_t pid = 0;
+		
 		BufferReader descriptor;
+		
+		void Encode(BufferWritter& writer) override;
+		size_t Size() const override;
 
 		static ElementaryStream Parse(BufferReader& reader);
 	};
 
 	uint16_t pcrPid = 0;
-	uint8_t _reserved1 = 0;
 	uint16_t piLength = 0;
 	
 	std::vector<ElementaryStream> streams;
 
-	void Encode(BufferWritter& writer);
-	size_t Size() const override { return 4 + piLength; };
+	void Encode(BufferWritter& writer) override;
+	size_t Size() const override;
 	
 	static ProgramMap Parse(BufferReader& reader);
 };

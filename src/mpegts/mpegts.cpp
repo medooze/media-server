@@ -20,6 +20,11 @@ void Header::Encode(BufferWritter& writer)
 	bitwriter.Put(4, continuityCounter);
 }
 
+size_t Header::Size() const
+{
+	return 4;
+}
+
 Header Header::Parse(BufferReader& reader)
 {
 	if (reader.GetLeft()<4)
@@ -83,7 +88,7 @@ void Header::Dump() const
 
 void AdaptationField::Encode(BufferWritter& writer)
 {
-	if (writer.GetLeft() < adaptationFieldLength + 1)
+	if (writer.GetLeft() < Size())
 		throw std::runtime_error("Not enought data to write mpegts adaptation field");
 	
 	writer.Set1(adaptationFieldLength);
@@ -102,8 +107,14 @@ void AdaptationField::Encode(BufferWritter& writer)
 		bitwriter.Put(1, transportPrivateDataFlag);
 		bitwriter.Put(1, adaptationFieldExtensionFlag);
 	}
+	
+	// @todo padd until adaptationFieldLength
 }
 
+size_t AdaptationField::Size() const
+{
+	return 1 + adaptationFieldLength;
+}
 
 AdaptationField AdaptationField::Parse(BufferReader& reader)
 {
@@ -208,6 +219,12 @@ void Header::Encode(BufferWritter& writer)
 	writer.Set2(packetLength);
 }
 
+size_t Header::Size() const
+{
+	return 6;
+}
+
+
 Header Header::Parse(BufferReader& reader)
 {
 	if (reader.GetLeft() < 6)
@@ -231,7 +248,7 @@ Header Header::Parse(BufferReader& reader)
 
 void HeaderExtension::Encode(BufferWritter& writer)
 {
-	if (writer.GetLeft() < 3)
+	if (writer.GetLeft() < Size())
 		throw std::runtime_error("Not enought data to write mpegtsp pes extension header");
 	
 	BitWritter bitwriter(writer, 3);
@@ -272,6 +289,11 @@ void HeaderExtension::Encode(BufferWritter& writer)
 		bitwriter.Put(1, 0x1);
 		bitwriter.Put(15, (*dts) & 0x7fff);
 	}
+}
+
+size_t HeaderExtension::Size() const
+{
+	return 3 + (pts ? 5 : 0) + (dts ? 5 : 0);
 }
 
 HeaderExtension HeaderExtension::Parse(BufferReader& reader)
@@ -441,6 +463,11 @@ namespace adts
 		
 		if (!protectionAbsence)
 			bitwriter.Put(16, crc);
+	}
+	
+	size_t Header::Size() const
+	{
+		return 7 + protectionAbsence ? 1 : 0;
 	}
 
 	Header Header::Parse(BufferReader& reader)

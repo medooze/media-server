@@ -46,7 +46,7 @@ struct Header : public Encodable
 
 	// Encodable overrides
 	void Encode(BufferWritter& writer) override;
-	size_t Size() const override { return 4; }
+	size_t Size() const override;
 	
 	static Header Parse(BufferReader& reader);
 	
@@ -67,7 +67,7 @@ struct AdaptationField : public Encodable
 	
 	// Encodable overrides
 	void Encode(BufferWritter& writer) override;
-	size_t Size() const override { return 1 + adaptationFieldLength; }
+	size_t Size() const override;
 	
 	static AdaptationField Parse(BufferReader& reader);
 };
@@ -115,7 +115,7 @@ struct Header : public Encodable
 
 	// Encodable overrides
 	void Encode(BufferWritter& writer) override;
-	size_t Size() const override { return 6; }
+	size_t Size() const override;
 	
 	static Header Parse(BufferReader& reader);
 };
@@ -142,7 +142,7 @@ struct HeaderExtension : public Encodable
 
 	// Encodable overrides
 	void Encode(BufferWritter& writer) override;
-	size_t Size() const override { return 0; }
+	size_t Size() const override;
 	
 	static HeaderExtension Parse(BufferReader& reader);
 };
@@ -180,7 +180,7 @@ struct Header : public Encodable
 
 	// Encodable overrides
 	void Encode(BufferWritter& writer) override;
-	size_t Size() const override { return 7; }
+	size_t Size() const override;
 	
 	static Header Parse(BufferReader& reader);
 };
