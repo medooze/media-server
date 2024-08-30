@@ -31,7 +31,7 @@ SendSideBandwidthEstimation::SendSideBandwidthEstimation(const std::string& logI
 		packetsReceivedAcumulator(kMonitorDuration, 1E6, 500),
 		packetsLostAcumulator(kMonitorDuration, 1E6, 100)
 {
-	// @todo Suggest logPrefix be replaced with a new C++ logger object later. Also couldnt use std::format here
+	// @todo Suggest logPrefix be replaced with a new C++ logger object later (and it should format consistent with JS logger or be used by JS).
 	std::ostringstream ss;
 	ss << logId << "[" << this << "]";
 	logPrefix = ss.str();

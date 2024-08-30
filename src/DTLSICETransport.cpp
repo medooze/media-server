@@ -65,10 +65,6 @@ DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService, Obje
 	senderSideBandwidthEstimator(new SendSideBandwidthEstimation(logId))
 {
 	// @todo Suggest logPrefix be replaced with a new C++ logger object later (and it should format consistent with JS logger or be used by JS).
-	// @todo Maybe we can improve the consistency of the log prefix format. Right now for the JS logger we have:
-	// 2024-08-28T02:10:56.301Z [DEBUG] viewer:view[65636b35-1c67-41e7-accb-2e1ad4bae1c4]...
-	// For C++ it looks like:
-	// [44437 VIEW2     ][0x19611b][1724811058.006][DBG]viewer:view[65636b35-1c67-41e7-accb-2e1ad4bae1c4][0x435d060d0]...
 	std::ostringstream ss;
 	ss << logId << "[" << this << "]";
 	logPrefix = ss.str();
