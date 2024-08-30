@@ -1,10 +1,11 @@
 #ifndef AV1_H
 #define AV1_H
+
 #include "config.h"
 #include "log.h"
-#include "bitstream.h"
 #include "BufferWritter.h"
 #include "BufferReader.h"
+#include "bitstream/BitReader.h"
 
 class AV1CodecConfig
 {
@@ -119,147 +120,172 @@ struct SequenceHeaderObu
 	{
 		BitReader r(reader.PeekData(), reader.GetLeft());
 
-		seq_profile = r.Get(3);
-		still_picture = r.Get(1);
-		reduced_still_picture_header = r.Get(1);
-
-		if (reduced_still_picture_header) 
+		try 
 		{
-			timing_info_present_flag = 0;
-			decoder_model_info_present_flag = 0;
-			initial_display_delay_present_flag = 0;
-			operating_points_cnt_minus_1 = 0;
-			operating_point_idc[0] = 0;
-			seq_level_idx[0] = r.Get(5);
-			seq_tier[0] = 0;
-			decoder_model_present_for_this_op[0] = 0;
-			initial_display_delay_present_for_this_op[0] = 0;
-		} else {
-			timing_info_present_flag = r.Get(1);
-			if (timing_info_present_flag) 
-			{
-				//timing_info()
-				num_units_in_display_tick = r.Get(32);
-				time_scale = r.Get(32);
-				equal_picture_interval = r.Get(1);
-				if (equal_picture_interval)
-					num_ticks_per_picture_minus_1 = r.GetVariableLengthUnsigned();
+			seq_profile			= r.Get(3);
+			still_picture			= r.Get(1);
+			reduced_still_picture_header	= r.Get(1);
 
-				decoder_model_info_present_flag = r.Get(1);
-				if (decoder_model_info_present_flag) 
-				{
-					//decoder_model_info()
-					buffer_delay_length_minus_1 = r.Get(5);
-					num_units_in_decoding_tick = r.Get(32);
-					buffer_removal_time_length_minus_1 = r.Get(5);
-					frame_presentation_time_length_minus_1 = r.Get(5);
-				}
+			if (reduced_still_picture_header) 
+			{
+				timing_info_present_flag			= 0;
+				decoder_model_info_present_flag			= 0;
+				initial_display_delay_present_flag		= 0;
+				operating_points_cnt_minus_1			= 0;
+				operating_point_idc[0]				= 0;
+				seq_level_idx[0]				= r.Get(5);
+				seq_tier[0]					= 0;
+				decoder_model_present_for_this_op[0]		= 0;
+				initial_display_delay_present_for_this_op[0]	= 0;
 			} else {
-				decoder_model_info_present_flag = 0;
-			}
-			initial_display_delay_present_flag = r.Get(1);
-			operating_points_cnt_minus_1 = r.Get(5);
-
-			for (int i = 0; i <= operating_points_cnt_minus_1; i++) 
-			{
-				operating_point_idc[i] = r.Get(12);
-				seq_level_idx[i] = r.Get(5);
-				if (seq_level_idx[i] > 7) {
-					seq_tier[i] = r.Get(1);
-				} else {
-					seq_tier[i] = 0;
-				}
-				if (decoder_model_info_present_flag) 
+				timing_info_present_flag = r.Get(1);
+				if (timing_info_present_flag) 
 				{
-					decoder_model_present_for_this_op[i] = r.Get(1);
-					if (decoder_model_present_for_this_op[i]) {
-						//operating_parameters_info( i )
-						int n = buffer_delay_length_minus_1 + 1;
-						decoder_buffer_delay[i] = r.Get(n);
-						encoder_buffer_delay[i] = r.Get(n);
-						low_delay_mode_flag[i] = r.Get(1);
+					//timing_info()
+					num_units_in_display_tick	= r.Get(32);
+					time_scale			= r.Get(32);
+					equal_picture_interval		= r.Get(1);
+
+					if (equal_picture_interval)
+						num_ticks_per_picture_minus_1 = r.GetVariableLengthUnsigned();
+
+					decoder_model_info_present_flag = r.Get(1);
+					if (decoder_model_info_present_flag) 
+					{
+						//decoder_model_info()
+						buffer_delay_length_minus_1		= r.Get(5);
+						num_units_in_decoding_tick		= r.Get(32);
+						buffer_removal_time_length_minus_1	= r.Get(5);
+						frame_presentation_time_length_minus_1	= r.Get(5);
 					}
 				} else {
-					decoder_model_present_for_this_op[i] = 0;
+					decoder_model_info_present_flag = 0;
 				}
-				if (initial_display_delay_present_flag) 
+
+				initial_display_delay_present_flag	= r.Get(1);
+				operating_points_cnt_minus_1		= r.Get(5);
+
+				for (int i = 0; i <= operating_points_cnt_minus_1; i++) 
 				{
-					initial_display_delay_present_for_this_op[i] = r.Get(1);
-					if (initial_display_delay_present_for_this_op[i]) {
-						initial_display_delay_minus_1[i] = r.Get(4);
+					operating_point_idc[i]	= r.Get(12);
+					seq_level_idx[i]	= r.Get(5);
+
+					if (seq_level_idx[i] > 7)
+					{
+						seq_tier[i] = r.Get(1);
+					} else {
+						seq_tier[i] = 0;
+					}
+
+					if (decoder_model_info_present_flag) 
+					{
+						decoder_model_present_for_this_op[i] = r.Get(1);
+						if (decoder_model_present_for_this_op[i])
+						{
+							//operating_parameters_info( i )
+							int n = buffer_delay_length_minus_1 + 1;
+							decoder_buffer_delay[i]		= r.Get(n);
+							encoder_buffer_delay[i]		= r.Get(n);
+							low_delay_mode_flag[i]		= r.Get(1);
+						}
+					} else {
+						decoder_model_present_for_this_op[i] = 0;
+					}
+					if (initial_display_delay_present_flag) 
+					{
+						initial_display_delay_present_for_this_op[i] = r.Get(1);
+						if (initial_display_delay_present_for_this_op[i])
+						{
+							initial_display_delay_minus_1[i] = r.Get(4);
+						}
 					}
 				}
 			}
-		}
-		auto frame_width_bits_minus_1 = r.Get(4);
-		auto frame_height_bits_minus_1 = r.Get(4);
-		max_frame_width_minus_1 = r.Get(frame_width_bits_minus_1 + 1);
-		max_frame_height_minus_1 = r.Get(frame_height_bits_minus_1 + 1);
-		if (reduced_still_picture_header)
-			frame_id_numbers_present_flag = 0;
-		else
-			frame_id_numbers_present_flag = r.Get(1);
-		if (frame_id_numbers_present_flag) 
-		{
-			delta_frame_id_length_minus_2 = r.Get(4);
-			additional_frame_id_length_minus_1 = r.Get(3);
-		}
-		use_128x128_superblock = r.Get(1);
-		enable_filter_intra = r.Get(1);
-		enable_intra_edge_filter = r.Get(1);
-		if (reduced_still_picture_header) 
-		{
-			enable_interintra_compound = 0;
-			enable_masked_compound = 0;
-			enable_warped_motion = 0;
-			enable_dual_filter = 0;
-			enable_order_hint = 0;
-			enable_jnt_comp = 0;
-			enable_ref_frame_mvs = 0;
-			seq_force_screen_content_tools = SELECT_SCREEN_CONTENT_TOOLS;
-			seq_force_integer_mv = SELECT_INTEGER_MV;
-		} else {
-			enable_interintra_compound = r.Get(1);
-			enable_masked_compound = r.Get(1);
-			enable_warped_motion = r.Get(1);
-			enable_dual_filter = r.Get(1);
-			enable_order_hint = r.Get(1);
-			if (enable_order_hint) {
-				enable_jnt_comp = r.Get(1);
-				enable_ref_frame_mvs = r.Get(1);
-			} else {
-				enable_jnt_comp = 0;
-				enable_ref_frame_mvs = 0;
-			}
-			seq_choose_screen_content_tools = r.Get(1);
-			if (seq_choose_screen_content_tools) {
-				seq_force_screen_content_tools = SELECT_SCREEN_CONTENT_TOOLS;
-			} else {
-				seq_force_screen_content_tools = r.Get(1);
-			}
-			if (seq_force_screen_content_tools > 0) 
+			auto frame_width_bits_minus_1	= r.Get(4);
+			auto frame_height_bits_minus_1	= r.Get(4);
+			max_frame_width_minus_1		= r.Get(frame_width_bits_minus_1 + 1);
+			max_frame_height_minus_1	= r.Get(frame_height_bits_minus_1 + 1);
+
+			if (reduced_still_picture_header)
+				frame_id_numbers_present_flag = 0;
+			else
+				frame_id_numbers_present_flag = r.Get(1);
+
+			if (frame_id_numbers_present_flag) 
 			{
-				seq_choose_integer_mv = r.Get(1);
-				if (seq_choose_integer_mv) 
+				delta_frame_id_length_minus_2		= r.Get(4);
+				additional_frame_id_length_minus_1	= r.Get(3);
+			}
+
+			use_128x128_superblock		= r.Get(1);
+			enable_filter_intra		= r.Get(1);
+			enable_intra_edge_filter	= r.Get(1);
+
+			if (reduced_still_picture_header) 
+			{
+				enable_interintra_compound	= 0;
+				enable_masked_compound		= 0;
+				enable_warped_motion		= 0;
+				enable_dual_filter		= 0;
+				enable_order_hint		= 0;
+				enable_jnt_comp			= 0;
+				enable_ref_frame_mvs		= 0;
+				seq_force_screen_content_tools	= SELECT_SCREEN_CONTENT_TOOLS;
+				seq_force_integer_mv		= SELECT_INTEGER_MV;
+			} else {
+				enable_interintra_compound	= r.Get(1);
+				enable_masked_compound		= r.Get(1);
+				enable_warped_motion		= r.Get(1);
+				enable_dual_filter		= r.Get(1);
+				enable_order_hint		= r.Get(1);
+
+				if (enable_order_hint) 
 				{
+					enable_jnt_comp		= r.Get(1);
+					enable_ref_frame_mvs	= r.Get(1);
+				} else {
+					enable_jnt_comp = 0;
+					enable_ref_frame_mvs = 0;
+				}
+
+				seq_choose_screen_content_tools = r.Get(1);
+				if (seq_choose_screen_content_tools)
+				{
+					seq_force_screen_content_tools = SELECT_SCREEN_CONTENT_TOOLS;
+				} else {
+					seq_force_screen_content_tools = r.Get(1);
+				}
+
+				if (seq_force_screen_content_tools > 0) 
+				{
+					seq_choose_integer_mv = r.Get(1);
+					if (seq_choose_integer_mv) 
+					{
+						seq_force_integer_mv = SELECT_INTEGER_MV;
+					} else {
+						seq_force_integer_mv = r.Get(1);
+					}
+				} else {
 					seq_force_integer_mv = SELECT_INTEGER_MV;
-				} else {
-					seq_force_integer_mv = r.Get(1);
 				}
-			} else {
-				seq_force_integer_mv = SELECT_INTEGER_MV;
+				if (enable_order_hint) 
+					order_hint_bits_minus_1 = r.Get(3);
 			}
-			if (enable_order_hint) 
-				order_hint_bits_minus_1 = r.Get(3);
-		}
-		enable_superres = r.Get(1);
-		enable_cdef = r.Get(1);
-		enable_restoration = r.Get(1);
-		//TODO color_config();
-		//film_grain_params_present = r.Get(1);
 
-		//Skip readed bits
-		reader.Skip(r.Flush());
+			enable_superres		= r.Get(1);
+			enable_cdef		= r.Get(1);
+			enable_restoration	= r.Get(1);
+
+			//TODO color_config();
+			//film_grain_params_present = r.Get(1);
+
+			//Skip readed bits
+			reader.Skip(r.Flush());
+		}
+		catch (std::exception& e) 
+		{
+			return false;
+		}
 
 		return true;
 	}

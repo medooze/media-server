@@ -1,9 +1,14 @@
 #ifndef BITWRITTER_H_
 #define	BITWRITTER_H_
+
+#include <stdexcept>
+#include <cassert>
+
 #include "config.h"
 #include "tools.h"
-#include <stdexcept>
+
 #include "BufferWritter.h"
+#include "bitstream/BitReader.h"
 
 class BitWritter {
 public:
@@ -30,8 +35,6 @@ public:
 		//nothing in the cache
 		cached = 0;
 		cache = 0;
-		//No error
-		error = false;
 	}
 
 	inline DWORD Flush()
@@ -43,18 +46,13 @@ public:
 	
 	inline void FlushCache()
 	{
+		assert(cached <= bufferSize * 8);
+
 		//Check if we have already finished
 		if (!cached)
 			//exit
 			return;
-		//Check size
-		if (cached>bufferSize*8)
-		{
-			//We can't use exceptions so set error flag
-			error = true;
-			//Exit
-			return;
-		}
+		
 		//Debug("Flushing  cache");
 		//BitDump(cache,cached);
 		if (cached==32)
@@ -72,13 +70,13 @@ public:
 			bufferSize-=3;
 			buffer+=3;
 			bufferLen+=3;
-		}else if (cached==16) {
+		} else if (cached==16) {
 			set2(buffer,0,cache);
 			//Increase pointers
 			bufferSize-=2;
 			buffer+=2;
 			bufferLen+=2;
-		}else if (cached==8) {
+		} else if (cached==8) {
 			set1(buffer,0,cache);
 			//Increase pointers
 			--bufferSize;
@@ -106,12 +104,17 @@ public:
 
 	inline DWORD Put(BYTE n,DWORD v)
 	{
+		assert(n<=32);
 		
-		if (!n) 
+		//Nothing to do
+		if (!n) return v;
+
+		//Check we have enougth space for writting n bits
+		if (n>Left())
+			throw std::range_error("not enough buffer");
+
+		if (n+cached>32)
 		{
-			//Nothing to do
-			return v;
-		} else if (n+cached>32) {
 			BYTE a = 32-cached;
 			BYTE b =  n-a;
 			//Check if cache is not full
@@ -149,15 +152,11 @@ public:
 	{
 		return Put(n,reader.Get(n));
 	}
-	
-	inline bool Error()
-	{
-		//We won't use exceptions, so we need to signal errors somehow
-		return error;
-	}
-	
+
 	inline bool WriteNonSymmetric(uint32_t num,uint32_t val) 
 	{
+		assert(num);
+		
   		if (num == 1)
 			// When there is only one possible value, it requires zero bits to store it.
 			return true;
@@ -186,7 +185,6 @@ private:
 	DWORD bufferSize;
 	DWORD cache;
 	BYTE  cached;
-	bool  error;
 };
 
 #endif	/* BITWRITTER_H */

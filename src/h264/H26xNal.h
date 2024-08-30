@@ -5,7 +5,9 @@
 #include <limits>
 #include <optional>
 #include <functional>
-#include "bitstream.h"
+
+#include "Buffer.h"
+#include "BufferReader.h"
 
 constexpr uint32_t AnnexBStartCode = 0x01;
 
@@ -30,6 +32,14 @@ inline DWORD NalUnescapeRbsp(BYTE *dst, const BYTE *src, DWORD size)
 		}
 	}
 	return len;
+}
+
+inline Buffer NalUnescapeRbsp(const BYTE* src, DWORD size)
+{
+	Buffer escaped(size);
+	DWORD len = NalUnescapeRbsp(escaped.GetData(), src, size);
+	escaped.SetSize(len);
+	return escaped;
 }
 
 inline std::optional<DWORD> NalEscapeRbsp(BYTE *dst, DWORD dstsize, const BYTE *src, DWORD size)
@@ -71,6 +81,8 @@ inline void NalSliceAnnexB(BufferReader& reader, std::function<void(BufferReader
 			startCodeLength = 4;
 		else if (reader.GetLeft()>3 && reader.Peek3() == 0x01)
 			startCodeLength = 3;
+		else 
+			break;
 
 		//If we found a nal unit and not first
 		if (startCodeLength)

@@ -1,19 +1,7 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/* 
- * File:   RTCPRTPFeedback.cpp
- * Author: Sergio
- * 
- * Created on 3 de febrero de 2017, 12:03
- */
-
 #include "rtp/RTCPRTPFeedback.h"
-#include "rtp/RTCPCommonHeader.h"
 
+#include "bitstream/BitWritter.h"
+#include "rtp/RTCPCommonHeader.h"
 
 RTCPRTPFeedback::RTCPRTPFeedback() : RTCPPacket(RTCPPacket::RTPFeedback)
 {
@@ -353,219 +341,227 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Serialize(BYTE* data,D
 	
 	//Bitwritter for the rest
 	BitWritter writter(data+8,size-8);
-	
-	//For each packet 
-	for (Packets::const_iterator it = packets.begin(); it!=packets.end(); ++it)
+
+	try
 	{
-		PacketStatus status = PacketStatus::NotReceived;
-		
-		//If got packet
-		if (it->second)
+		//For each packet 
+		for (Packets::const_iterator it = packets.begin(); it!=packets.end(); ++it)
 		{
-			int delta = 0;
-			//If first received
-			if (!firstReceived)
+			PacketStatus status = PacketStatus::NotReceived;
+		
+			//If got packet
+			if (it->second)
 			{
-				//Got it 
-				firstReceived = true;
-				//Set it as 3 bytes signed integer
-				referenceTime = (it->second/64000) & 0x7FFFFF;
-				//Get initial time
-				time = referenceTime * 64000;
-				//also in bufffer
-				set3(data,4,referenceTime);
-			}
+				int delta = 0;
+				//If first received
+				if (!firstReceived)
+				{
+					//Got it 
+					firstReceived = true;
+					//Set it as 3 bytes signed integer
+					referenceTime = (it->second/64000) & 0x7FFFFF;
+					//Get initial time
+					time = referenceTime * 64000;
+					//also in bufffer
+					set3(data,4,referenceTime);
+				}
 			
-			//Get delta
-			if (it->second>time)
-				delta = (it->second-time)/250;
-			else
-				delta = -(int)((time-it->second)/250);
-			//If it is negative or to big
-			if (delta<0 || delta> 127)
-				//Big one
-				status = PacketStatus::LargeOrNegativeDelta;
-			else
-				//Small
-				status = PacketStatus::SmallDelta;
-			//Store delta
-			deltas.push_back(delta);
-			//Set next time
-			time = time + delta*250;
-		}
+				//Get delta
+				if (it->second>time)
+					delta = (it->second-time)/250;
+				else
+					delta = -(int)((time-it->second)/250);
+				//If it is negative or to big
+				if (delta<0 || delta> 127)
+					//Big one
+					status = PacketStatus::LargeOrNegativeDelta;
+				else
+					//Small
+					status = PacketStatus::SmallDelta;
+				//Store delta
+				deltas.push_back(delta);
+				//Set next time
+				time = time + delta*250;
+			}
 		
-		//Check if all previoues ones were equal and this one the firt different
-		if (allsame && lastStatus!=PacketStatus::Reserved && status!=lastStatus)
+			//Check if all previoues ones were equal and this one the firt different
+			if (allsame && lastStatus!=PacketStatus::Reserved && status!=lastStatus)
+			{
+				//Anything bigger is worth a run
+				if (statuses.size()>7)
+				{
+					//Write run!
+					/*
+						0                   1
+						0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
+					       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+					       |T| S |       Run Length        |
+					       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+						T = 0
+					 */
+					writter.Put(1,0);
+					writter.Put(2,lastStatus);
+					writter.Put(13,statuses.size());
+					//Remove all statuses
+					statuses.clear();
+					//Reset status
+					maxStatus = PacketStatus::NotReceived;
+					allsame = true;
+				} else {
+					//Not same
+					allsame = false;
+				}
+			}
+		
+			//Push back statuses, it will be handled later
+			statuses.push_back(status);
+		
+			//If it is bigger
+			if (status>maxStatus)
+				//Store it
+				maxStatus = status;
+			//Store las status
+			lastStatus = status;
+
+			//If they are different already
+			if (!allsame)
+			{
+				//Check 
+				if (maxStatus==PacketStatus::LargeOrNegativeDelta && statuses.size()>6)
+				{
+					/*
+						0                   1
+						0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
+					       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+					       |T|S|        Symbols            |
+					       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+						T = 1
+						S = 1
+					 */
+					writter.Put(1,1);
+					writter.Put(1,1);
+					//Set next 7
+					for (DWORD i=0;i<7;++i)
+					{
+						//Write
+						writter.Put(2,(BYTE)statuses.front());
+						//Remove
+						statuses.pop_front();
+					}
+					//REset
+					lastStatus = PacketStatus::Reserved;
+					maxStatus = PacketStatus::NotReceived;
+					allsame = true;
+					// We need to restore the values, as there may be more elements on the buffer
+					for (auto it = statuses.begin(); it!=statuses.end(); ++it)
+					{
+						//Get status
+						status = *it;
+						//If it is bigger
+						if (status>maxStatus)
+							//Store it
+							maxStatus = status;
+						//Check if it is the same
+						if (allsame && lastStatus!=PacketStatus::Reserved && status!=lastStatus)
+							//not the same
+							allsame = false;
+						//Store las status
+						lastStatus = status;
+					}
+				} else if (statuses.size()>13) {
+					/*
+						0                   1
+						0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
+					       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+					       |T|S|       symbol list         |
+					       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+						 T = 1
+						 S = 0
+					 */
+					writter.Put(1,1);
+					writter.Put(1,0);
+					//Set next 7
+					for (DWORD i=0;i<14;++i)
+					{
+						//Write
+						writter.Put(1,(BYTE)statuses.front());
+						//Remove
+						statuses.pop_front();
+					}
+					//REset
+					lastStatus = PacketStatus::Reserved;
+					maxStatus = PacketStatus::NotReceived;
+					allsame = true;
+				} 
+			}
+		}
+	
+		//If not finished yet
+		if (statuses.size()>0)
 		{
-			//Anything bigger is worth a run
-			if (statuses.size()>7)
+			//How big was the same run
+			if (allsame)
 			{
 				//Write run!
-				/*
-					0                   1
-					0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
-				       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-				       |T| S |       Run Length        |
-				       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-					T = 0
-				 */
 				writter.Put(1,0);
 				writter.Put(2,lastStatus);
 				writter.Put(13,statuses.size());
-				//Remove all statuses
-				statuses.clear();
-				//Reset status
-				maxStatus = PacketStatus::NotReceived;
-				allsame = true;
-			} else {
-				//Not same
-				allsame = false;
-			}
-		}
-		
-		//Push back statuses, it will be handled later
-		statuses.push_back(status);
-		
-		//If it is bigger
-		if (status>maxStatus)
-			//Store it
-			maxStatus = status;
-		//Store las status
-		lastStatus = status;
-
-		//If they are different already
-		if (!allsame)
-		{
-			//Check 
-			if (maxStatus==PacketStatus::LargeOrNegativeDelta && statuses.size()>6)
-			{
-				/*
-					0                   1
-					0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
-				       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-				       |T|S|        Symbols            |
-				       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-					T = 1
-					S = 1
-				 */
+			} else if (maxStatus==PacketStatus::LargeOrNegativeDelta) {
+				//Write chunk
 				writter.Put(1,1);
 				writter.Put(1,1);
-				//Set next 7
-				for (DWORD i=0;i<7;++i)
-				{
+				//Wirte rest
+				for (std::list<PacketStatus>::iterator it = statuses.begin(); it!= statuses.end(); ++it)
 					//Write
-					writter.Put(2,(BYTE)statuses.front());
-					//Remove
-					statuses.pop_front();
-				}
-				//REset
-				lastStatus = PacketStatus::Reserved;
-				maxStatus = PacketStatus::NotReceived;
-				allsame = true;
-				// We need to restore the values, as there may be more elements on the buffer
-				for (auto it = statuses.begin(); it!=statuses.end(); ++it)
-				{
-					//Get status
-					status = *it;
-					//If it is bigger
-					if (status>maxStatus)
-						//Store it
-						maxStatus = status;
-					//Check if it is the same
-					if (allsame && lastStatus!=PacketStatus::Reserved && status!=lastStatus)
-						//not the same
-						allsame = false;
-					//Store las status
-					lastStatus = status;
-				}
-			} else if (statuses.size()>13) {
-				/*
-					0                   1
-					0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
-				       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-				       |T|S|       symbol list         |
-				       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-					 T = 1
-					 S = 0
-				 */
+					writter.Put(2,(BYTE)*it);
+				//Write pending
+				writter.Put(14-statuses.size()*2,0);
+			} else {
+				//Write chunck
 				writter.Put(1,1);
 				writter.Put(1,0);
-				//Set next 7
-				for (DWORD i=0;i<14;++i)
-				{
+				//Wirte rest
+				for (std::list<PacketStatus>::iterator it = statuses.begin(); it!= statuses.end(); ++it)
 					//Write
-					writter.Put(1,(BYTE)statuses.front());
-					//Remove
-					statuses.pop_front();
-				}
-				//REset
-				lastStatus = PacketStatus::Reserved;
-				maxStatus = PacketStatus::NotReceived;
-				allsame = true;
-			} 
+					writter.Put(1,(BYTE)*it);
+				//Write pending
+				writter.Put(14-statuses.size(),0);
+			}
 		}
-	}
 	
-	//If not finished yet
-	if (statuses.size()>0)
-	{
-		//How big was the same run
-		if (allsame)
-		{
-			//Write run!
-			writter.Put(1,0);
-			writter.Put(2,lastStatus);
-			writter.Put(13,statuses.size());
-		} else if (maxStatus==PacketStatus::LargeOrNegativeDelta) {
-			//Write chunk
-			writter.Put(1,1);
-			writter.Put(1,1);
-			//Wirte rest
-			for (std::list<PacketStatus>::iterator it = statuses.begin(); it!= statuses.end(); ++it)
-				//Write
-				writter.Put(2,(BYTE)*it);
-			//Write pending
-			writter.Put(14-statuses.size()*2,0);
-		} else {
-			//Write chunck
-			writter.Put(1,1);
-			writter.Put(1,0);
-			//Wirte rest
-			for (std::list<PacketStatus>::iterator it = statuses.begin(); it!= statuses.end(); ++it)
-				//Write
-				writter.Put(1,(BYTE)*it);
-			//Write pending
-			writter.Put(14-statuses.size(),0);
-		}
-	}
-	
-	//Flush wirtter and aling, count also header
-	DWORD len = writter.Flush()+8;
-	
-	//Write now the deltas
-	for (std::list<int>::iterator it = deltas.begin(); it!=deltas.end(); ++it)
-	{
-		//Check size
-		if (*it<0 || *it>127)
-		{
-			//2 bytes
-			set2(data,len,(short)*it);
-			//Inc
-			len += 2;
-		} else {
-			//1 byte
-			set1(data,len,(BYTE)*it);
-			//Inc
-			len ++;
-		}
-	}
+		//Flush wirtter and aling, count also header
+		DWORD len = writter.Flush()+8;
 
-	//Add zero padding
-	while (len%4)
-		//Add padding
-		data[len++] = 0;
-	//Done
-	return len;
+		//Write now the deltas
+		for (std::list<int>::iterator it = deltas.begin(); it != deltas.end(); ++it)
+		{
+			//Check size
+			if (*it < 0 || *it>127)
+			{
+				//2 bytes
+				set2(data, len, (short)*it);
+				//Inc
+				len += 2;
+			}
+			else {
+				//1 byte
+				set1(data, len, (BYTE)*it);
+				//Inc
+				len++;
+			}
+		}
+
+		//Add zero padding
+		while (len % 4)
+			//Add padding
+			data[len++] = 0;
+		//Done
+		return len;
+	}
+	catch (std::exception &e)
+	{
+		return 0;
+	}
 }
 
 DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Parse(const BYTE* data,DWORD size)
