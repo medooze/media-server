@@ -24,7 +24,7 @@ void NetEventLoop::ClearRawTx()
 
 void NetEventLoop::Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet, const std::optional<PacketHeader::FlowRoutingInfo>& rawTxData, const std::optional<std::function<void(std::chrono::milliseconds)>>& callback)
 {
-	TRACE_EVENT("eventloop", "NetEventLoop::Send", "packet_size", packet.GetSize());
+	TRACE_EVENT("neteventloop", "NetEventLoop::Send", "packet_size", packet.GetSize());
 
 	//Get approximate queued size
 	auto aprox = sending.size_approx();
@@ -76,7 +76,7 @@ void NetEventLoop::OnPollIn(int fd)
 	struct mmsghdr messages[MaxMultipleReceivingMessages] = {};
 	struct iovec iovs[MaxMultipleReceivingMessages][1] = {{}};
 
-	TRACE_EVENT("eventloop", "NetEventLoop::Run::ProcessIn");
+	TRACE_EVENT("neteventloop", "NetEventLoop::OnPollIn");
 	//UltraDebug("-NetEventLoop::Run() | ufds[0].revents & POLLIN\n");
 
 	//Reserve space
@@ -124,7 +124,7 @@ void NetEventLoop::OnPollOut(int fd)
 	struct sockaddr_in tos[MaxMultipleSendingMessages] = {};
 	struct iovec iovs[MaxMultipleSendingMessages][1] = {{}};
 
-	TRACE_EVENT("eventloop", "EventLoop::Run::ProcessOut");
+	TRACE_EVENT("neteventloop", "NetEventLoop::OnPollOut");
 	//UltraDebug("-EventLoop::Run() | ufds[0].revents & POLLOUT\n");
 
 	
@@ -190,7 +190,7 @@ void NetEventLoop::OnPollOut(int fd)
 	//Send them
 	int sendFd = this->rawTx ? this->rawTx->fd : fd;
 	{
-		TRACE_EVENT("eventloop", "sendmmsg", "fd", fd, "vlen", len);
+		TRACE_EVENT("neteventloop", "sendmmsg", "fd", fd, "vlen", len);
 		sendmmsg(sendFd, messages, len, flags);
 	}
 	
