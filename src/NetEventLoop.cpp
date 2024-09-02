@@ -1,20 +1,6 @@
 #include "tracing.h"
 #include "NetEventLoop.h"
 
-#include <sys/socket.h>
-#include <netinet/tcp.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <sys/poll.h>
-
-#include <errno.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <signal.h>
-#include <sched.h>
-#include <pthread.h>
-#include <cmath>
-
 #include "log.h"
 
 NetEventLoop::NetEventLoop(Listener* listener, uint32_t packetPoolSize) :

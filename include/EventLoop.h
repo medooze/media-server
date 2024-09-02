@@ -2,19 +2,12 @@
 #define EVENTLOOP_H
 
 #include <thread>
-#include <functional>
 #include <chrono>
 #include <optional>
 #include <poll.h>
-#include <cassert>
-#include <optional>
-#include "config.h"
 #include "concurrentqueue.h"
-#include "Packet.h"
-#include "ObjectPool.h"
 #include "TimeService.h"
 #include "FileDescriptor.h"
-#include "PacketHeader.h"
 
 using namespace std::chrono_literals;
 
@@ -74,7 +67,6 @@ public:
 	virtual void Async(const std::function<void(std::chrono::milliseconds)>& func, const std::function<void(std::chrono::milliseconds)>& callback) override;
 	virtual std::future<void> Future(const std::function<void(std::chrono::milliseconds)>& func) override;
 	
-	void Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet, const std::optional<PacketHeader::FlowRoutingInfo>& rawTxData = std::nullopt, const std::optional<std::function<void(std::chrono::milliseconds)>>& callback = std::nullopt);
 	void Run(const std::chrono::milliseconds &duration = std::chrono::milliseconds::max());
 	
 	bool SetAffinity(int cpu);
