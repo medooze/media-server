@@ -1,6 +1,5 @@
 #include "overlay.h"
 #include "log.h"
-#include "bitstream.h"
 
 
 #include <stdlib.h>
