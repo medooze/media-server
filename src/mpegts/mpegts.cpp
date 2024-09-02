@@ -1,6 +1,7 @@
 #include "mpegts/mpegts.h"
 #include "log.h"
-#include "bitstream.h"
+#include "bitstream/BitReader.h"
+
 namespace mpegts
 {
 

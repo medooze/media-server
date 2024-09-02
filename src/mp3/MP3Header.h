@@ -2,7 +2,7 @@
 #define	MP3HEADER_H
 
 #include "config.h"
-#include "bitstream.h"
+#include "bitstream/BitWritter.h"
 
 #define CHECK(r) if(r.Error()) return false;
 

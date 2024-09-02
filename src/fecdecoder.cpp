@@ -10,7 +10,8 @@
 
 #include "fecdecoder.h"
 #include "codecs.h"
-#include "bitstream.h"
+#include "bitstream/BitReader.h"
+#include "bitstream/BitWritter.h"
 
 
 FECDecoder::FECDecoder()
