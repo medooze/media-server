@@ -4,7 +4,7 @@
 #include <optional>
 
 #include "bitstream/BitReader.h"
-#include "bitstream/BitWritter.h"
+#include "bitstream/BitWriter.h"
  	
 DWORD ObuHeader::Serialize(BufferWritter& writter) const
 {
@@ -15,21 +15,21 @@ DWORD ObuHeader::Serialize(BufferWritter& writter) const
 
 	try
 	{
-		BitWritter bitwritter(writter, extension.has_value() ? 2 : 1);
-		bitwritter.Put(1, 0); //forbidden
-		bitwritter.Put(4, type);
-		bitwritter.Put(1, extension.has_value());
-		bitwritter.Put(1, length.has_value());
-		bitwritter.Put(1, 0); //reserved
+		BitWriter BitWriter(writter, extension.has_value() ? 2 : 1);
+		BitWriter.Put(1, 0); //forbidden
+		BitWriter.Put(4, type);
+		BitWriter.Put(1, extension.has_value());
+		BitWriter.Put(1, length.has_value());
+		BitWriter.Put(1, 0); //reserved
 
 		if (extension.has_value())
 		{
-			bitwritter.Put(3, extension->layerInfo.temporalLayerId);
-			bitwritter.Put(2, extension->layerInfo.spatialLayerId);
-			bitwritter.Put(3, 0); //extended reserved
+			BitWriter.Put(3, extension->layerInfo.temporalLayerId);
+			BitWriter.Put(2, extension->layerInfo.spatialLayerId);
+			BitWriter.Put(3, 0); //extended reserved
 		}
 	
-		bitwritter.Flush();
+		BitWriter.Flush();
 	}
 	catch (std::exception &e)
 	{

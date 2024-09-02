@@ -631,7 +631,7 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 		BYTE ext[255];
 
 		//Get writter
-		BitWritter writter(ext, sizeof(ext));
+		BitWriter writter(ext, sizeof(ext));
 
 		//Serialize 
 		if (dependencyDescryptor->Serialize(writter))
@@ -688,21 +688,21 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 
 			//Extension header
 			uint8_t header = 0;
-			BitWritter headerBitWritter(&header, 1);
+			BitWriter headerBitWriter(&header, 1);
 
 			//Set rid and number of streams
-			headerBitWritter.Put(2, videoLayersAllocation->streamIdx);
-			headerBitWritter.Put(2, videoLayersAllocation->numRtpStreams - 1);
+			headerBitWriter.Put(2, videoLayersAllocation->streamIdx);
+			headerBitWriter.Put(2, videoLayersAllocation->numRtpStreams - 1);
 
 			//If using master
 			if (allEqual)
 				//Get active layer mask
 				for (const auto& active : spatialLayesrMask[0])
 					//Write in header
-					headerBitWritter.Put(1, active);
+					headerBitWriter.Put(1, active);
 
 			//Flush header
-			headerBitWritter.Flush();
+			headerBitWriter.Flush();
 
 			//Write header to extension
 			writter.Set1(header);
@@ -712,16 +712,16 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 			{
 				//Active spatial layer mask for each stream
 				std::array<uint8_t, VideoLayersAllocation::MaxStreams / 2> mask = {};
-				BitWritter maskBitWritter(mask.data(), mask.size());
+				BitWriter maskBitWriter(mask.data(), mask.size());
 
 				//For each stream
 				for (auto i = 0; i < videoLayersAllocation->numRtpStreams && i < VideoLayersAllocation::MaxStreams; ++i)
 					//for each layer in stream
 					for (const auto& active : spatialLayesrMask[i])
 						//Write in mask
-						maskBitWritter.Put(1, active);
+						maskBitWriter.Put(1, active);
 				//Flush mask
-				int len = maskBitWritter.Flush();
+				int len = maskBitWriter.Flush();
 
 				//Set mask in extension
 				writter.SetN(mask, len);
@@ -729,17 +729,17 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 
 			//Temporal layers for each spatial layer
 			std::array<uint8_t, VideoLayersAllocation::MaxSpatialIds / 4> numTemporalLayers = {};
-			BitWritter numTemporalLayersBitWritter(numTemporalLayers.data(), numTemporalLayers.size());
+			BitWriter numTemporalLayersBitWriter(numTemporalLayers.data(), numTemporalLayers.size());
 
 			//For each active spatial layer
 			for (const auto& spatialLayer : videoLayersAllocation->activeSpatialLayers)
 			{
 				//Set the number of layers
-				numTemporalLayersBitWritter.Put(2, spatialLayer.targetBitratePerTemporalLayer.size());
+				numTemporalLayersBitWriter.Put(2, spatialLayer.targetBitratePerTemporalLayer.size());
 			}
 
 			//Flush temporal layers number
-			int len = numTemporalLayersBitWritter.Flush();
+			int len = numTemporalLayersBitWriter.Flush();
 			
 			//Set  temporal layers number in extension
 			writter.SetN(numTemporalLayers, len);

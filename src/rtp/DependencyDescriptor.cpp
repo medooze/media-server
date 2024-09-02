@@ -3,7 +3,7 @@
 #include "rtp/DependencyDescriptor.h"
 #include "video.h"
 
-#include "bitstream/BitWritter.h"
+#include "bitstream/BitWriter.h"
 
 
 enum NextLayerIdc 
@@ -283,7 +283,7 @@ std::optional<DependencyDescriptor> DependencyDescriptor::Parse(BitReader& reade
 	return dd;
 }
 
-bool TemplateDependencyStructure::Serialize(BitWritter& writter) const
+bool TemplateDependencyStructure::Serialize(BitWriter& writter) const
 {
 	try
 	{
@@ -378,7 +378,7 @@ bool TemplateDependencyStructure::Serialize(BitWritter& writter) const
 	return true;
 }
 
-bool DependencyDescriptor::Serialize(BitWritter& writter) const
+bool DependencyDescriptor::Serialize(BitWriter& writter) const
 {
 
 	try
