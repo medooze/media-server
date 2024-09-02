@@ -48,7 +48,7 @@ public:
 	virtual ~RTPBundleTransport();
 	int Init();
 	int Init(int port);
-	Connection::shared AddICETransport(const std::string &username,const Properties& properties);
+	Connection::shared AddICETransport(const std::string &username,const Properties& properties,const std::string& logId="");
 	bool RestartICETransport(const std::string& username, const std::string& restarted, const Properties& properties);
 	int RemoveICETransport(const std::string &username);
 	
