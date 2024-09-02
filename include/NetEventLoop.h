@@ -115,15 +115,12 @@ private:
 	ObjectPool<Packet> packetPool;
 	std::optional<RawTx> rawTx;
 	
-	
 	//Recv data
-// Ignore coverity error: Local variable "datas" uses 192000 bytes of stack space, which exceeds the maximum single use of 20000 bytes.
-// coverity[stack_use_local_overflow]
 	uint8_t datas[MaxMultipleReceivingMessages][MTU] ZEROALIGNEDTO32;
 	size_t  size = MTU;
 	
 	//UDP send flags
-	uint32_t flags = MSG_DONTWAIT;
+	const uint32_t flags = MSG_DONTWAIT;
 	
 	//Pending data
 	std::vector<SendBuffer> items;
