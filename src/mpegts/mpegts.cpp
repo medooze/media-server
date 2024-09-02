@@ -118,7 +118,6 @@ size_t AdaptationField::Size() const
 
 AdaptationField AdaptationField::Parse(BufferReader& reader)
 {
-
 	if (reader.GetLeft() < 1)
 		throw std::runtime_error("Not enought data to read mpegts adaptation field length");
 

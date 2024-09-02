@@ -27,6 +27,11 @@ public:
 		return buffer && pos < buffer->GetSize();
 	}
 	
+	bool IsMessageStart() const
+	{
+		return !buffer || pos == buffer->GetSize();
+	}
+	
 	virtual void GetNextPacket(BufferWritter& writer)
 	{
 		while (writer.GetLeft())
