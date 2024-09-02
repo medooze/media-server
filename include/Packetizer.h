@@ -49,7 +49,7 @@ public:
 					return;
 				
 				// Grap the first message
-				auto& msg = messages.begin();
+				auto& msg = messages.front();
 				auto [encodable, forceSeparate] = msg;
 				
 				// check force sperate flag
