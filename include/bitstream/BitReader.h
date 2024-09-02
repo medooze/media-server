@@ -296,7 +296,7 @@ private:
 			//Increase pointer
 			bufferPos++;
 		} else {
-			throw std::out_of_range("no more bytes to read from");
+			throw std::range_error("no more bytes to read from");
 		}
 			
 
@@ -324,7 +324,7 @@ private:
 			//return  cached
 			return get1(buffer+bufferPos,0)<<24;
 		} else {
-			throw std::out_of_range("no more bytes to read from");
+			throw std::range_error("no more bytes to read from");
 		}
 	}
 
