@@ -523,9 +523,6 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 {
 	//Log(">EventLoop::Run() | [%p,running:%d,duration:%llu]\n",this,running,duration.count());
 	
-	//UDP send flags
-	uint32_t flags = MSG_DONTWAIT;
-	
 	//Set values for polling
 	ufds[0].fd = fd;
 	ufds[1].fd = pipe[0];
