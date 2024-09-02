@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 #include <list>
+#include <mutex>
 
 template<typename T>
 class Packetizer
@@ -17,11 +18,15 @@ public:
 	
 	void AddMessage(const T& message, bool forceSeparatePacket = false)
 	{
+		std::lock_guard lock(mutex);
+		
 		messages.emplace_back(message, forceSeparatePacket);
 	}
 	
 	bool HasData() const
 	{
+		std::lock_guard lock(mutex);
+		
 		if (!messages.empty()) return true;
 		
 		return buffer && pos < buffer->GetSize();
@@ -38,6 +43,8 @@ public:
 		{
 			if (!buffer || pos >= buffer->GetSize())
 			{
+				std::unique_lock lock(mutex);
+				
 				if (messages.empty())
 					return;
 				
@@ -49,6 +56,11 @@ public:
 				if (forceSeparate)
 					return;
 				
+				// Remove the message
+				messages.erase(messages.begin());
+				
+				lock.unlock();
+				
 				// Create a new buffer for the message
 				buffer = std::make_unique<Buffer>(encodable->Size());
 				BufferWritter awriter(*buffer);
@@ -56,9 +68,6 @@ public:
 				
 				buffer->SetSize(awriter.GetLength());
 				pos = 0;
-				
-				// Remove the message
-				messages.erase(messages.begin());
 			}
 			
 			// Fill the writer as much as possible
@@ -71,6 +80,8 @@ public:
 	
 private:
 	std::list<std::pair<T, bool>> messages;
+	
+	std::mutex mutex;
 	
 	std::unique_ptr<Buffer> buffer;
 	size_t pos = 0;
