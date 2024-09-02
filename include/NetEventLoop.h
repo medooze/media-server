@@ -40,8 +40,9 @@ public:
 	
 protected:
 	
-	virtual void OnPoolIn(int fd) override;
-	virtual void OnPoolOut(int fd) override;
+	virtual short GetPollEvents() const override;
+	virtual void OnPollIn(int fd) override;
+	virtual void OnPollOut(int fd) override;
 	
 private:
 	enum State

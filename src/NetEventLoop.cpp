@@ -18,7 +18,7 @@
 #include "log.h"
 
 NetEventLoop::NetEventLoop(Listener* listener, uint32_t packetPoolSize) :
-	NetEventLoop(listener),
+	EventLoop(),
 	listener(listener),
 	packetPool(packetPoolSize ? packetPoolSize : PacketPoolSize)
 {
@@ -78,7 +78,13 @@ void NetEventLoop::Send(const uint32_t ipAddr, const uint16_t port, Packet&& pac
 	Signal();
 }
 
-void NetEventLoop::OnPoolIn(int fd)
+short NetEventLoop::GetPollEvents() const
+{
+	//If we have anything to send set to wait also for write events
+	return sending.size_approx() ? POLLIN | POLLOUT | POLLERR | POLLHUP : POLLIN | POLLERR | POLLHUP;
+}
+
+void NetEventLoop::OnPollIn(int fd)
 {
 	struct sockaddr_in froms[MaxMultipleReceivingMessages] = {};
 	struct mmsghdr messages[MaxMultipleReceivingMessages] = {};
@@ -125,7 +131,7 @@ void NetEventLoop::OnPoolIn(int fd)
 
 }
 
-void NetEventLoop::OnPoolOut(int fd)
+void NetEventLoop::OnPollOut(int fd)
 {
 	//Multiple messages struct
 	struct mmsghdr messages[MaxMultipleSendingMessages] = {};

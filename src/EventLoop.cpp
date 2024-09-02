@@ -551,8 +551,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 	while(running && now<=until)
 	{
 		//TRACE_EVENT("eventloop", "EventLoop::Run::Iteration");
-		//If we have anything to send set to wait also for write events
-		ufds[0].events = sending.size_approx() ? POLLIN | POLLOUT | POLLERR | POLLHUP : POLLIN | POLLERR | POLLHUP;
+		ufds[0].events = GetPollEvents();
 		//Clear readed events
 		ufds[0].revents = 0;
 		ufds[1].revents = 0;
@@ -585,13 +584,13 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		//Read first
 		if (ufds[0].revents & POLLIN)
 		{
-			OnPoolIn();
+			OnPollIn(ufds[0].fd);
 		}
 		
 		//Check read is possible
 		if (ufds[0].revents & POLLOUT)
 		{
-			OnPoolOut();
+			OnPollOut(ufds[0].fd);
 		}
 		
 		//Process pendint tasks

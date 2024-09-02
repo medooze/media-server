@@ -77,8 +77,6 @@ public:
 	void Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet, const std::optional<PacketHeader::FlowRoutingInfo>& rawTxData = std::nullopt, const std::optional<std::function<void(std::chrono::milliseconds)>>& callback = std::nullopt);
 	void Run(const std::chrono::milliseconds &duration = std::chrono::milliseconds::max());
 	
-	void SetRawTx(const FileDescriptor &fd, const PacketHeader& header, const PacketHeader::FlowRoutingInfo& defaultRoute);
-	void ClearRawTx();
 	bool SetAffinity(int cpu);
 	bool SetThreadName(const std::string& name);
 	bool SetPriority(int priority);
@@ -100,8 +98,9 @@ protected:
 
 	const std::chrono::milliseconds Now();
 	
-	virtual void OnPoolIn(int fd) {};
-	virtual void OnPoolOut(int fd) {};
+	virtual short GetPollEvents() const { return POLLIN | POLLERR | POLLHUP; };
+	virtual void OnPollIn(int fd) {};
+	virtual void OnPollOut(int fd) {};
 	
 private:
 
