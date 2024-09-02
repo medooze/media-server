@@ -516,4 +516,20 @@ inline size_t CountBits(uint64_t val)
 	return count;
 }
 
+/**
+ * Convert timestamp from one clock rate to another
+ * 
+ * @param ts The input timestamp
+ * @param originalRate The clock rate of the input timestamp, must not be 0.
+ * @param targetRate The target clock rate
+ * 
+ * @return The timestamp basing on the target clock rate
+ */
+template<typename T>
+static constexpr T convertTimestampClockRate(T ts, uint64_t originalRate, uint64_t targetRate)
+{
+	return originalRate == targetRate ? ts : (ts * T(targetRate) / T(originalRate));
+}
+
+
 #endif
