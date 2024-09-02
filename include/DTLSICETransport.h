@@ -179,7 +179,6 @@ private:
 	DWORD		lastFeedbackPacketExtSeqNum	= 0;
 	WORD		feedbackCycles			= 0;
 
-	//TODO: change by shared pointers
 	std::map<DWORD, RTPOutgoingSourceGroup::shared> outgoing;
 	std::map<DWORD, RTPIncomingSourceGroup::shared> incoming;
 	std::map<std::string,RTPIncomingSourceGroup::shared> rids;
