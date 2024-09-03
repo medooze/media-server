@@ -11,33 +11,81 @@ VideoCodec::Type GetRtmpFrameVideoCodec(const RTMPVideoFrame& videoFrame)
 	{
 		switch (videoFrame.GetVideoCodec())
 		{
-		case RTMPVideoFrame::AVC:
-			return VideoCodec::H264;
-		default:
-			return VideoCodec::UNKNOWN;
+			case RTMPVideoFrame::AVC:
+				return VideoCodec::H264;
+			default:
+				return VideoCodec::UNKNOWN;
 		}
 	}
 	
 	switch (videoFrame.GetVideoCodecEx())
 	{
-	case RTMPVideoFrame::HEVC: 
-		return VideoCodec::H265;
+		case RTMPVideoFrame::H264:
+			return VideoCodec::H264;
+
+		case RTMPVideoFrame::HEVC: 
+			return VideoCodec::H265;
 	
-	case RTMPVideoFrame::AV1: 
-		return VideoCodec::AV1;
+		case RTMPVideoFrame::AV1: 
+			return VideoCodec::AV1;
 	
-	case RTMPVideoFrame::VP9: 
-		return VideoCodec::VP9;
+		case RTMPVideoFrame::VP9: 
+			return VideoCodec::VP9;
 		
-	default:
-		return VideoCodec::UNKNOWN;
+		default:
+			return VideoCodec::UNKNOWN;
+	}
+}
+
+AudioCodec::Type GetRtmpFrameAudioCodec(const RTMPAudioFrame& audioFrame)
+{
+	switch (audioFrame.GetAudioCodec())
+	{
+		case RTMPAudioFrame::AAC:
+			return AudioCodec::AAC;
+		case RTMPAudioFrame::G711A:
+			return AudioCodec::PCMA;
+		case RTMPAudioFrame::G711U:
+			return AudioCodec::PCMU;
+		default:
+			return AudioCodec::UNKNOWN;
+	}
+}
+
+std::unique_ptr<RTMPVideoPacketizer> CreateRTMPVideoPacketizer(VideoCodec::Type type)
+{
+	switch (type)
+	{
+		case VideoCodec::H264:
+			return std::unique_ptr<RTMPVideoPacketizer>(new RTMPAVCPacketizer());
+		case VideoCodec::H265:
+			return std::unique_ptr<RTMPVideoPacketizer>(new RTMPHEVCPacketizer());
+		case VideoCodec::AV1:
+			return std::unique_ptr<RTMPVideoPacketizer>(new RTMPAv1Packetizer());
+		default:
+			return nullptr;
+	}
+}
+
+std::unique_ptr<RTMPAudioPacketizer> CreateRTMPAudioPacketizer(AudioCodec::Type type)
+{
+	switch (type)
+	{
+		case AudioCodec::AAC:
+			return std::unique_ptr<RTMPAudioPacketizer>(new RTMPAACPacketizer());
+		case AudioCodec::PCMA:
+			return std::unique_ptr<RTMPAudioPacketizer>(new RTMPG711APacketizer());
+		case AudioCodec::PCMU:
+			return std::unique_ptr<RTMPAudioPacketizer>(new RTMPG711UPacketizer());
+		default:
+			return nullptr;
 	}
 }
 
 template<typename DescClass, VideoCodec::Type codec>
-std::unique_ptr<VideoFrame> RTMPPacketizer<DescClass, codec>::PrepareFrame(RTMPVideoFrame* videoFrame)
+std::unique_ptr<VideoFrame> RTMPVideoPacketizerImpl<DescClass, codec>::PrepareFrame(RTMPVideoFrame* videoFrame)
 {
-	Debug("-RTMPPacketizer::PrepareFrame() [codec:%d, isConfig:%d, isCodedFrames:%d]\n", GetRtmpFrameVideoCodec(*videoFrame), videoFrame->IsConfig(), videoFrame->IsCodedFrames());
+	//UltraDebug("-RTMPPacketizer::PrepareFrame() [codec:%d, isConfig:%d, isCodedFrames:%d]\n", GetRtmpFrameVideoCodec(*videoFrame), videoFrame->IsConfig(), videoFrame->IsCodedFrames());
 	
 	//Check it is processing codec
 	if (GetRtmpFrameVideoCodec(*videoFrame) != codec)
@@ -47,28 +95,36 @@ std::unique_ptr<VideoFrame> RTMPPacketizer<DescClass, codec>::PrepareFrame(RTMPV
 	//Check if it is descriptor
 	if (videoFrame->IsConfig())
 	{
-		::Dump(videoFrame->GetMediaData(), videoFrame->GetMediaSize());
 		//Parse it
-		if(desc.Parse(videoFrame->GetMediaData(),videoFrame->GetMediaSize()))
+		if(desc.Parse(videoFrame->GetMediaData(),videoFrame->GetMediaSize())) 
+		{
 			//Got config
 			gotConfig = true;
-		else
+		} else {
 			//Show error
 			Warning(" RTMPPacketizer::PrepareFrame() | Config parse error\n");
+			//Dump data
+			videoFrame->Dump();
+			::Dump(videoFrame->GetMediaData(), videoFrame->GetMediaSize());
+		}
 		//DOne
 		return nullptr;
 	}
 	
 	//It should be a nalu then
 	if (!videoFrame->IsCodedFrames())
+	{
+		//Error
+		Warning("-RTMPPacketizer::PrepareFrame() | Not a coded frame\n");
 		//DOne
 		return nullptr;
+	}
 	
 	//Ensure that we have got config
 	if (!gotConfig)
 	{
 		//Error
-		Debug("-RTMPPacketizer::PrepareFrame() | Got media frame but not valid description yet\n");
+		Warning("-RTMPPacketizer::PrepareFrame() | Got media frame but not valid description yet\n");
 		//DOne
 		return nullptr;
 	}
@@ -241,7 +297,7 @@ std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, PPSClass, co
 		if (nalSize+nalUnitLength>size)
 		{
 			//Error
-			Error("-RTMPAVCPacketizer::AddFrame() Error adding size=%d nalSize=%d fameSize=%d\n",size,nalSize,videoFrame->GetMediaSize());
+			Warning("-RTMPAVCPacketizer::AddFrame() Error adding size=%d nalSize=%d fameSize=%d\n",size,nalSize,videoFrame->GetMediaSize());
 			//Skip
 			break;
 		}
