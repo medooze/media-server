@@ -106,12 +106,19 @@ public:
 
 	inline void Skip(DWORD n)
 	{
-		assert(n <= 32);
+		//If input is bigger than cache
+		while (n>32)
+		{
+			//Cache next
+			Cache();
+			//Consume
+			n -= 32;
+		}
 
 		if (n>cached) 
 		{
 			//Get what is left to skip
-			BYTE a = n-cached;
+			BYTE a = (n % 32)-cached;
 			//Cache next
 			Cache();
 			//Skip cache
