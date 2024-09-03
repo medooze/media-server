@@ -10,7 +10,7 @@
 
 #include "config.h"
 #include "bitstream/BitReader.h"
-#include "bitstream/BitWritter.h"
+#include "bitstream/BitWriter.h"
 
 
 //AudioSpecificConfig ()
@@ -96,7 +96,7 @@ public:
 			return 0;
 		
 		//Put bytes
-		BitWritter writter(data,size);
+		BitWriter writter(data,size);
 
 		try
 		{

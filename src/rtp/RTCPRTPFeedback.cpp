@@ -1,6 +1,6 @@
 #include "rtp/RTCPRTPFeedback.h"
 
-#include "bitstream/BitWritter.h"
+#include "bitstream/BitWriter.h"
 #include "rtp/RTCPCommonHeader.h"
 
 RTCPRTPFeedback::RTCPRTPFeedback() : RTCPPacket(RTCPPacket::RTPFeedback)
@@ -339,8 +339,8 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Serialize(BYTE* data,D
 	PacketStatus maxStatus = PacketStatus::NotReceived;
 	bool allsame = true;
 	
-	//Bitwritter for the rest
-	BitWritter writter(data+8,size-8);
+	//BitWriter for the rest
+	BitWriter writter(data+8,size-8);
 
 	try
 	{

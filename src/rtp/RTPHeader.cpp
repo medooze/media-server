@@ -2,7 +2,7 @@
 #include "log.h"
 
 #include "bitstream/BitReader.h"
-#include "bitstream/BitWritter.h"
+#include "bitstream/BitWriter.h"
 /*
  
      0                   1                   2                   3
@@ -81,7 +81,7 @@ DWORD RTPHeader::Serialize(BYTE* data, const DWORD size) const
 		return 0;
 	
 	//Bite writter
-	BitWritter w(data,2);
+	BitWriter w(data,2);
 	
 	try
 	{

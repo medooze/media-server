@@ -11,7 +11,7 @@
 #include "fecdecoder.h"
 #include "codecs.h"
 #include "bitstream/BitReader.h"
-#include "bitstream/BitWritter.h"
+#include "bitstream/BitWriter.h"
 
 
 FECDecoder::FECDecoder()
@@ -140,7 +140,7 @@ RTPPacket* FECDecoder::Recover()
 	//Set to 0
 	memset(aux,0,8);
 	//Create writter
-	BitWritter w(aux,8);
+	BitWriter w(aux,8);
 	//vector of lost pacekt seq
 	std::vector<DWORD> losts;
 

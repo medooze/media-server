@@ -1,5 +1,5 @@
-#ifndef BITWRITTER_H_
-#define	BITWRITTER_H_
+#ifndef BITWRITER_H_
+#define	BITWRITER_H_
 
 #include <stdexcept>
 #include <cassert>
@@ -10,9 +10,9 @@
 #include "BufferWritter.h"
 #include "bitstream/BitReader.h"
 
-class BitWritter {
+class BitWriter {
 public:
-	BitWritter(BYTE *data,DWORD size)
+	BitWriter(BYTE *data,DWORD size)
 	{
 		//Store pointers
 		this->data = data;
@@ -21,8 +21,8 @@ public:
 		Reset();
 	}
 
-	BitWritter(BufferWritter& writter, DWORD size) : 
-		BitWritter(writter.Consume(size), size)
+	BitWriter(BufferWritter& writter, DWORD size) : 
+		BitWriter(writter.Consume(size), size)
 	{
 	}
 
@@ -187,4 +187,4 @@ private:
 	BYTE  cached;
 };
 
-#endif	/* BITWRITTER_H */
+#endif	/* BITWRITER_H */
