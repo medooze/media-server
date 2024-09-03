@@ -126,12 +126,11 @@ RTMPClientConnection::ErrorCode RTMPClientConnection::Connect(const char* server
 	this->listener = listener;
 
 	//Start
-	return Start();
+	return OnConnect();
 }
 
-RTMPClientConnection::ErrorCode RTMPClientConnection::Start()
+RTMPClientConnection::ErrorCode RTMPClientConnection::OnConnect()
 {
-	
 	EventLoop::Start([&]() {
 		run(this);
 	});
@@ -139,7 +138,7 @@ RTMPClientConnection::ErrorCode RTMPClientConnection::Start()
 	return RTMPClientConnection::ErrorCode::NoError;
 }
 
-void RTMPClientConnection::Stop()
+bool RTMPClientConnection::Stop()
 {
 	EventLoop::Stop();
 	
