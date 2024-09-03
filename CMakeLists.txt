@@ -113,6 +113,7 @@ add_library(MediaServerLib
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPIncomingSourceGroup.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/avcdescriptor.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/EventLoop.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/NetEventLoop.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/log.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/stunmessage.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/FrameDelayCalculator.cpp
