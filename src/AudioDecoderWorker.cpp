@@ -1,6 +1,6 @@
-#include "audiodecoder.h"
+#include "AudioDecoderWorker.h"
 #include "media.h"
-#include "aac/aacdecoder.h"
+#include "aac/AACDecoder.h"
 #include "AudioCodecFactory.h"
 
 AudioDecoderWorker::~AudioDecoderWorker()
@@ -124,11 +124,6 @@ void AudioDecoderWorker::SetAACConfig(const uint8_t* data,const size_t size)
 
 int AudioDecoderWorker::Decode()
 {
-	SWORD		raw[4096];
-	DWORD		rawSize=4096;
-	QWORD		frameDuration=0;
-	QWORD		lastTime=0;
-
 	Log(">AudioDecoderWorker::Decode()\n");
 
 	//Mientras tengamos que capturar
@@ -193,35 +188,34 @@ int AudioDecoderWorker::Decode()
 					output->StartPlaying(rate, numChannels);
 			}
 
-			//Lo decodificamos
-			int len = audioDecoder->Decode(frame,raw,rawSize);
-			
-			//Check if we have a different channel count
-			if (numChannels != audioDecoder->GetNumChannels())
+			if(!audioDecoder->Decode(frame))
+				continue;
+			while (auto audioBuffer = audioDecoder->GetDecodedAudioFrame())
 			{
-				//Update rate
-				rate = audioDecoder->GetRate();
-				numChannels = audioDecoder->GetNumChannels();
+				//Check if we have a different channel count
+				if (numChannels != audioDecoder->GetNumChannels())
+				{
+					//Update rate
+					rate = audioDecoder->GetRate();
+					numChannels = audioDecoder->GetNumChannels();
 
+					//For each output
+					for (auto output : outputs)
+					{
+						//Stop it
+						output->StopPlaying();
+						//Start playing again
+						output->StartPlaying(rate, numChannels);
+					}
+				}
+
+				audioBuffer->SetTimestamp(frame->GetTimestamp());
+				audioBuffer->SetClockRate(frame->GetClockRate());
 				//For each output
 				for (auto output : outputs)
-				{
-					//Stop it
-					output->StopPlaying();
-					//Start playing again
-					output->StartPlaying(rate, numChannels);
-				}
-			}
-			//Get last frame time duration
-			frameDuration = frame->GetTimestamp() - lastTime;
-
-			// Update last sent time
-			lastTime = frame->GetTimestamp();
-
-			//For each output
-			for (auto output : outputs)
-				//Send buffer
-				output->PlayBuffer(raw, len, frameDuration);
+					//Send buffer
+					output->PlayBuffer(audioBuffer);
+			}	
 		}
 	}
 

@@ -1,5 +1,6 @@
 #include "log.h"
 #include "AudioPipe.h"
+#include <math.h>
 	
 AudioPipe::AudioPipe(DWORD rate)
 {
@@ -26,18 +27,17 @@ AudioPipe::~AudioPipe()
 int AudioPipe::StartRecording(DWORD rate)
 {
 	Log("-AudioPipe start recording [rate:%d]\n",rate);
-	
-	//Set small cache 20ms
-	cache = rate/50;
 
 	//Lock
 	pthread_mutex_lock(&mutex);
 
 	//If rate has changed
 	if (rate != recordRate)
-		//Clear playing buffer
-		fifoBuffer.clear();
-
+	{
+		// Clear playing buffer
+		rateBlockBuffer.clear();
+	}
+		
 	//Store recording rate
 	recordRate = rate;
 	//If we already had an open transcoder
@@ -85,7 +85,6 @@ int AudioPipe::StopRecording()
 	return true;
 }
 
-
 void  AudioPipe::CancelRecBuffer()
 {
 	//Protegemos
@@ -100,7 +99,6 @@ void  AudioPipe::CancelRecBuffer()
 	//Unloco mutex
 	pthread_mutex_unlock(&mutex);
 }
-
 
 int AudioPipe::StartPlaying(DWORD rate, DWORD numChannels)
 {
@@ -156,12 +154,14 @@ int AudioPipe::StopPlaying()
 	return true;
 }
 
-int AudioPipe::PlayBuffer(SWORD* buffer, DWORD size, DWORD frameTime, BYTE vadLevel)
-{
-	//Debug("-push %d cache %d\n",size,fifoBuffer.length());
 
+int AudioPipe::PlayBuffer(const AudioBuffer::shared& audioBuffer)
+{
 	//Lock
 	pthread_mutex_lock(&mutex);
+
+	auto buffer = const_cast<SWORD*>(audioBuffer->GetData());
+	auto totalSamples = audioBuffer->GetNumSamples()*numChannels;
 
 	//Don't do anything if nobody is listening
 	if (!recording)
@@ -169,65 +169,44 @@ int AudioPipe::PlayBuffer(SWORD* buffer, DWORD size, DWORD frameTime, BYTE vadLe
 		//Unlock
 		pthread_mutex_unlock(&mutex);
 		//Ok
-		return size;
+		return queue.length();
 	}
-
+	if(decoderPTSOffset == std::numeric_limits<QWORD>::max()) 
+		decoderPTSOffset = audioBuffer->GetTimestamp();
+	
 	//Check if we are transtrating
 	SWORD resampled[8192];
 	if (transrater.IsOpen())
 	{
-		DWORD resampledSize = 8192 / numChannels;
-
+		DWORD numResampled = std::round<uint64_t>(audioBuffer->GetNumSamples() * (static_cast<double>(recordRate) / playRate));
 		//Proccess
-		if (!transrater.ProcessBuffer(buffer, size, resampled, &resampledSize))
+		if (!transrater.ProcessBuffer(buffer, totalSamples, resampled, &numResampled))
 		{
 			//Error
 			pthread_mutex_unlock(&mutex);
-			return Error("-AudioPipe could not transrate\n");
+			return Error("-AudioPipe::PlayBuffer() could not transrate\n");
 		}
-
-		//Update parameters
-		buffer = resampled;
-		size = resampledSize;
+		int len = audioBuffer->CopyResampled(resampled, numResampled);
+		if(len < numResampled)
+		{
+			pthread_mutex_unlock(&mutex);
+			return Error("-AudioPipe::PlayBuffer() less resampled audio data copied, actual=%d - expected=%d\n", len, numResampled);
+		}	
 	}
-
-	//Calculate total audio length
-	DWORD totalSize = size * numChannels;
-
-	//Get left space
-	DWORD left = fifoBuffer.size() - fifoBuffer.length();
-
-	//if not enought
-	if (totalSize > left)
-	{
-		Warning("-AudioPipe::PlayBuffer() | not enought space %d %d\n", fifoBuffer.size(), fifoBuffer.length());
-		//Free space
-		fifoBuffer.remove(totalSize - static_cast<DWORD>(left / numChannels)* numChannels);
-	}
-
-	//Add data to fifo
-	fifoBuffer.push(buffer, totalSize);
-
+	queue.push_back(audioBuffer);
+	availableNumSamples += audioBuffer->GetNumSamples()*numChannels;
 	//Signal rec
 	pthread_cond_signal(&cond);
-
 	//Unlock
 	pthread_mutex_unlock(&mutex);
-
-	return size;
+	return queue.length();
 }
 
 
-int AudioPipe::RecBuffer(SWORD* buffer, DWORD size)
+AudioBuffer::shared AudioPipe::RecBuffer(DWORD frameSize)
 {
-	//Debug("-pop %d cache %d\n",size,fifoBuffer.length());
-
-	DWORD len = 0;
-	DWORD totalSize = 0;
-
 	//Lock
 	pthread_mutex_lock(&mutex);
-	
 	//Ensere we are playing
 	while (!playing) 
 	{
@@ -239,21 +218,21 @@ int AudioPipe::RecBuffer(SWORD* buffer, DWORD size)
 			//Exit
 			Log("AudioPipe: RecBuffer cancelled.\n");
 			//End
-			goto end;
+			pthread_mutex_unlock(&mutex);
+			return {};
 		}
 		//Wait for change
 		pthread_cond_wait(&cond, &mutex);
 	}
-	
-	//Calculate total audio length
-	totalSize = size * numChannels;
-	
-	//Until we have enought samples
-	while (!canceled && recording && (fifoBuffer.length() < totalSize + cache))
+	// TODO: use object pool to reuse audiobuffer
+	AudioBuffer::shared audioBuffer = std::make_shared<AudioBuffer>(frameSize, numChannels);
+	audioBuffer->SetClockRate(recordRate);
+	// put it to waiting state if audio pipe has less available samples than what's needed by encoder
+	QWORD requiredNumSamples = frameSize * numChannels; 
+	while (!canceled && recording && requiredNumSamples > availableNumSamples)
 	{
 		//Wait for change
 		pthread_cond_wait(&cond, &mutex);
-
 		//If we have been canceled
 		if (canceled)
 		{
@@ -262,22 +241,37 @@ int AudioPipe::RecBuffer(SWORD* buffer, DWORD size)
 			//Exit
 			Log("AudioPipe: RecBuffer cancelled.\n");
 			//End
-			goto end;
+			pthread_mutex_unlock(&mutex);
+			return {};
 		}
 	}
 
-	//Get samples from queue
-	len = fifoBuffer.pop(buffer, totalSize) / numChannels;
+	int readSamples = std::min(rateBlockBuffer.length() / numChannels, frameSize);
+	rateBlockBuffer.pop(audioBuffer->ConsumeData(readSamples*numChannels), readSamples*numChannels);
+	int needSamples = frameSize - readSamples;
 
-end:
-	//Unlock
+	AudioBuffer::const_shared frontAudioBuffer;
+	// if need > 0 which means need to pop audioBuffer queue to get number of required samples
+	while(queue.length()>0 && needSamples>0)
+	{
+		frontAudioBuffer = queue.front();
+		auto samples = frontAudioBuffer->GetNumSamples();
+		audioBuffer->CopyAudioBufferData(frontAudioBuffer, std::min(needSamples, samples));
+		needSamples -= frontAudioBuffer->GetNumSamples();
+		queue.pop_front();
+	}
+	int left = -needSamples;
+	if (left > 0)
+	{
+		int used = frontAudioBuffer->GetNumSamples() + needSamples;
+		rateBlockBuffer.push((SWORD*)frontAudioBuffer->GetData()+used, left*numChannels);
+	}
+	audioBuffer->SetTimestamp(encoderPTS);	
+	availableNumSamples -= requiredNumSamples;
+	encoderPTS += frameSize;
 	pthread_mutex_unlock(&mutex);
-
-	//Debug("-poped %d cache %d\n",size,fifoBuffer.length());
-
-	return len;
+	return audioBuffer;
 }
-
 
 int AudioPipe::ClearBuffer()
 {
@@ -285,7 +279,8 @@ int AudioPipe::ClearBuffer()
 	pthread_mutex_lock(&mutex);
 
 	//Clear data
-	fifoBuffer.clear();
+	rateBlockBuffer.clear();
+	queue.clear();
 
 	//Unlock
 	pthread_mutex_unlock(&mutex);

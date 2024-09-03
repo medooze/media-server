@@ -72,44 +72,44 @@ bool MP3Decoder::SetConfig(const uint8_t* data,const size_t size)
 	return true;
 }
 
-int MP3Decoder::Decode(const AudioFrame::const_shared& audioFrame, SWORD* out, int outLen)
+
+int MP3Decoder::Decode(const AudioFrame::const_shared& audioFrame)
 {
 	//Check we have config
-	//if (!inited)
-	//	return Error("-MP3Decoder::Decode() Not inited\n");
-	
-	//If we have input
-	
+	if (!inited)
+		return Error("-AACDecoder::Decode() Not inited\n");
 	
 	//Set data
 	packet->data = audioFrame ? (uint8_t*)audioFrame->GetData() : nullptr;
 	packet->size = audioFrame ? audioFrame->GetLength() : 0;
-
-	// if (inLen<=0)
-	// 	return 0;
-	// TODO: update this if to while since a packet may contain multiple complete compressed audio frames
 	//Decode it
 	if (avcodec_send_packet(ctx, packet)<0)
 		//nothing
-		return Error("-MP3Decoder::Decode() Error decoding MP3 packet\n");
+		return Error("-AACDecoder::Decode() Error decoding AAC packet\n");
 	
 	//Release side data
 	av_packet_free_side_data(packet);
-	
-	//If we got a frame
-	if (avcodec_receive_frame(ctx, frame)<0)
-		//Nothing yet
-		return 0;
-	
-	//Get number of samples
-	auto len = frame->nb_samples;
-	//Convert to SWORD
-	for (size_t i=0; i<len && (i*frame->channels)<outLen; ++i)
-		//For each channel
-		for (size_t n=0; n<std::min(frame->channels,2); ++n)
-			//Interleave
-			out[i*frame->channels + n] = ((float*)(frame->extended_data[n]))[i] * (1<<15);
-	//Return number of samples
-	return len;
+	return 1;
 }
 
+AudioBuffer::shared MP3Decoder::GetDecodedAudioFrame()
+{
+	int ret;
+	ret = avcodec_receive_frame(ctx, frame);
+	if (ret < 0)
+	{
+		if(ret != AVERROR(EAGAIN))
+			Error("-MP3Decoder::GetDecodedAudioFrame Error getting decoded frame reason: %d\n", ret);
+		return {};
+	}
+	auto audioBuffer = std::make_shared<AudioBuffer>(frame->nb_samples, frame->channels);
+
+	int len = audioBuffer->CopyDecodedData(frame->extended_data, frame->nb_samples);
+
+	if(len<frame->nb_samples) 
+	{
+		Error("-MP3Decoder::GetDecodedAudioFrame less decoded data copied:actual=%d - should=%d\n", len, frame->nb_samples);
+		return {};
+	}
+	return audioBuffer;
+}

@@ -3,7 +3,7 @@
 #include "log.h"
 #include "speexcodec.h"
 
-SpeexEncoder::SpeexEncoder(const Properties &properties)
+SpeexEncoder::SpeexEncoder(const Properties &properties) : audioFrame(AudioCodec::SPEEX16)
 {
 	///Set type
 	type =  AudioCodec::SPEEX16;
@@ -44,6 +44,7 @@ SpeexEncoder::SpeexEncoder(const Properties &properties)
 
 	// get frame sizes
 	speex_mode_query(&speex_wb_mode, SPEEX_MODE_FRAME_SIZE, &numFrameSamples);
+	audioFrame.DisableSharedBuffer();
 
 	Log("-Speex: Open codec with %d numFrameSamples\n",numFrameSamples);
 }
@@ -70,21 +71,30 @@ DWORD SpeexEncoder::GetRate()
 	return rate;
 }
 
-int SpeexEncoder::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
+AudioFrame* SpeexEncoder::Encode(const AudioBuffer::const_shared& audioBuffer)
 {
-	if (!inLen)
-		return 0;
+
+	const SWORD *in = audioBuffer->GetData();
+	int inLen = audioBuffer->GetNumSamples() * audioBuffer->GetNumChannels();
+	int outLen = audioFrame.GetMaxMediaLength();
+	if (!in || inLen <= 0)
+		return nullptr;
 
 	//check lengths
 	if ((inLen != numFrameSamples) || (outLen < numFrameSamples))
-		return Error("-speex encode ((inLen[%d] != numFrameSamples[%d]) || (outLen[%d] < enc_frame_size[%d]))\n", inLen, numFrameSamples, outLen, numFrameSamples);
+	{
+		Error("-speex encode ((inLen[%d] != numFrameSamples[%d]) || (outLen[%d] < enc_frame_size[%d]))\n", inLen, numFrameSamples, outLen, numFrameSamples);
+		return nullptr;
+	}
 
 	//Reset
 	speex_bits_reset(&encbits);
 	//Encode
 	speex_encode_int(encoder, (spx_int16_t*)in, &encbits);
 	///Paste
-	return speex_bits_write_whole_bytes(&encbits, (char*)out, outLen);
+	int len = speex_bits_write_whole_bytes(&encbits, (char*)audioFrame.GetData(), outLen);
+	audioFrame.SetLength(len);
+	return &audioFrame;
 }
 
 SpeexDecoder::SpeexDecoder()
@@ -114,7 +124,7 @@ DWORD SpeexDecoder::TrySetRate(DWORD rate)
 	return GetRate();
 }
 
-int SpeexDecoder::Decode(const AudioFrame::const_shared& audioFrame, SWORD* out, int outLen)
+int SpeexDecoder::Decode(const AudioFrame::const_shared& audioFrame)
 {
 
 	const uint8_t* in = audioFrame ? (uint8_t*)audioFrame->GetData() : nullptr;
@@ -124,16 +134,18 @@ int SpeexDecoder::Decode(const AudioFrame::const_shared& audioFrame, SWORD* out,
 		//Exit
 		return 0;
 	
-	//check lengths
-	if (outLen < dec_frame_size) 
-		return Error("-speex decode outLen[%d] < dec_frame_size[%d]\n", outLen, dec_frame_size);
-
 	//Read bits
 	speex_bits_read_from(&decbits, (char*)in, inLen);
+}
+
+AudioBuffer::shared SpeexDecoder::GetDecodedAudioFrame()
+{
+	auto audioBuffer = std::make_shared<AudioBuffer>(dec_frame_size, 1);
 	//Decode
-	if (speex_decode_int(decoder, &decbits, (spx_int16_t*)out)<0)
-		//Error
-		return Error("-speex speex_decode_int error");
-	//Exit
-	return dec_frame_size;
+	if (speex_decode_int(decoder, &decbits, (spx_int16_t*)audioBuffer->GetData())<0)
+	{
+		Error("-speex speex_decode_int error");
+		return {};
+	}
+	return audioBuffer;
 }

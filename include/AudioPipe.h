@@ -3,7 +3,10 @@
 #include <pthread.h>
 #include <audio.h>
 #include <fifo.h>
-#include "audiotransrater.h"
+#include "AudioTransrater.h"
+#include <AudioBuffer.h>
+#include <limits>
+#include "CircularQueue.h"
 
 
 class AudioPipe : 
@@ -15,14 +18,14 @@ public:
 	virtual ~AudioPipe();
 	
 	//Audio input
-	virtual int RecBuffer(SWORD *buffer,DWORD size);
+	virtual AudioBuffer::shared RecBuffer(DWORD frameSize);
 	virtual int ClearBuffer();
 	virtual void CancelRecBuffer();
 	virtual int StartRecording(DWORD rate);
 	virtual int StopRecording();
 
 	//Audio output
-	virtual int PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime, BYTE vadLevel = -1);
+	virtual int PlayBuffer(const AudioBuffer::shared& audioBuffer);
 	virtual int StartPlaying(DWORD samplerate, DWORD numChannels);
 	virtual int StopPlaying();
 
@@ -34,10 +37,17 @@ public:
 private:
 	//Los mutex y condiciones
 	pthread_mutex_t mutex;
-	pthread_cond_t  cond; 
+	pthread_cond_t  cond;
+	QWORD availableNumSamples = 0;
 
+	CircularQueue<AudioBuffer::const_shared> queue;
 	//Members
-	fifo<SWORD,48000*4>	fifoBuffer;
+	fifo<SWORD,48000*4>	rateBlockBuffer;
+
+	QWORD decoderFrameSize = 0;
+	QWORD decoderPTSOffset = std::numeric_limits<QWORD>::max();
+	QWORD encoderPTS = 0;
+
 	bool			recording = false;
 	bool			playing = false;
 	bool			inited = false;
@@ -48,7 +58,6 @@ private:
 	DWORD			recordRate = 0;
 	DWORD			nativeRate = 0;
 	DWORD			numChannels = 1;
-	
 	DWORD			cache = 0;
 };
 

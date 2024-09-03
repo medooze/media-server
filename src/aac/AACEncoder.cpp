@@ -5,10 +5,10 @@
  * Created on 20 de junio de 2013, 10:46
  */
 
-#include "aacencoder.h"
+#include "AACEncoder.h"
 #include "log.h"
 
-AACEncoder::AACEncoder(const Properties &properties)
+AACEncoder::AACEncoder(const Properties &properties): audioFrame(AudioCodec::AAC)
 {
 	//NO ctx yet
 	swr = NULL;
@@ -73,7 +73,7 @@ AACEncoder::AACEncoder(const Properties &properties)
 	av_opt_set_int(swr, "in_sample_rate",     ctx->sample_rate,   0);
 	av_opt_set_int(swr, "out_sample_rate",    ctx->sample_rate,   0);
 	av_opt_set_int(swr, "in_sample_fmt",      AV_SAMPLE_FMT_S16,  0);
-	av_opt_set_int(swr, "out_sample_fmt",     AV_SAMPLE_FMT_FLTP, 0);
+	av_opt_set_int(swr, "out_sample_fmt",     ctx->sample_fmt	, 0);
 
 	//Open context
 	swr_init(swr);
@@ -82,7 +82,7 @@ AACEncoder::AACEncoder(const Properties &properties)
 	samplesNum = numFrameSamples;
 
 	//Allocate float samples
-	av_samples_alloc(&samples, &samplesSize, 1, samplesNum, AV_SAMPLE_FMT_FLTP, 0);
+	av_samples_alloc(&samples, &samplesSize, ctx->channels, samplesNum, ctx->sample_fmt, 0);
 
 	//Create frame
 	frame = av_frame_alloc();
@@ -90,7 +90,10 @@ AACEncoder::AACEncoder(const Properties &properties)
 	frame->nb_samples     = ctx->frame_size;
 	frame->format         = ctx->sample_fmt;
 	frame->channel_layout = ctx->channel_layout;
+	frame->channels = ctx->channels;
+	frame->sample_rate = ctx->sample_rate;
 
+	audioFrame.DisableSharedBuffer();
 	//Log
 	Log("-AACEncoder::AACEncoder() Encoder open with frame size %d.\n", numFrameSamples);
 }
@@ -112,47 +115,60 @@ AACEncoder::~AACEncoder()
 		av_frame_free(&frame);
 }
 
-int AACEncoder::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
+AudioFrame* AACEncoder::Encode(const AudioBuffer::const_shared& audioBuffer)
 {
 	AVPacket pkt;
-	int got_output;
+	int ret;
+
+	auto in = audioBuffer->GetData();
+	auto inLen = audioBuffer->GetNumSamples() * audioBuffer->GetNumChannels();	
 
 	if (!inLen)
 		return 0;
 	
 	if (ctx == NULL)
-		return Error("-AACEncoder::Encode() no context.\n");
+		Error("-AACEncoder::Encode() no context.\n");
+		return nullptr;
 
 	//If not enought samples
 	if (inLen!=numFrameSamples)
 		//Exit
-		return Error("-AACEncoder::Encode() sample size %d is not correct. Should be %d\n", inLen, numFrameSamples);
-
+		Error("-AACEncoder::Encode() sample size %d is not correct. Should be %d\n", inLen, numFrameSamples);
+		return nullptr;
 	//Convert
 	int len = swr_convert(swr, &samples, samplesNum, (const BYTE**)&in, inLen);
-
 	//Check 
 	if (avcodec_fill_audio_frame(frame, ctx->channels, ctx->sample_fmt, (BYTE*)samples, samplesSize, 0)<0)
-                //Exit
-                return Error("-AACEncoder::Encode() could not fill audio frame \n");
+		Error("-AACEncoder::Encode() could not fill audio frame \n");
+		return nullptr;
 
 	//Reset packet
 	av_init_packet(&pkt);
-
-        //Set output
-        pkt.data = out;
-        pkt.size = outLen;
-
+	//Set output
+	frame->nb_samples = len;
+	
 	//Send frame for encoding
-	if (avcodec_send_frame(ctx, frame) != 0)
-		//Exit
-		return Error("-AACEncoder::Encode() could not encode audio frame\n");
+	ret = avcodec_send_frame(ctx, frame);
+	if (ret < 0)
+	{
+		Error("-AACEncoder::Encode() could not encode audio frame\n");
+		return nullptr;
+	}
 
-	//Receive encoded packet
-	if (avcodec_receive_packet(ctx, &pkt) != 0)
-                //Exit
-                return Error("-AACEncoder::Encode() could not get output packet\n");
-
-        //Return encoded size
-        return pkt.size;
+	ret = avcodec_receive_packet(ctx, &pkt);
+	// If the encoder asks for more data to be able to provide an
+	// encoded frame, or the last frame has been encoded
+	if (ret == AVERROR(EAGAIN))
+	{
+		Warning("-AACEncoder::Encode() encoder needs more data or EOF received\n");
+		return nullptr;
+	}
+	else if(ret < 0)
+	{
+		Error("-AACEncoder::Encode() could not get output packet\n");
+		return nullptr;
+	}
+	else	
+		audioFrame.AppendMedia(pkt.data, pkt.size);
+	return &audioFrame;
 } 

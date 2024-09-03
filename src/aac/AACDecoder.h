@@ -6,7 +6,7 @@ extern "C" {
 #include <libavutil/opt.h>
 }
 #include "config.h"
-#include "fifo.h"
+#include <AudioBuffer.h>
 #include "audio.h"
 #include "aacconfig.h"
 
@@ -15,7 +15,8 @@ class AACDecoder : public AudioDecoder
 public:
 	AACDecoder();
 	virtual ~AACDecoder();
-	virtual int Decode(const std::shared_ptr<const AudioFrame>& frame, SWORD* out, int outLen);
+	virtual int Decode(const AudioFrame::const_shared& frame);
+	virtual AudioBuffer::shared GetDecodedAudioFrame();
 	virtual DWORD TrySetRate(DWORD rate)	{ return ctx->sample_rate;		}
 	virtual DWORD GetRate()			{ return ctx->sample_rate;		}
 	virtual DWORD GetNumChannels()		{ return std::min(ctx->channels,2);	}
@@ -26,7 +27,6 @@ private:
 	AVCodecContext*	ctx	= nullptr;
 	AVPacket*	packet	= nullptr;
 	AVFrame*	frame	= nullptr;
-
 };
 
 #endif /* AACDECODER_H */

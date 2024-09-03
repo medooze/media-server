@@ -129,8 +129,9 @@ add_library(MediaServerLib
     ${CMAKE_CURRENT_LIST_DIR}/src/VideoLayerSelector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/VideoCodecFactory.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/VideoDecoderWorker.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/audiodecoder.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/audiotransrater.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/AudioDecoderWorker.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/AudioEncoderWorker.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/AudioTransrater.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/AudioPipe.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/AudioCodecFactory.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/Deinterlacer.cpp
@@ -195,6 +196,8 @@ add_executable(MediaServerUnitTest
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAV1.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAV1Bitstream.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAAC.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestOpus.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAudioPipe.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAMFNumber.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestVideoLayersAllocation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestTools.cpp

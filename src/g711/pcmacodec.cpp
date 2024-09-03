@@ -4,7 +4,7 @@
 
 #define NUMFRAMES 160
 
-PCMAEncoder::PCMAEncoder(const Properties &properties)
+PCMAEncoder::PCMAEncoder(const Properties &properties) : audioFrame(AudioCodec::PCMA)
 {
 	type=AudioCodec::PCMA;
 	numFrameSamples=NUMFRAMES;
@@ -25,31 +25,44 @@ PCMADecoder::~PCMADecoder()
 
 }
 
-int PCMAEncoder::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
+AudioFrame* PCMAEncoder::Encode(const AudioBuffer::const_shared& audioBuffer)
 {
-	//Comprobamos las longitudes
-	if (outLen<inLen)
-		return 0;
-
-	//Y codificamos
+	const SWORD *in = audioBuffer->GetData();
+	int inLen = audioBuffer->GetNumSamples() * audioBuffer->GetNumChannels();
+	if(!in || inLen<=0) return nullptr;
 	for (int j = 0; j< inLen ;j++)
-		out[j]=linear2alaw(in[j]);
-
-	return inLen;
+	{
+		uint8_t alaw = linear2alaw(in[j]);
+		audioFrame.AppendMedia(&alaw, 1); 
+	}
+	audioFrame.SetLength(inLen);
+	return &audioFrame;
 }
 
-int PCMADecoder::Decode(const AudioFrame::const_shared& audioFrame, SWORD* out,int outLen)
+
+int PCMADecoder::Decode(const AudioFrame::const_shared& audioFrame)
 {
 	//Comprobamos las longitudes
 	// inLen: compressed data length in bytes/samples one byte per sample for g711a, outLen: pcm data size in samples
 	int inLen = audioFrame->GetLength();
-	const uint8_t* in = audioFrame->GetData();
-	if (outLen<inLen || !in)
+	uint8_t* in = const_cast<uint8_t*>(audioFrame->GetData());
+	if (!in || inLen <= 0)
 		return 0;
+	audioFrameInfo.first = in;
+	audioFrameInfo.second = inLen;
+	return 1;	
+}
 
-	//Decodificamos
-	for (int j = 0; j< inLen ;j++)
-		out[j]=alaw2linear(in[j]);
+AudioBuffer::shared PCMADecoder::GetDecodedAudioFrame()
+{
+	uint8_t* in = audioFrameInfo.first;
+	int inLen = audioFrameInfo.second;
 
-	return inLen;	
+	auto audioBuffer = std::make_shared<AudioBuffer>(inLen, 1);
+	for (int j = 0; j< inLen;j++)
+	{
+		audioBuffer->AddPCM(alaw2linear(*in), j);
+		in++;
+	}
+	return audioBuffer;
 }

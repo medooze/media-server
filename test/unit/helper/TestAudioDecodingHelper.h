@@ -1,3 +1,5 @@
+#ifndef TESTAUDIODECODING_H
+#define	TESTAUDIODECODING_H
 extern "C"
 {
 #include <libavcodec/avcodec.h>
@@ -9,8 +11,9 @@ extern "C"
 #include "log.h"
 #include <cmath>
 #include <string>
-#include <fftw3.h>
 #include <queue>
+#include "TestAudioCommon.h"
+
 
 struct AudioEncodingParams
 {
@@ -22,42 +25,10 @@ struct AudioEncodingParams
     AVCodecID codecId;
 };
 
-std::pair<double,double> findPeakFrequency(double* data, int sampleRate, int numSamples)
-{
-    fftw_complex* in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*numSamples);
-    fftw_complex* out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*numSamples);
-    fftw_plan plan = fftw_plan_dft_1d(numSamples, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
-    for(int i=0;i<numSamples;i++)
-    {
-        in[i][0] = data[i];
-        in[i][1] = 0.0;
-    }
-
-    fftw_execute(plan);
-    int peakIdx = 0;
-    double peakMagnitude = 0.0;
-    for(int i=0;i<numSamples/2;i++)
-    {
-        double magnitude = sqrt(out[i][0]*out[i][0] + out[i][1]*out[i][1]);
-        if (magnitude > peakMagnitude)
-        {
-            peakMagnitude = magnitude;
-            peakIdx = i;
-        }
-    }
-    double peakFreq = peakIdx * sampleRate / numSamples;
-
-    fftw_destroy_plan(plan);
-    fftw_free(in);
-    fftw_free(out);
-    return {peakFreq, peakMagnitude/numSamples*2.0};
-}
-
-
-class AudioAVPacketGenerator
+class AudioPacketGenerator
 {
 public:
-    AudioAVPacketGenerator(AudioEncodingParams params, size_t numSamples, float frequency, int sampleRate) : 
+    AudioPacketGenerator(AudioEncodingParams params, size_t numSamples, float frequency, int sampleRate) : 
         frequency(frequency),
         bitrate(params.bitrate),
         numChannels(params.numChannels),
@@ -76,14 +47,14 @@ public:
         }
     }
 
-    ~AudioAVPacketGenerator()
+    ~AudioPacketGenerator()
     {
         if(frame)  av_frame_free(&frame);
         if(pkt) av_packet_free(&pkt);
         if(codecCtx) avcodec_free_context(&codecCtx);
     }
 
-    const std::queue<AVPacket *> &GenerateAVPackets(double amplitude)
+    const std::queue<AVPacket*>& GenerateAVPackets(double amplitude)
     {
         generateSineTone(amplitude, (float*)srcData[0]);
         int bufferIdx = 0;
@@ -117,7 +88,6 @@ public:
             encode(frame, pkt);
             bufferIdx += numSamplesInTargetFmt;
             srcData[0] += numChannels * numSamplesInTargetFmt * av_get_bytes_per_sample(AV_SAMPLE_FMT_FLT);
-
         }
         // flush encoder
         encode(nullptr, pkt);
@@ -149,14 +119,16 @@ private:
     // srcData stores generated sine tone in flt format
     uint8_t** srcData;
 
-    const AVCodec *codec = nullptr;
+    uint8_t* samples;
+
+    AVCodec *codec = nullptr;
     AVCodecContext *codecCtx = nullptr;
     AVFrame *frame = nullptr;
     AVPacket *pkt = nullptr;
     SwrContext* swrCtx = nullptr;
     std::unordered_set<std::string> supportedFmts;
     // store generated encoded packets
-    std::queue<AVPacket *> avPackets;
+    std::queue<AVPacket*> avPackets;
     
     int prepareEncoderContext()
     {
@@ -200,16 +172,11 @@ private:
         frame->channels = codecCtx->channels;
         frame->channel_layout = codecCtx->channel_layout;
 
-        ret = av_frame_get_buffer(frame, 0);
-        if (ret < 0)
-            return Error("Could not allocate the video frame data\n");
-
-
         swrCtx = swr_alloc();
         if (!swrCtx) 
             Error("could not allocate swr context\n");
 
-        // generated sine tone is interleaved float, so pick AV_SAMPLE_FMT_FLT as input sample format
+        // generated sine tone in interleaved flt format, so use AV_SAMPLE_FMT_FLT
         swrCtx = swr_alloc_set_opts(nullptr, 
                                     codecCtx->channel_layout, codecCtx->sample_fmt, codecCtx->sample_rate,
                                     codecCtx->channel_layout, AV_SAMPLE_FMT_FLT, sampleRate,
@@ -221,7 +188,7 @@ private:
         int dstLineSize;
         if( av_samples_alloc_array_and_samples(&audioDataInTargetFmt, &dstLineSize, codecCtx->channels, codecCtx->frame_size, codecCtx->sample_fmt, 0) < 0 )
             return Error("allocate samples buffer failed\n");
-        
+      
         int srcLineSize;
         if( av_samples_alloc_array_and_samples(&srcData, &srcLineSize, codecCtx->channels, totalSamplesPerChannel, AV_SAMPLE_FMT_FLT, 0) < 0 )
             return Error("allocate samples buffer failed\n");
@@ -235,9 +202,7 @@ private:
         {
             float sample = amplitude*sin( 2.0 * M_PI * frequency * i / sampleRate);
             for(int ch=0;ch<numChannels;++ch)
-            {
                 audData[i*numChannels+ch] = sample;
-            }
         }
     }
 
@@ -278,3 +243,5 @@ private:
         return 1;
     }
 };
+
+#endif	/* TESTAUDIODECODING_H */
