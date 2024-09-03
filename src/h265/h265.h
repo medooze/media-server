@@ -2,6 +2,7 @@
 #define	H265_H
 
 #include <array>
+#include <string>
 
 #include "config.h"
 #include "math.h"
@@ -36,8 +37,8 @@ enum HEVC_RTP_NALU_Type	{
 	IDR_W_RADL	= 19,
 	IDR_N_LP	= 20,
 	CRA_NUT		= 21,
-	RSV_IRAP_VCL22 = 22,
-	RSV_IRAP_VCL23 = 23,
+	RSV_IRAP_VCL22	= 22,
+	RSV_IRAP_VCL23	= 23,
 	RSV_VCL24	= 24,
 	RSV_VCL25	= 25,
 	RSV_VCL26	= 26,
@@ -46,13 +47,13 @@ enum HEVC_RTP_NALU_Type	{
 	RSV_VCL29	= 29,
 	RSV_VCL30	= 30,
 	RSV_VCL31	= 31,
-	VPS			= 32,
-	SPS			= 33,
-	PPS			= 34,
-	AUD			= 35,
-	EOS			= 36,
-	EOB			= 37,
-	FD			= 38,
+	VPS		= 32,
+	SPS		= 33,
+	PPS		= 34,
+	AUD		= 35,
+	EOS		= 36,
+	EOB		= 37,
+	FD		= 38,
 	SEI_PREFIX	= 39,
 	SEI_SUFFIX	= 40,
 	RSV_NVCL41	= 41,
@@ -64,7 +65,7 @@ enum HEVC_RTP_NALU_Type	{
 	RSV_NVCL47	= 47,
 	UNSPEC48_AP	= 48,
 	UNSPEC49_FU	= 49,
-	UNSPEC50_PACI= 50,
+	UNSPEC50_PACI	= 50,
 	UNSPEC51	= 51,
 	UNSPEC52	= 52,
 	UNSPEC53	= 53,
@@ -145,14 +146,14 @@ struct HEVCParams{
 	static const BYTE ANNEX_B_START_CODE = 0x01;
 
 	// HEVC PROFILE
-	static const BYTE PROFILE_MAIN						= 1;
-	static const BYTE PROFILE_MAIN_10					= 2;
-	static const BYTE PROFILE_MAIN_STILL_PICTURE		= 3;
-	static const BYTE PROFILE_REXT						= 4;
-	static const BYTE PROFILE_SCC						= 9;
+	static const BYTE PROFILE_MAIN			= 1;
+	static const BYTE PROFILE_MAIN_10		= 2;
+	static const BYTE PROFILE_MAIN_STILL_PICTURE	= 3;
+	static const BYTE PROFILE_REXT			= 4;
+	static const BYTE PROFILE_SCC			= 9;
 
 	// RFC 7998
-	static const BYTE RTP_NAL_HEADER_SIZE				= 2;
+	static const BYTE RTP_NAL_HEADER_SIZE		= 2;
 	/* 
 	* +-------------+-----------------+
 	* |0|1|2|3|4|5|6|7|0|1|2|3|4|5|6|7|
@@ -163,7 +164,7 @@ struct HEVCParams{
 	* F must be 0.
 	*/
 
-	static const BYTE RTP_NAL_FU_HEADER_SIZE			= 1;
+	static const BYTE RTP_NAL_FU_HEADER_SIZE	= 1;
 	/*
 	* FU header:
 	* +---------------+
@@ -184,16 +185,16 @@ const std::array<BYTE, 4> hevc_sub_height_c{
 };
 
 struct HEVCWindow {
-	DWORD left_offset =	0;
-	DWORD right_offset = 0;
-	DWORD top_offset = 0;
+	DWORD left_offset	= 0;
+	DWORD right_offset	= 0;
+	DWORD top_offset	= 0;
 	DWORD bottom_offset	= 0;
 
 	void Dump(const std::string name) const
 	{
-		Debug("\t%s.left_offset = %d\n", name.c_str(), left_offset);
-		Debug("\t%s.right_offset = %d\n", name.c_str(), right_offset);
-		Debug("\t%s.top_offset = %d\n", name.c_str(), top_offset);
+		Debug("\t%s.left_offset   = %d\n", name.c_str(), left_offset);
+		Debug("\t%s.right_offset  = %d\n", name.c_str(), right_offset);
+		Debug("\t%s.top_offset    = %d\n", name.c_str(), top_offset);
 		Debug("\t%s.bottom_offset = %d\n", name.c_str(), bottom_offset);
 	}
 };
@@ -228,26 +229,26 @@ public:
 
 	void Dump(const std::string& name) const
 	{
-		Debug("\t %s.profile_space = %d\n", name.c_str(), profile_space);
-		Debug("\t %s.tier_flag = %d\n", name.c_str(), tier_flag);
-		Debug("\t %s.profile_idc = %d\n", name.c_str(), profile_idc);
-		Debug("\t %s.progressive_source_flag = %d\n", name.c_str(), progressive_source_flag);
-		Debug("\t %s.interlaced_source_flag		= %d\n", name.c_str(), interlaced_source_flag);
-		Debug("\t %s.non_packed_constraint_flag	= %d\n", name.c_str(), non_packed_constraint_flag);
-		Debug("\t %s.frame_only_constraint_flag	= %d\n", name.c_str(), frame_only_constraint_flag);
-		Debug("\t %s.max_12bit_constraint_flag		= %d\n", name.c_str(), max_12bit_constraint_flag		);
-		Debug("\t %s.max_10bit_constraint_flag		= %d\n", name.c_str(), max_10bit_constraint_flag		);
-		Debug("\t %s.max_8bit_constraint_flag		= %d\n", name.c_str(), max_8bit_constraint_flag		);
-		Debug("\t %s.max_422chroma_constraint_flag	= %d\n", name.c_str(), max_422chroma_constraint_flag	);
-		Debug("\t %s.max_420chroma_constraint_flag	= %d\n", name.c_str(), max_420chroma_constraint_flag	);
-		Debug("\t %s.max_monochrome_constraint_flag	= %d\n", name.c_str(), max_monochrome_constraint_flag	);
-		Debug("\t %s.intra_constraint_flag			= %d\n", name.c_str(), intra_constraint_flag			);
-		Debug("\t %s.one_picture_only_constraint_flag	= %d\n", name.c_str(), one_picture_only_constraint_flag	);
-		Debug("\t %s.lower_bit_rate_constraint_flag		= %d\n", name.c_str(), lower_bit_rate_constraint_flag		);
-		Debug("\t %s.max_14bit_constraint_flag			= %d\n", name.c_str(), max_14bit_constraint_flag			);
-		Debug("\t %s.inbld_flag							= %d\n", name.c_str(), inbld_flag							);
-		Debug("\t %s.constraint_indicator_flags			= 0x%lu\n", name.c_str(), constraing_indicator_flags);
-		Debug("\t %s.level_idc							= %d\n", name.c_str(), level_idc);
+		Debug("\t %s.profile_space                        = %d\n", name.c_str(), profile_space);
+		Debug("\t %s.tier_flag                            = %d\n", name.c_str(), tier_flag);
+		Debug("\t %s.profile_idc                          = %d\n", name.c_str(), profile_idc);
+		Debug("\t %s.progressive_source_flag              = %d\n", name.c_str(), progressive_source_flag);
+		Debug("\t %s.interlaced_source_flag               = %d\n", name.c_str(), interlaced_source_flag);
+		Debug("\t %s.non_packed_constraint_flag           = %d\n", name.c_str(), non_packed_constraint_flag);
+		Debug("\t %s.frame_only_constraint_flag           = %d\n", name.c_str(), frame_only_constraint_flag);
+		Debug("\t %s.max_12bit_constraint_flag            = %d\n", name.c_str(), max_12bit_constraint_flag);
+		Debug("\t %s.max_10bit_constraint_flag            = %d\n", name.c_str(), max_10bit_constraint_flag);
+		Debug("\t %s.max_8bit_constraint_flag             = %d\n", name.c_str(), max_8bit_constraint_flag);
+		Debug("\t %s.max_422chroma_constraint_flag        = %d\n", name.c_str(), max_422chroma_constraint_flag);
+		Debug("\t %s.max_420chroma_constraint_flag        = %d\n", name.c_str(), max_420chroma_constraint_flag);
+		Debug("\t %s.max_monochrome_constraint_flag       = %d\n", name.c_str(), max_monochrome_constraint_flag);
+		Debug("\t %s.intra_constraint_flag                = %d\n", name.c_str(), intra_constraint_flag);
+		Debug("\t %s.one_picture_only_constraint_flag     = %d\n", name.c_str(), one_picture_only_constraint_flag);
+		Debug("\t %s.lower_bit_rate_constraint_flag       = %d\n", name.c_str(), lower_bit_rate_constraint_flag);
+		Debug("\t %s.max_14bit_constraint_flag            = %d\n", name.c_str(), max_14bit_constraint_flag);
+		Debug("\t %s.inbld_flag                           = %d\n", name.c_str(), inbld_flag);
+		Debug("\t %s.constraint_indicator_flags           = 0x%lu\n", name.c_str(), constraing_indicator_flags);
+		Debug("\t %s.level_idc                            = %d\n", name.c_str(), level_idc);
 	}
 
 private:
@@ -256,23 +257,23 @@ private:
 	bool tier_flag = 0;
 	BYTE profile_idc = HEVCParams::PROFILE_MAIN; // 1
 	H265ProfileCompatibilityFlags profile_compatibility_flag; // [PROFILE_MAIN/1]: true, others are false
-	QWORD constraing_indicator_flags = 0; // 6B, 48 bits
-	bool progressive_source_flag	= true	;
-	bool interlaced_source_flag		= false ;
-	bool non_packed_constraint_flag	= true	;
-	bool frame_only_constraint_flag	= true	;
+	QWORD constraing_indicator_flags	= 0; // 6B, 48 bits
+	bool progressive_source_flag		= true;
+	bool interlaced_source_flag		= false;
+	bool non_packed_constraint_flag		= true;
+	bool frame_only_constraint_flag		= true;
 
-	bool max_12bit_constraint_flag		;
-	bool max_10bit_constraint_flag		;
-	bool max_8bit_constraint_flag		;
-	bool max_422chroma_constraint_flag	;
-	bool max_420chroma_constraint_flag	; 
-	bool max_monochrome_constraint_flag	;
-	bool intra_constraint_flag			;
-	bool one_picture_only_constraint_flag	;
-	bool lower_bit_rate_constraint_flag		;
-	bool max_14bit_constraint_flag			;
-	bool inbld_flag							;
+	bool max_12bit_constraint_flag		= false;
+	bool max_10bit_constraint_flag		= false;
+	bool max_8bit_constraint_flag		= false;
+	bool max_422chroma_constraint_flag	= false;
+	bool max_420chroma_constraint_flag	= false; 
+	bool max_monochrome_constraint_flag	= false;
+	bool intra_constraint_flag		= false;
+	bool one_picture_only_constraint_flag	= false;
+	bool lower_bit_rate_constraint_flag	= false;
+	bool max_14bit_constraint_flag		= false;
+	bool inbld_flag				= false;
 	/* 30 times	Leverl in Table	A.8	– General tier and level limits	*/
 	BYTE level_idc = 93	; // level 3.1
 };
@@ -307,7 +308,7 @@ public:
 		for (size_t i = 0; i < sub_layer_profile_tier_level.size(); ++i)
 		{
 			const std::string sub_layer_ptl_log = "sub_layer_profile_tier_level[" + std::to_string(i) + "]";
-			//sub_layer_profile_tier_level[i].Dump(sub_layer_ptl_log);
+			sub_layer_profile_tier_level[i].Dump(sub_layer_ptl_log);
 		}
 	}
 
@@ -326,10 +327,10 @@ public:
 	void Dump()	const
 	{
 		Debug("[H265VideoParameterSet\n");
-		Debug("\tvps_id = %d\n", vps_id);
-		Debug("\tvps_max_layers_minus1 = %d\n", vps_max_layers_minus1);
-		Debug("\tvps_max_sub_layers_minus1 = %d\n", vps_max_sub_layers_minus1);
-		Debug("\tvps_temporal_id = %d\n", vps_temporal_id_nesting_flag);
+		Debug("\tvps_id                     = %d\n", vps_id);
+		Debug("\tvps_max_layers_minus1      = %d\n", vps_max_layers_minus1);
+		Debug("\tvps_max_sub_layers_minus1  = %d\n", vps_max_sub_layers_minus1);
+		Debug("\tvps_temporal_id            = %d\n", vps_temporal_id_nesting_flag);
 		profile_tier_level.Dump();
 		Debug("H265VideoParameterSet/]\n");
 	}
@@ -337,10 +338,10 @@ public:
 	const H265ProfileTierLevel& GetProfileTierLevel() const {return profile_tier_level;}
 
 private:
-	BYTE vps_id  = 0;
+	BYTE vps_id				= 0;
 	BYTE vps_max_layers_minus1		= 0;
-	BYTE vps_max_sub_layers_minus1	= 0;
-	bool vps_temporal_id_nesting_flag  = false;
+	BYTE vps_max_sub_layers_minus1		= 0;
+	bool vps_temporal_id_nesting_flag	= false;
 	H265ProfileTierLevel profile_tier_level;
 };
 
@@ -357,43 +358,43 @@ public:
 	void Dump()	const
 	{
 		Debug("[H265SeqParameterSet\n");
-		Debug("\tvps_id=%.2x\n", vps_id);
-		Debug("\tmax_sub_layers_minus1 = %d\n", max_sub_layers_minus1);
+		Debug("\tvps_id                       = %.2x\n", vps_id);
+		Debug("\tmax_sub_layers_minus1        = %d\n", max_sub_layers_minus1);
 		Debug("\text_or_max_sub_layers_minus1 = %d\n", ext_or_max_sub_layers_minus1);
-		Debug("\ttemporal_id_nesting_flag = %d\n", temporal_id_nesting_flag);
+		Debug("\ttemporal_id_nesting_flag     = %d\n", temporal_id_nesting_flag);
 		profile_tier_level.Dump();
-		Debug("\tpic_width_in_luma_samples = %d\n", pic_width_in_luma_samples);
-		Debug("\tpic_height_in_luma_samples = %d\n", pic_height_in_luma_samples);
-		Debug("\tconformance_window_flag = %d\n", conformance_window_flag );
+		Debug("\tpic_width_in_luma_samples    = %d\n", pic_width_in_luma_samples);
+		Debug("\tpic_height_in_luma_samples   = %d\n", pic_height_in_luma_samples);
+		Debug("\tconformance_window_flag      = %d\n", conformance_window_flag );
 		pic_conf_win.Dump("pic_conf_win");
-		Debug("\tseq_parameter_set_id = %d\n", seq_parameter_set_id);
-		Debug("\tchroma_format_idc = %d\n", chroma_format_idc);
-		Debug("\tseparate_colour_plane_flag = %d\n", separate_colour_plane_flag);
+		Debug("\tseq_parameter_set_id         = %d\n", seq_parameter_set_id);
+		Debug("\tchroma_format_idc            = %d\n", chroma_format_idc);
+		Debug("\tseparate_colour_plane_flag   = %d\n", separate_colour_plane_flag);
 		Debug("H265SeqParameterSet/]\n");
 	}
 private:
-	BYTE			vps_id = 0;
-	BYTE			max_sub_layers_minus1 =	0;
-	BYTE			ext_or_max_sub_layers_minus1 = 0;
-	BYTE			temporal_id_nesting_flag = 0;
+	BYTE			vps_id				= 0;
+	BYTE			max_sub_layers_minus1		= 0;
+	BYTE			ext_or_max_sub_layers_minus1	= 0;
+	BYTE			temporal_id_nesting_flag	= 0;
 	H265ProfileTierLevel 	profile_tier_level;
-	DWORD			pic_width_in_luma_samples =	0;
-	DWORD			pic_height_in_luma_samples = 0;
-	bool			conformance_window_flag	= false;
+	DWORD			pic_width_in_luma_samples	= 0;
+	DWORD			pic_height_in_luma_samples	= 0;
+	bool			conformance_window_flag		= false;
 	HEVCWindow		pic_conf_win;
 
-	BYTE			seq_parameter_set_id = 0;
-	BYTE			chroma_format_idc =	0;
-	bool			separate_colour_plane_flag = false;
+	BYTE			seq_parameter_set_id		= 0;
+	BYTE			chroma_format_idc		= 0;
+	bool			separate_colour_plane_flag	= false;
 	
-	uint32_t 		bit_depth_luma_minus8 = 0;
-	uint32_t 		bit_depth_chroma_minus8 = 0;
-	uint32_t 		log2_max_pic_order_cnt_lsb_minus4 = 0;
-	uint8_t 		sps_sub_layer_ordering_info_present_flag = 0;
-	uint32_t 		log2_min_luma_coding_block_size_minus3 = 0;
-	uint32_t 		log2_diff_max_min_luma_coding_block_size = 0;
-	uint32_t 		log2_min_luma_transform_block_size_minus2 = 0;
-	uint32_t 		log2_diff_max_min_luma_transform_block_size = 0;	
+	uint32_t 		bit_depth_luma_minus8				= 0;
+	uint32_t 		bit_depth_chroma_minus8				= 0;
+	uint32_t 		log2_max_pic_order_cnt_lsb_minus4		= 0;
+	uint8_t 		sps_sub_layer_ordering_info_present_flag	= 0;
+	uint32_t 		log2_min_luma_coding_block_size_minus3		= 0;
+	uint32_t 		log2_diff_max_min_luma_coding_block_size	= 0;
+	uint32_t 		log2_min_luma_transform_block_size_minus2	= 0;
+	uint32_t 		log2_diff_max_min_luma_transform_block_size	= 0;	
 
 	// Calculated value basing one raw fields
 	uint8_t 		log2PicSizeInCtbsY = 0;
@@ -490,12 +491,12 @@ public:
 	uint32_t GetSliceType() const { return sliceType; }
 	
 private:
-	uint8_t firstSliceSegmentInPicFlag = 0;
-	uint8_t noOutputOfPriorPicsFlag = 0;
-	uint32_t slicePpsId = 0;
-	uint8_t dependentSliceSegmentFlag = 0;
-	uint32_t sliceSegmentAddress = 0;
-	uint32_t sliceType = 0;
+	uint8_t  firstSliceSegmentInPicFlag	= 0;
+	uint8_t  noOutputOfPriorPicsFlag	= 0;
+	uint32_t slicePpsId			= 0;
+	uint8_t	 dependentSliceSegmentFlag	= 0;
+	uint32_t sliceSegmentAddress		= 0;
+	uint32_t sliceType			= 0;
 };
 
 #undef CHECK

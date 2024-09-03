@@ -95,7 +95,7 @@ bool DecodeNalHeader(const BYTE* payload, DWORD payloadLen, BYTE& nalUnitType, B
 		return false;
 
 	/* 
-	*   +-------------+-----------------+
+	*   +---------------+---------------+
 	*   |0|1|2|3|4|5|6|7|0|1|2|3|4|5|6|7|
 	*   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 	*   |F|   Type    |  LayerId  | TID |
