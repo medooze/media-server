@@ -63,6 +63,7 @@ public:
 	}
 	
 public:	
+	std::string rid;
 	std::string mid;
 	MediaFrame::Type type;
 	RTPOutgoingSource media;
