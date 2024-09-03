@@ -81,7 +81,7 @@ public:
 private:
 	std::list<std::pair<T, bool>> messages;
 	
-	std::mutex mutex;
+	mutable std::mutex mutex;
 	
 	std::unique_ptr<Buffer> buffer;
 	size_t pos = 0;
