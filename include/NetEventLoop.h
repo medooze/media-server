@@ -20,7 +20,7 @@ public:
 	};
 
 	NetEventLoop(Listener* listener = nullptr, uint32_t packetPoolSize = 0);
-	virtual ~NetEventLoop();
+	virtual ~NetEventLoop() = default;
 	
 	void Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet, const std::optional<PacketHeader::FlowRoutingInfo>& rawTxData = std::nullopt, const std::optional<std::function<void(std::chrono::milliseconds)>>& callback = std::nullopt);
 	
