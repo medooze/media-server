@@ -107,8 +107,6 @@ void HEVCDescriptor::AddSequenceParameterSet(Buffer&& buffer)
 	spsTotalSizes += buffer.GetSize();
 	//Add data
 	spsData.push_back(std::move(buffer));
-	//Inc size
-	
 }
 
 void HEVCDescriptor::AddSequenceParameterSet(const BYTE* data, DWORD size)
