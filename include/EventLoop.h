@@ -56,10 +56,8 @@ public:
 	virtual ~EventLoop();
 	
 	bool Start(std::function<void(void)> loop);
-	bool Start(int fd);
-	
-	virtual bool Start() { return Start(FD_INVALID); };
-	virtual bool Stop();
+	bool Start(int fd = FD_INVALID);
+	bool Stop();
 	
 	virtual const std::chrono::milliseconds GetNow() const override { return now; }
 	virtual Timer::shared CreateTimer(const std::function<void(std::chrono::milliseconds)>& callback) override;
