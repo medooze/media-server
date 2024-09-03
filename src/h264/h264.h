@@ -106,6 +106,7 @@ public:
 		}
 		catch (std::exception &e) 
 		{
+			Warning("-H264SeqParameterSet::Decoder() Exception\n");
 			//Error
 			return false;
 		}
@@ -250,6 +251,7 @@ public:
 		}
 		catch (std::exception& e)
 		{
+			Warning("-H264PictureParameterSet::Decoder() Exception\n");
 			//Error
 			return false;
 		}
@@ -339,6 +341,7 @@ public:
 		}
 		catch (std::exception& e)
 		{
+			Warning("-H264SliceHeader::Decoder() Exception\n");
 			//Error
 			return false;
 		}

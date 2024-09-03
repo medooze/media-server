@@ -6,6 +6,9 @@
 #include <optional>
 #include <functional>
 
+#include "config.h"
+#include "log.h"
+#include "tools.h"
 #include "Buffer.h"
 #include "BufferReader.h"
 
@@ -81,8 +84,6 @@ inline void NalSliceAnnexB(BufferReader& reader, std::function<void(BufferReader
 			startCodeLength = 4;
 		else if (reader.GetLeft()>3 && reader.Peek3() == 0x01)
 			startCodeLength = 3;
-		else 
-			break;
 
 		//If we found a nal unit and not first
 		if (startCodeLength)
@@ -95,8 +96,16 @@ inline void NalSliceAnnexB(BufferReader& reader, std::function<void(BufferReader
 			{
 				//Get nalu reader
 				BufferReader nalu = reader.GetReader(start, end - start);
-				//Process current NALU
-				onNalu(nalu);
+
+				try 
+				{
+					//Process current NALU
+					onNalu(nalu);
+				}
+				catch (const std::exception& e)
+				{
+					Warning("-NalSliceAnnexB() exception on onNalu()\n");
+				}
 			}
 			//Skip start code
 			reader.Skip(startCodeLength);
@@ -116,8 +125,15 @@ inline void NalSliceAnnexB(BufferReader& reader, std::function<void(BufferReader
 	{
 		//Get nalu reader
 		BufferReader nalu = reader.GetReader(start, end - start);
-		//Process current NALU
-		onNalu(nalu);
+		try
+		{
+			//Process current NALU
+			onNalu(nalu);
+		}
+		catch (const std::exception& e)
+		{
+			Warning("-NalSliceAnnexB() exception on onNalu()\n");
+		}
 	}
 }
 
