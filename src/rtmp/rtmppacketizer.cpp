@@ -141,7 +141,7 @@ std::unique_ptr<VideoFrame> RTMPVideoPacketizerImpl<DescClass, codec>::PrepareFr
 	frame->SetClockRate(1000);
 	//Set timestamp
 	frame->SetTimestamp(videoFrame->GetTimestamp());
-	frame->SetPresentationTimestamp(videoFrame->GetTimestamp() + videoFrame->GetAVCTS());
+	frame->SetPresentationTimestamp(videoFrame->GetTimestamp() + videoFrame->GetCompositionTimeOffset());
 
 
 	//Set Sender time
