@@ -955,7 +955,7 @@ void RTMPVideoFrame::Dump()
 		
 		if (codecEx==VideoCodecEx::HEVC && packetType == CodedFrames)
 		{
-			Debug("\t[HEVC composition time: %d/]\n", GetSI24(extraData));
+			Debug("\t[HEVC composition time: %d/]\n", GetSI24(&extraData[1]));
 		}
 			
 		if (codecEx==VideoCodecEx::HEVC && IsConfig())
@@ -1101,7 +1101,8 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 					}
 					else if (packetType == CodedFrames)
 					{
-						bufferWritter = std::make_unique<BufferWritter>(extraData, 3);
+						extraData[0] = 0; // First byte not used for hevc
+						bufferWritter = std::make_unique<BufferWritter>(&extraData[1], 3);
 					
 						parsingState = ParsingState::VideoTagHevcCompositionTime;
 					}
@@ -1217,7 +1218,7 @@ DWORD RTMPVideoFrame::Serialize(BYTE* data,DWORD size)
 		
 		if (codecEx == VideoCodecEx::HEVC && packetType == PacketType::CodedFrames)
 		{
-			memcpy(data, extraData, 3);
+			memcpy(data, &extraData[1], 3);
 			data += 3;
 		}
 		
