@@ -239,7 +239,7 @@ public:
 	VideoCodecEx	GetVideoCodecEx() const			{ return codecEx; }
 	PacketType      GetPacketType() const			{ return packetType; }
 	
-	int32_t		GetCompositionTime() const;
+	int32_t		GetCompositionTimeOffset() const;
 	
 	bool IsConfig() const
 	{

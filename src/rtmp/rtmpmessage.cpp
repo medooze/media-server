@@ -978,7 +978,7 @@ void RTMPVideoFrame::Dump()
 	}
 }
 
-int32_t RTMPVideoFrame::GetCompositionTime() const
+int32_t RTMPVideoFrame::GetCompositionTimeOffset() const
 {
 	if (isExtended)
 	{
