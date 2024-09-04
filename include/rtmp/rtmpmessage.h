@@ -226,8 +226,9 @@ public:
 	void		SetFrameType(FrameType frameType)	{ this->frameType = frameType;	}
 	VideoCodec	GetVideoCodec()	const			{ return codec;		}
 	FrameType	GetFrameType() const			{ return frameType;	}
+	
+	// @todo Remove codec specifc functions and add unified version
 	BYTE		GetAVCType() const			{ return extraData[0];	}
-	DWORD		GetAVCTS() const			{ return ((DWORD)extraData[1]) << 16 | ((DWORD)extraData[2]) << 8 | extraData[3]; }
 	
 	DWORD		SetVideoFrame(BYTE* data,DWORD size);
 	void		SetAVCType(BYTE type)			{ extraData[0] = type;		}
@@ -238,6 +239,7 @@ public:
 	VideoCodecEx	GetVideoCodecEx() const			{ return codecEx; }
 	PacketType      GetPacketType() const			{ return packetType; }
 	
+	int32_t		GetCTS() const;
 	
 	bool IsConfig() const
 	{
