@@ -978,6 +978,21 @@ void RTMPVideoFrame::Dump()
 	}
 }
 
+int32_t RTMPVideoFrame::GetCompositionTimeOffset() const
+{
+	if (isExtended)
+	{
+		if (GetVideoCodecEx() == VideoCodecEx::HEVC)
+			return  GetSI24(extraData);
+			
+		return 0;
+	}
+	else
+	{	
+		return GetSI24(&extraData[1]);
+	}
+}
+
 DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 {
 	BYTE* buffer = data;
