@@ -12,12 +12,12 @@
 #include <srtp2/srtp.h>
 #include "config.h"
 #include "DTLSICETransport.h"
-#include "EventLoop.h"
+#include "NetEventLoop.h"
 #include "PacketHeader.h"
 
 class RTPBundleTransport :
 	public DTLSICETransport::Sender,
-	public EventLoop::Listener
+	public NetEventLoop::Listener
 {
 public:
 	struct Connection
@@ -77,7 +77,7 @@ private:
 	int 	socket;
 	int 	port;
 	
-	EventLoop loop;
+	NetEventLoop loop;
 	Timer::shared iceTimer;
 	std::chrono::milliseconds iceTimeout = 10000ms;
 
