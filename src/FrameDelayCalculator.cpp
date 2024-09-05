@@ -174,4 +174,3 @@ void FrameDelayCalculator::Reference::Set(std::chrono::milliseconds refTime, uin
 	
 	SyncWriteUint128(&field, newRef.value);
 }
-		
