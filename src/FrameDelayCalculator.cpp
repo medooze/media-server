@@ -89,12 +89,12 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 	
 	// Asynchronously check if we can reduce latency if all frames comes early
 	timeService.Async([selfWeak = weak_from_this(), early, now, unifiedTs, refTime, refTimestamp, 
-				streamIdentifier, updateRefsPacketEarlyThresholdMs](std::chrono::milliseconds) {
+				streamIdentifier, updateRefsPacketEarlyThresholdMs, state = state](std::chrono::milliseconds) {
 		
 		auto self = selfWeak.lock();
 		if (!self) return;
 		
-		if (self->state == State::Reset)
+		if (state == State::Reset)
 		{
 			self->frameArrivalInfo.erase(streamIdentifier);
 			self->allEarlyStartTimeMs.reset();
