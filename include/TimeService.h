@@ -46,11 +46,11 @@ public:
 	template <typename T, typename Func>
 	void Async(T& obj, Func&& func)
 	{
-		Async([selfWeak = obj.weak_from_this(), func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
-			auto self = selfWeak.lock();
-			if (!self) return;
+		Async([objWeak = obj.weak_from_this(), func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
+			auto obj = objWeak.lock();
+			if (!obj) return;
 			
-			func(self, now);
+			func(obj, now);
 		});
 	}
 };
