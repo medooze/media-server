@@ -4,8 +4,8 @@
 FrameDispatchCoordinator::FrameDispatchCoordinator(int aUpdateRefsPacketLateThresholdMs, 
 					std::chrono::milliseconds aUpdateRefsStepPacketEarlyMs,
 					std::shared_ptr<TimeService> timeService) :
-	frameDelayCalculator(std::make_shared<FrameDelayCalculator>(aUpdateRefsPacketLateThresholdMs, aUpdateRefsStepPacketEarlyMs, *timeService)),
 	timeService(timeService),
+	frameDelayCalculator(std::make_shared<FrameDelayCalculator>(aUpdateRefsPacketLateThresholdMs, aUpdateRefsStepPacketEarlyMs, *timeService)),
 	maxDelayMs(std::chrono::milliseconds(5000)) // Max delay 5 seconds
 {
 	static_assert(std::atomic<std::chrono::milliseconds>::is_always_lock_free);
