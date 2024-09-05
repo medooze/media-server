@@ -28,6 +28,12 @@ public:
 	std::chrono::milliseconds OnFrame(uint64_t streamIdentifier, std::chrono::milliseconds now, uint64_t ts, uint64_t clockRate);
 
 private:
+
+	enum class State
+	{
+		Reset,
+		Running
+	};
 	
 	class Reference
 	{
@@ -81,6 +87,8 @@ private:
 	std::optional<std::chrono::milliseconds> allEarlyStartTimeMs;
 	
 	std::unordered_map<uint64_t, std::pair<std::chrono::milliseconds, uint64_t>> frameArrivalInfo;
+	
+	State state = State::Reset;
 	
 	friend class TestFrameDelayCalculator;
 };

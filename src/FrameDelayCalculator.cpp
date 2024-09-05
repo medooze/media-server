@@ -47,9 +47,11 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 	
 	auto [refTime, refTimestamp] = reference.Get();
 	
-	if (refTime.count() == 0 && refTimestamp == 0)
+	if (state == State::Reset)
 	{
 		reference.Set(now, unifiedTs);
+		
+		state = State::Running;
 		return 0ms;
 	}
 			
@@ -64,31 +66,17 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 	auto updateRefsPacketEarlyThresholdMs = -updateRefsStepPacketEarlyMs.count();
 
 	//Log("-FrameDelayCalculator::OnFrame() | [ts:%lld,late:%lld,delay:%lld,timestampDiff:%lld]\n", unifiedTs, lateMs, delayMs.count(), timestampDiff);
-	
-	bool allEarly = false;
+
 	//If we detect a clock difference between the timestamps
-	if (refTimestamp && timestampDiff > MaxClockDesync)
+	if (timestampDiff > MaxClockDesync)
 	{
 		//Reset calculator, we keep the refTimestamp so it is not set to the stream that has the jump
 		Warning("-FrameDelayCalculator::OnFrame() | Timestamp clock jump detected [diff:%llu]\n",timestampDiff);
-		allEarlyStartTimeMs.reset();
-		frameArrivalInfo.erase(streamIdentifier);
-	
-		reference.Set(0ms, refTimestamp);
-		return 0ms;
-	}
-	//If we were reseted because of a ts jump
-	else if (!refTime.count())
-	{
-		//Store valid timestamp after reset
-		refTime = now;
-		refTimestamp = unifiedTs;
-		
-		reference.Set(now, unifiedTs);
+		state = State::Reset;
 	}
 
 	bool early = false;
-	if (lateMs > updateRefsPacketLateThresholdMs)  // Packet late
+	if (state == State::Reset || lateMs > updateRefsPacketLateThresholdMs)  // Packet late
 	{
 		reference.Set(now, unifiedTs);
 		
@@ -105,6 +93,13 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 		
 		auto self = selfWeak.lock();
 		if (!self) return;
+		
+		if (self->state == State::Reset)
+		{
+			self->frameArrivalInfo.erase(streamIdentifier);
+			self->allEarlyStartTimeMs.reset();
+			return;
+		}
 		
 		self->frameArrivalInfo[streamIdentifier] = {now, unifiedTs};
 		
