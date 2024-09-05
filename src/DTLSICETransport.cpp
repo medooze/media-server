@@ -257,7 +257,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		return Warning("-DTLSICETransport::onData() | RTP packet payload type unknown [%d]\n",packet->GetPayloadType());
 	
 	//Get group
-	RTPIncomingSourceGroup *group = GetIncomingSourceGroup(ssrc);
+	RTPIncomingSourceGroup* group = GetIncomingSourceGroup(ssrc);
 
 	//If it doesn't have a group
 	if (!group)
@@ -266,7 +266,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		auto mid = packet->GetMediaStreamId();
 		auto rid = packet->HasRepairedId() ? packet->GetRepairedId() : packet->GetRId();
 
-		Debug("-DTLSICETransport::onData() | Unknowing group for ssrc trying to retrieve by [ssrc:%u,rid:'%s']\n",ssrc,rid.c_str());
+		Debug("-DTLSICETransport::onData() | Unknowing group for ssrc trying to retrieve by [ssrc:%u,mid:'%s',rid:'%s']\n",ssrc,mid.c_str(),rid.c_str());
 
 		//If it is the repaidr stream or it has rid and it is rtx
 		if (!rid.empty() && (packet->GetCodec()==VideoCodec::RTX || packet->GetCodec() == AudioCodec::RTX))
@@ -279,7 +279,9 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 				Log("-DTLSICETransport::onData() | Associating rtx stream to ssrc [ssrc:%u,mid:'%s',rid:'%s']\n",ssrc,mid.c_str(),rid.c_str());
 
 				//Got source
-				group = it->second;
+				auto& shared = it->second;
+
+				group = shared.get();
 
 				//Check if there was a previous ssrc
 				if (group->rtx.ssrc)
@@ -294,11 +296,11 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 				group->rtx.ssrc = ssrc;
 
 				//Add it to the incoming list
-				incoming[ssrc] = group;
-				//And to the srtp session
+				incoming[ssrc] = shared;
+				//And to the srtp shared
 				recv.AddStream(ssrc);
 			}
-		} else if (packet->HasRId()) {
+		} else if (packet->HasRId() && packet->HasMediaStreamId()) {
 			//Try to find it on the rids and mids
 			auto it = rids.find(mid+"@"+rid);
 			//If found
@@ -307,7 +309,9 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 				Log("-DTLSICETransport::onData() | Associating rtp stream to ssrc [ssrc:%u,mid:'%s',rid:'%s']\n",ssrc,mid.c_str(),rid.c_str());
 
 				//Got source
-				group = it->second;
+				auto& shared = it->second;
+
+				group = shared.get();
 
 				//Check if there was a previous ssrc
 				if (group->media.ssrc)
@@ -322,20 +326,44 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 				group->media.ssrc = ssrc;
 
 				//Add it to the incoming list
-				incoming[ssrc] = group;
+				incoming[ssrc] = shared;
 				//And to the srtp session
 				recv.AddStream(ssrc);
+			}
+			else 
+			{
+				Log("-DTLSICETransport::onData() | Got unsignaled rtp stream [ssrc:%u,mid:'%s',rid:'%s']\n", ssrc, mid.c_str(), rid.c_str());
+
+				//We need to create a new group
+				RTPIncomingSourceGroup::shared shared = std::make_shared<RTPIncomingSourceGroup>(packet->GetMediaType(), timeService);
+
+				//Set mid & rid
+				shared->mid = mid;
+				shared->rid = rid;
+				//Set ssrc for media
+				shared->media.ssrc = ssrc;
+				
+				//Add it
+				AddIncomingSourceGroup(shared);
+
+				//Use it
+				group = shared.get();
+
+				//Signal it
+				listener->onUnsignaledIncomingSourceGroup(shared);
 			}
 		} else if (packet->HasMediaStreamId() && (packet->GetCodec()==VideoCodec::RTX || packet->GetCodec() == AudioCodec::RTX)) {
 			//Try to find it on the rids and mids
 			auto it = mids.find(mid);
 			//If found
-			if (it!=mids.end())
+			if (it!=mids.end() && !it->second.empty())
 			{
 				Log("-DTLSICETransport::onData() | Associating rtx stream id to ssrc [ssrc:%u,mid:'%s']\n",ssrc,mid.c_str());
 
 				//Get first source in set, if there was more it should have contained an rid
-				group = *it->second.begin();
+				auto& shared = *it->second.begin();
+
+				group = shared.get();
 
 				//Check if there was a previous ssrc
 				if (group->rtx.ssrc)
@@ -350,7 +378,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 				group->rtx.ssrc = ssrc;
 
 				//Add it to the incoming list
-				incoming[ssrc] = group;
+				incoming[ssrc] = shared;
 				//And to the srtp session
 				recv.AddStream(ssrc);
 			}
@@ -358,12 +386,14 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 			//Try to find it on the rids and mids
 			auto it = mids.find(mid);
 			//If found
-			if (it!=mids.end())
+			if (it != mids.end() && !it->second.empty())
 			{
 				Log("-DTLSICETransport::onData() | Associating rtp stream to ssrc [ssrc:%u,mid:'%s']\n",ssrc,mid.c_str());
 
 				//Get first source in set, if there was more it should have contained an rid
-				group = *it->second.begin();
+				auto& shared = *it->second.begin();
+
+				group = shared.get();
 
 				//Check if there was a previous ssrc
 				if (group->media.ssrc)
@@ -378,7 +408,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 				group->media.ssrc = ssrc;
 
 				//Add it to the incoming list
-				incoming[ssrc] = group;
+				incoming[ssrc] = shared;
 				//And to the srtp session
 				recv.AddStream(ssrc);
 			}
@@ -403,11 +433,11 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		auto it = mids.find(mid);
 		//If not there
 		if (it!=mids.end())
-			//Append
-			it->second.insert(group);
+			//Append the shared ptr
+			it->second.insert(incoming[group->media.ssrc]);
 		else
-			//Add new set
-			mids[mid] = { group };
+			//Add new set with shared ptr
+			mids[mid] = { incoming[group->media.ssrc] };
 	}
 	
 	//UltraDebug("-DTLSICETransport::onData() | Got RTP on media:%s sssrc:%u seq:%u pt:%u codec:%s rid:'%s', mid:'%s'\n",MediaFrame::TypeToString(group->type),ssrc,packet->GetSeqNum(),packet->GetPayloadType(),GetNameForCodec(group->type,codec),group->rid.c_str(),group->mid.c_str());
@@ -897,7 +927,7 @@ DWORD DTLSICETransport::SendProbe(const RTPPacket::shared& original)
 	return len;
 }
 
-DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
+DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup* group,BYTE padding)
 {
 	//Check if we have an active DTLS connection yet
 	if (!send.IsSetup())
@@ -1083,7 +1113,7 @@ DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 	return len;
 }
 
-void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
+void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup* group,WORD seq)
 {
 	//Check if we have an active DTLS connection yet
 	if (!send.IsSetup())
@@ -1182,15 +1212,31 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	
 	//Disable rid & repair id
 	packet->DisableRId();
-	packet->DisableRepairedId();
 	
 	//Update mid
 	if (!group->mid.empty())
+	{
 		//Set new mid
 		packet->SetMediaStreamId(group->mid);
+
+		if (!group->rid.empty())
+		{
+			//Set new rid
+			packet->SetRepairedId(group->rid);
+		}
+		else
+		{
+			//Disable rid
+			packet->DisableRepairedId();
+		}
+	}
 	else
+	{
 		//Disable it
 		packet->DisableMediaStreamId();
+		//Disable repair id
+		packet->DisableRepairedId();
+	}
 	
 	//No frame markings
 	packet->DisableFrameMarkings();
@@ -1857,17 +1903,17 @@ bool DTLSICETransport::AddOutgoingSourceGroup(const RTPOutgoingSourceGroup::shar
 		//Add it for each group ssrc
 		if (media)
 		{
-			outgoing[media] = group.get();
+			outgoing[media] = group;
 			send.AddStream(media);
 		}
 		if (fec)
 		{
-			outgoing[fec] = group.get();
+			outgoing[fec] = group;
 			send.AddStream(fec);
 		}
 		if (rtx)
 		{
-			outgoing[rtx] = group.get();
+			outgoing[rtx] = group;
 			send.AddStream(rtx);
 		}
 
@@ -1989,7 +2035,7 @@ bool DTLSICETransport::AddIncomingSourceGroup(const RTPIncomingSourceGroup::shar
 
 		//Add rid if any
 		if (!group->rid.empty())
-			rids[group->mid + "@" + group->rid] = group.get();
+			rids[group->mid + "@" + group->rid] = group;
 
 		//Add mid if any
 		if (!group->mid.empty())
@@ -1999,21 +2045,21 @@ bool DTLSICETransport::AddIncomingSourceGroup(const RTPIncomingSourceGroup::shar
 			//If not there
 			if (it!=mids.end())
 				//Append
-				it->second.insert(group.get());
+				it->second.insert(group);
 			else
 				//Add new set
-				mids[group->mid] = { group.get() };
+				mids[group->mid] = { group };
 		}
 
 		//Add it for each group ssrc
 		if (media)
 		{
-			incoming[media] = group.get();
+			incoming[media] = group;
 			recv.AddStream(media);
 		}
 		if (rtx)
 		{
-			incoming[rtx] = group.get();
+			incoming[rtx] = group;
 			recv.AddStream(rtx);
 		}
 
@@ -2032,7 +2078,7 @@ bool DTLSICETransport::AddIncomingSourceGroup(const RTPIncomingSourceGroup::shar
 	return true;
 }
 
-bool DTLSICETransport::RemoveIncomingSourceGroup(const RTPIncomingSourceGroup::shared &group)
+bool DTLSICETransport::RemoveIncomingSourceGroup(const RTPIncomingSourceGroup::shared& group)
 {
 	Log("-DTLSICETransport::RemoveIncomingSourceGroup() [mid:'%s',rid:'%s',ssrc:%u,rtx:%u]\n",group->mid.c_str(),group->rid.c_str(),group->media.ssrc,group->rtx.ssrc);
 	
@@ -2049,7 +2095,7 @@ bool DTLSICETransport::RemoveIncomingSourceGroup(const RTPIncomingSourceGroup::s
 		if (it!=mids.end())
 		{
 			//Erase group
-			it->second.erase(group.get());
+			it->second.erase(group);
 			//If it is empty now
 			if(it->second.empty())
 				//Remove from mids
@@ -2171,7 +2217,7 @@ int DTLSICETransport::SendPLI(DWORD ssrc)
 	//Execute on the event loop thread and do not wait
 	timeService.Async([=](auto now){
 		//Get group
-		RTPIncomingSourceGroup *group = GetIncomingSourceGroup(ssrc);
+		RTPIncomingSourceGroup* group = GetIncomingSourceGroup(ssrc);
 
 		//If not found
 		if (!group)
@@ -2297,17 +2343,29 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 		//Disable it
 		packet->DisableAbsSentTime();
 	
-	//Disable rid & repair id
-	packet->DisableRId();
+	//Disable repair id
 	packet->DisableRepairedId();
 	
 	//Update mid
 	if (!group->mid.empty())
+	{
 		//Set new mid
 		packet->SetMediaStreamId(group->mid);
-	else
+
+		if (!group->rid.empty()) 
+		{
+			//Set new rid
+			packet->SetRId(group->rid);
+		} else {
+			//Disable rid
+			packet->DisableRId();
+		}
+	} else {
 		//Disable it
 		packet->DisableMediaStreamId();
+		//Disable rid & repair id
+		packet->DisableRId();
+	}
 	
 	//No frame markings
 	packet->DisableFrameMarkings();
@@ -2574,7 +2632,7 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 				for (auto& ssrc : bye->GetSSRCs())
 				{
 					//Get media
-					RTPIncomingSourceGroup* group = GetIncomingSourceGroup(ssrc);
+					auto group = GetIncomingSourceGroup(ssrc);
 
 					//Debug
 					Debug("-DTLSICETransport::onRTCP() | Got BYE [ssrc:%u,group:%p,this:%p]\n", ssrc, group, this);
@@ -2775,10 +2833,10 @@ RTPIncomingSourceGroup* DTLSICETransport::GetIncomingSourceGroup(DWORD ssrc)
 	//If not found
 	if (it==incoming.end())
 		//Not found
-		return NULL;
+		return nullptr;
 	
 	//Get source froup
-	return it->second;
+	return it->second.get();
 }
 
 RTPIncomingSource* DTLSICETransport::GetIncomingSource(DWORD ssrc)
@@ -2789,7 +2847,7 @@ RTPIncomingSource* DTLSICETransport::GetIncomingSource(DWORD ssrc)
 	//If not found
 	if (it==incoming.end())
 		//Not found
-		return NULL;
+		return nullptr;
 	
 	//Get source
 	return it->second->GetSource(ssrc);
@@ -2804,10 +2862,10 @@ RTPOutgoingSourceGroup* DTLSICETransport::GetOutgoingSourceGroup(DWORD ssrc)
 	//If not found
 	if (it==outgoing.end())
 		//Not found
-		return NULL;
+		return nullptr;
 	
 	//Get source froup
-	return it->second;
+	return it->second.get();
 
 }
 
@@ -3123,7 +3181,7 @@ void DTLSICETransport::Probe(QWORD now)
 						while (probeSize >=size)
 						{
 							//Send probe packet
-							DWORD len = SendProbe(group.second,size);
+							DWORD len = SendProbe(group.second.get(), size);
 							//Check len
 							if (!len)
 								//Done

@@ -1,6 +1,6 @@
 #include "mpegts/psi.h"
 #include "log.h"
-#include "bitstream.h"
+#include "bitstream/BitReader.h"
 namespace mpegts
 {
 namespace psi

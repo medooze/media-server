@@ -6,9 +6,11 @@
 #include <utility>
 #include <vector>
 
-#include "bitstream.h"
 #include "WrapExtender.h"
+#include "bitstream/BitReader.h"
+#include "bitstream/BitWriter.h"
 #include "rtp/LayerInfo.h"
+
 
 enum DecodeTargetIndication
 {
@@ -78,7 +80,7 @@ struct TemplateDependencyStructure
 	void CalculateLayerMapping();
 	
 	static std::optional<TemplateDependencyStructure> Parse(BitReader& reader);
-	bool Serialize(BitWritter& writter) const;
+	bool Serialize(BitWriter& writter) const;
 	void Dump() const;
 	
 	friend bool operator==(const TemplateDependencyStructure& lhs, const TemplateDependencyStructure& rhs)
@@ -114,7 +116,7 @@ struct DependencyDescriptor
 	std::optional<std::vector<uint32_t>> customFrameDiffs;
 	std::optional<std::vector<uint32_t>> customFrameDiffsChains;
 	
-	bool Serialize(BitWritter& writter) const;
+	bool Serialize(BitWriter& writter) const;
 	void Dump() const;
 	
 	static std::optional<DependencyDescriptor> Parse(BitReader& reader, const std::optional<TemplateDependencyStructure>& templateDependencyStructure = std::nullopt);

@@ -32,7 +32,10 @@ void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader, std::optiona
 {
 	//Return if current NAL is empty
 	if (!reader.GetLeft())
+	{
+		Warning("-H264Packetizer::OnNal() Empty nal received\n");
 		return;
+	}
 
 	auto nalSize = reader.GetLeft();
 	auto nalUnit = reader.PeekData();
@@ -43,9 +46,9 @@ void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader, std::optiona
 	 * |F|NRI|  Type   |
 	 * +---------------+
 	 */
-	uint8_t naluHeader 	= reader.Get1();
-	[[maybe_unused]] uint8_t nri		= naluHeader & 0b0'11'00000;
-	uint8_t nalUnitType	= naluHeader & 0b0'00'11111;
+	uint8_t naluHeader 		= reader.Get1();
+	[[maybe_unused]] uint8_t nri	= naluHeader & 0b0'11'00000;
+	uint8_t nalUnitType		= naluHeader & 0b0'00'11111;
 
 	//UltraDebug("-SRTConnection::OnVideoData() | Got nal [type:%d,size:%d]\n", nalUnitType, nalSize);
 

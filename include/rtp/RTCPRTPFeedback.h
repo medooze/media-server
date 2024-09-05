@@ -14,7 +14,6 @@
 #ifndef RTCPRTPFEEDBACK_H
 #define RTCPRTPFEEDBACK_H
 #include "config.h"
-#include "bitstream.h"
 #include "rtp/RTCPPacket.h"
 #include "rtp/RTCPCommonHeader.h"
 #include <vector>

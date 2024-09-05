@@ -13,7 +13,6 @@
 
 #include "rtp/RTPDepacketizer.h"
 #include "audio.h"
-#include "bitstream.h"
 #include "opus/opusdepacketizer.h"
 #include "h264/h264depacketizer.h"
 #include "h265/H265Depacketizer.h"

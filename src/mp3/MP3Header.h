@@ -2,7 +2,7 @@
 #define	MP3HEADER_H
 
 #include "config.h"
-#include "bitstream.h"
+#include "bitstream/BitWriter.h"
 
 #define CHECK(r) if(r.Error()) return false;
 
@@ -94,7 +94,7 @@ public:
 			return 0;
 
 		//Put bytes
-		BitWritter writter(data, size);
+		BitWriter writter(data, size);
  
 		//Synword
 		writter.Put(12, 0b'1111'1111'1111);
