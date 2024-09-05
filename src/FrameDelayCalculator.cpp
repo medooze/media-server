@@ -175,8 +175,7 @@ std::pair<std::chrono::milliseconds, uint64_t> FrameDelayCalculator::Reference::
 
 void FrameDelayCalculator::Reference::Set(std::chrono::milliseconds refTime, uint64_t refTimestamp)
 {
-	ReferenceField newRef;
-	newRef.content = {refTime.count(), refTimestamp};
+	ReferenceField newRef = {{refTime.count(), refTimestamp}};
 	
 	SyncWriteUint128(&field, newRef.value);
 }

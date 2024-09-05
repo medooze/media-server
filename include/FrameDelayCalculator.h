@@ -38,12 +38,12 @@ private:
 	private:
 		union alignas (16) ReferenceField
 		{
-			__uint128_t value;
 			struct
 			{
 				int64_t refTime;
 				uint64_t refTimestamp;
 			} content;
+			__uint128_t value;
 		};
 		
 		__uint128_t field = 0;
