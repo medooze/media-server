@@ -32,8 +32,8 @@ private:
 	class Reference
 	{
 	public:
-		std::pair<int64_t, uint64_t> Get();
-		void Set(int64_t refTime, uint64_t refTimestamp);
+		std::pair<std::chrono::milliseconds, uint64_t> Get();
+		void Set(std::chrono::milliseconds refTime, uint64_t refTimestamp);
 		
 	private:
 		union alignas (16) ReferenceField

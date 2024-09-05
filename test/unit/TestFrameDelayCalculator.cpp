@@ -41,7 +41,7 @@ protected:
 	 * means the references used has a less latency than the first reference (which is basing on 
 	 * first frame).
 	 */
-	std::vector<int64_t> calcLatency(const std::vector<std::pair<uint64_t, uint64_t>>& references);
+	std::vector<int64_t> calcLatency(const std::vector<std::pair<std::chrono::milliseconds, uint64_t>>& references);
 
 	TestTimeService timeService;
 	std::shared_ptr<FrameDelayCalculator> calculator;
@@ -54,11 +54,10 @@ void TestFrameDelayCalculator::TestDelayCalculator(const std::vector<std::tuple<
 	std::queue<std::pair<RTPPacket::shared, std::chrono::milliseconds>> audioPackets;
 	std::queue<std::pair<RTPPacket::shared, std::chrono::milliseconds>> videoPackets;
 	
-	std::vector<std::pair<uint64_t, uint64_t>> references;
+	std::vector<std::pair<std::chrono::milliseconds, uint64_t>> references;
 	std::vector<std::pair<uint64_t, int64_t>> delays;
 
 	// Loop through all frames
-	int cnt = 0;
 	for (auto& f : framesInfo)
 	{	
 		auto now = std::chrono::milliseconds(std::get<1>(f));
@@ -94,7 +93,7 @@ void TestFrameDelayCalculator::TestDelayCalculator(const std::vector<std::tuple<
 }
 
 
-std::vector<int64_t> TestFrameDelayCalculator::calcLatency(const std::vector<std::pair<uint64_t, uint64_t>>& references)
+std::vector<int64_t> TestFrameDelayCalculator::calcLatency(const std::vector<std::pair<std::chrono::milliseconds, uint64_t>>& references)
 {
 	std::vector<int64_t> latencies;
 	
@@ -107,7 +106,7 @@ std::vector<int64_t> TestFrameDelayCalculator::calcLatency(const std::vector<std
 		auto calculatedTimeDiffMs = (r.second - first.second) * 1000 / 90000;
 		auto timeDiffMs = r.first - first.first;
 		
-		latencies.push_back(int64_t(timeDiffMs) - int64_t(calculatedTimeDiffMs));
+		latencies.push_back(timeDiffMs.count() - int64_t(calculatedTimeDiffMs));
 	}
 	
 	return latencies;
