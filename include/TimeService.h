@@ -42,6 +42,17 @@ public:
 		//Run async and wait for future
 		Future(func).wait();
 	}
+	
+	template <typename T, typename Func>
+	void Async(T& obj, Func&& func)
+	{
+		Async([selfWeak = obj.weak_from_this(), func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
+			auto self = selfWeak.lock();
+			if (!self) return;
+			
+			func(self, now);
+		});
+	}
 };
 
 #endif /* TIMESERVICE_H */
