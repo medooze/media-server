@@ -52,7 +52,8 @@ private:
 
 class MP4Recorder :
 	public RecorderControl,
-	public MediaFrame::Listener
+	public MediaFrame::Listener,
+	public TimeServiceWrapper<MP4Recorder>
 {
 public:
 	class Listener 

@@ -765,7 +765,7 @@ bool MP4Recorder::Close(bool async)
 	Log("-MP4Recorder::Close()\n");
 	
         //Stop always
-        auto res = loop.Future([=](auto now){
+        auto res = FutureSafe(loop, [=](auto self, auto now){
 		Debug(">MP4Recorder::Close() | Async\n");
 		
 		//Not recording anymore

@@ -24,7 +24,7 @@ MediaFrameListenerBridge::MediaFrameListenerBridge(TimeService& timeService,DWOR
 	Debug("-MediaFrameListenerBridge::MediaFrameListenerBridge() [this:%p]\n", this);
 
 	//Create packet dispatch timer
-	dispatchTimer = CreateTimer(timeService, [](auto self, auto now){
+	dispatchTimer = CreateTimerSafe(timeService, [](auto self, auto now){
 
 		if (self->stopped) return;
 		

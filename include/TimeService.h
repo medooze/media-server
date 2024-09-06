@@ -83,7 +83,7 @@ public:
 	}
 	
 	template <typename Func>
-	auto FutureSafe(TimeService& timeService, const std::chrono::milliseconds& ms, Func&& func)
+	auto FutureSafe(TimeService& timeService, Func&& func)
 	{
 		return timeService.Future([selfWeak = TimeServiceWrapper<T>::weak_from_this(), func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
 			auto self = selfWeak.lock();
