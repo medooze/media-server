@@ -37,7 +37,8 @@ class DTLSICETransport :
 	public RTPSender,
 	public RTPReceiver,
 	public DTLSConnection::Listener,
-	public ICERemoteCandidate::Listener
+	public ICERemoteCandidate::Listener,
+	public TimeServiceWrapper<DTLSICETransport>
 {
 public:
 	using shared = std::shared_ptr<DTLSICETransport>;

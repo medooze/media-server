@@ -17,7 +17,8 @@ class MediaFrameListenerBridge :
 	public MediaFrame::Listener,
 	public MediaFrame::Producer,
 	public RTPIncomingMediaStream,
-	public RTPReceiver
+	public RTPReceiver,
+	public TimeServiceWrapper<MediaFrameListenerBridge>
 {
 public:
 	using shared = std::shared_ptr<MediaFrameListenerBridge>;

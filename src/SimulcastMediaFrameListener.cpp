@@ -153,11 +153,8 @@ void SimulcastMediaFrameListener::ForwardFrame(VideoFrame& frame)
 }
 
 void SimulcastMediaFrameListener::Push(std::shared_ptr<VideoFrame>&& frame)
-{
-	timeService.Async([selfWeak = weak_from_this(), frame = std::move(frame)](std::chrono::milliseconds) mutable {
-		
-		auto self = selfWeak.lock();
-		if (!self) return;
+{	
+	Async(timeService, [frame = std::move(frame)](auto self, std::chrono::milliseconds) mutable {
 		
 		DWORD ssrc = frame->GetSSRC();
 

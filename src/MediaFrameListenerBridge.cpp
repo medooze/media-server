@@ -24,15 +24,15 @@ MediaFrameListenerBridge::MediaFrameListenerBridge(TimeService& timeService,DWOR
 	Debug("-MediaFrameListenerBridge::MediaFrameListenerBridge() [this:%p]\n", this);
 
 	//Create packet dispatch timer
-	dispatchTimer = timeService.CreateTimer([this](auto now){
+	dispatchTimer = CreateTimer(timeService, [](auto self, auto now){
 
-		if (stopped) return;
+		if (self->stopped) return;
 		
 		//Get how much should we send
-		auto period = lastSent!=0ms && now >= lastSent ? now - lastSent : 10ms;
+		auto period = self->lastSent!=0ms && now >= self->lastSent ? now - self->lastSent : 10ms;
 
 		//Updated last dispatched 
-		lastSent = now;
+		self->lastSent = now;
 
 		//Packets to send during the period
 		std::vector<RTPPacket::shared> sending;
@@ -41,9 +41,9 @@ MediaFrameListenerBridge::MediaFrameListenerBridge(TimeService& timeService,DWOR
 		auto accumulated = 0ms;
 
 		//Until no mor pacekts or full period
-		while (packets.size() && period >= accumulated)
+		while (self->packets.size() && period >= accumulated)
 		{
-			const auto& packetInfo = packets.front();
+			const auto& packetInfo = self->packets.front();
 			if (packetInfo.scheduled > now) break;
 			
 			//Increase accumulated time
@@ -51,26 +51,26 @@ MediaFrameListenerBridge::MediaFrameListenerBridge(TimeService& timeService,DWOR
 			//Add to sending packets
 			sending.push_back(packetInfo.packet);
 			//remove it from pending packets
-			packets.pop();
+			self->packets.pop();
 		}
 
 		//UltraDebug("-MediaFrameListenerBridge::dispatchTimer() [queue:%d,sending:%d,period:%llu,accumulated:%llu,next:%d,smooth:%d]\n", packets.size(), sending.size(), period.count(), accumulated.count(), packets.size() && accumulated > period ? (accumulated - period).count(): -1, this->smooth);
 
 		//Dispatch RTP packets
-		Dispatch(sending);
+		self->Dispatch(sending);
 
 		//If we have packets in the queue
-		if (packets.size())
+		if (self->packets.size())
 		{
 			//Reschedule
-			auto deferMs = packets.front().scheduled - now;
+			auto deferMs = self->packets.front().scheduled - now;
 			if (deferMs.count() > 0)
 			{
-				dispatchTimer->Again(deferMs);
+				self->dispatchTimer->Again(deferMs);
 			}
 			else if (accumulated > period)
 			{
-				dispatchTimer->Again(std::chrono::milliseconds(accumulated - period));
+				self->dispatchTimer->Again(std::chrono::milliseconds(accumulated - period));
 			}
 		}
 	});

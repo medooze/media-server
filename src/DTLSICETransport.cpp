@@ -2956,7 +2956,7 @@ void DTLSICETransport::Start()
 	dcOptions.localPort = 5000;
 	dcOptions.remotePort = 5000;
 	//Run ice timeout timer
-	iceTimeoutTimer = timeService.CreateTimer(IceTimeout,[this](auto now){
+	iceTimeoutTimer = CreateTimer(timeService, IceTimeout,[this](auto self, auto now){
 		//Log
 		Debug("-DTLSICETransport::onIceTimeoutTimer() ICE timeout\n");
 		//If got listener

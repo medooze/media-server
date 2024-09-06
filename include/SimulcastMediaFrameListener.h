@@ -15,7 +15,7 @@
 class SimulcastMediaFrameListener :
 	public MediaFrame::Listener,
 	public MediaFrame::Producer,
-	public std::enable_shared_from_this<SimulcastMediaFrameListener>
+	public TimeServiceWrapper<SimulcastMediaFrameListener>
 
 {
 public:
