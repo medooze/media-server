@@ -83,7 +83,7 @@ void TestFrameDispatchCoordinator::onRTP(const RTPIncomingMediaStream* stream,co
 
 TEST_F(TestFrameDispatchCoordinator, testDispatch)
 {
-	dispatch = std::make_unique<FrameDispatchCoordinator>(0, std::chrono::milliseconds(20));
+	dispatch = std::make_unique<FrameDispatchCoordinator>(0, std::chrono::milliseconds(20), std::make_shared<TestTimeService>());
 
 	ASSERT_NO_FATAL_FAILURE(TestDispatch(TestData::FramesArrivalInfo));
 
@@ -860,7 +860,7 @@ TEST_F(TestFrameDispatchCoordinator, testDispatch)
 
 TEST_F(TestFrameDispatchCoordinator, testLatencyReduction)
 {	
-	dispatch = std::make_unique<FrameDispatchCoordinator>(0, std::chrono::milliseconds(3));
+	dispatch = std::make_unique<FrameDispatchCoordinator>(0, std::chrono::milliseconds(3), std::make_shared<TestTimeService>());
 	ASSERT_NO_FATAL_FAILURE(TestDispatch(TestData::FramesArrivalInfo));
 	
 	// We set one packet for one frame, so all the frames should been dispatched.
