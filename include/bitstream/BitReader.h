@@ -23,6 +23,11 @@ public:
 		ini = reader.Mark();
 	}
 
+	~BitReader()
+	{
+		Flush();
+	}
+
 	inline void Reset()
 	{
 		//nothing in the cache
