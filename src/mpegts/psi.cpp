@@ -3,7 +3,7 @@
 #include "bitstream/BitReader.h"
 #include "bitstream/BitWriter.h"
 
-#include "crc32c/crc32c.h"
+#include "crc32calc.h"
 
 namespace mpegts
 {
@@ -30,8 +30,9 @@ void SyntaxData::Encode(BufferWritter& writer)
 	if (encodable)
 		(*encodable)->Encode(writer);
 	
-	uint32_t crc32 = crc32c::Crc32c(writer.GetData() + mark, writer.GetLength() - mark);
-	writer.Set4(crc32);
+	CRC32Calc crc32;
+	uint32_t crc = crc32.Update(writer.GetData() + mark, writer.GetLength() - mark);
+	writer.Set4(crc);
 }
 
 size_t SyntaxData::Size() const

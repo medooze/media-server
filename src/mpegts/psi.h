@@ -57,8 +57,8 @@ struct Table : public Encodable
 /** PSI table data for a Program Association Table */
 struct ProgramAssociation : public Encodable
 {
-	static const uint16_t PID = 0x0000;
-	static const uint8_t TABLE_ID = 0x00;
+	static constexpr uint16_t PID = 0x0000;
+	static constexpr uint8_t TABLE_ID = 0x00;
 
 	uint16_t programNum = 0;
 	uint16_t pmtPid = 0;
@@ -73,7 +73,7 @@ struct ProgramAssociation : public Encodable
 /** PSI table data for a Program Map Table */
 struct ProgramMap : public Encodable
 {
-	static const uint8_t TABLE_ID = 0x02;
+	static constexpr uint8_t TABLE_ID = 0x02;
 
 	/** data for an Elementary Stream entry in a PMT */
 	struct ElementaryStream : public Encodable

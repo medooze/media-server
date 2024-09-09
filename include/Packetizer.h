@@ -53,8 +53,12 @@ public:
 				auto [encodable, forceSeparate] = msg;
 				
 				// check force sperate flag
-				if (forceSeparate)
+				if (forceSeparate && buffer && pos != 0)
+				{
+					pos = 0;
+					buffer.reset();
 					return;
+				}
 				
 				// Remove the message
 				messages.erase(messages.begin());
@@ -72,7 +76,8 @@ public:
 			
 			// Fill the writer as much as possible
 			auto len = std::min(buffer->GetSize() - pos, writer.GetLeft());
-			writer.SetN(pos, *buffer, len);
+			memcpy(const_cast<uint8_t*>(writer.GetData()), &buffer->GetData()[pos], len);
+			writer.Consume(len);
 			
 			pos += len;
 		}
