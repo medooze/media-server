@@ -224,7 +224,7 @@ ProgramAssociation ProgramAssociation::Parse(BufferReader& reader)
 
 void ProgramMap::ElementaryStream::Encode(BufferWritter& writer)
 {
-	BitWriter bitwriter(writer, 4);
+	BitWriter bitwriter(writer, 5);
 	
 	bitwriter.Put(8, streamType);
 	bitwriter.Put(3, 0x7);	// reserved

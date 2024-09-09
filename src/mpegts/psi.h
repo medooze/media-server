@@ -78,6 +78,13 @@ struct ProgramMap : public Encodable
 	/** data for an Elementary Stream entry in a PMT */
 	struct ElementaryStream : public Encodable
 	{
+		enum StreamType
+		{
+			AAC_ADTS = 0x0F,
+			AVC = 0x1B,
+			HEVC = 0x24
+		};
+
 		uint8_t streamType = 0;
 		uint16_t pid = 0;
 		
