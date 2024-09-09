@@ -67,11 +67,6 @@ private:
 	 */
 	static int64_t GetFrameArrivalDelayMs(std::chrono::milliseconds now, uint64_t unifiedTs, std::chrono::milliseconds refTime, uint64_t refTimestamp);
 	
-	/**
-	 * Timeservice for latency reduction
-	 */
-	TimeService& timeService;
-	
 	// The following thresholds are checking the offsets of arrival time with regard to the previously
 	// scheduled time.
 	
@@ -79,6 +74,11 @@ private:
 	int updateRefsPacketLateThresholdMs = 0;
 	// Controls the latency reduction speed
 	std::chrono::milliseconds updateRefsStepPacketEarlyMs {0};
+	
+	/**
+	 * Timeservice for latency reduction
+	 */
+	TimeService& timeService;
 	
 	// Time reference
 	Reference reference;
