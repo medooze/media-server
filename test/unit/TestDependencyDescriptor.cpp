@@ -45,6 +45,8 @@ TEST(TestDependendyDescriptor, SerializeParser)
 	BYTE buffer[256];
 	BitWriter writter(buffer, sizeof(buffer));
 
+	Logger::EnableDebug(true);
+	Logger::EnableUltraDebug(true);
 
 	DependencyDescriptor dd;
 	dd.templateDependencyStructure = TemplateDependencyStructure{};
