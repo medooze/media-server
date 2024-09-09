@@ -28,7 +28,7 @@ DWORD RTPHeader::Parse(const BYTE* data,const DWORD size)
 	BufferReader reader(data,size);
 
 	//Ensure minumim size
-	if (reader.Assert(12))
+	if (!reader.Assert(12))
 		return 0;
 
 	try
@@ -60,7 +60,7 @@ DWORD RTPHeader::Parse(const BYTE* data,const DWORD size)
 		ssrc = reader.Get4();
 
 		//Ensure size
-		if (reader.Assert(cc * 4))
+		if (!reader.Assert(cc * 4))
 			//Error
 			return 0;
 
