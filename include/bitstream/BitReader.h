@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <cassert>
 
+#include "log.h"
 #include "config.h"
 #include "tools.h"
 #include "BufferReader.h"
@@ -35,6 +36,9 @@ public:
 	{
 		assert(n <= 32);
 
+		//Debug(">BitReader::Get() n:%d cached:%d\n", n, cached);
+		//BitDump(cache, cached);
+
 		DWORD ret = 0;
 			
 		if (n>cached)
@@ -51,7 +55,7 @@ public:
 			//Get from cache
 			ret = GetCached(n);
 		}
-		//Debug("Readed %d: cached:%d\n",n, cached);
+		//Debug("<BitReader::Get() Readed n:%d ret:%d cached:%d\n", n, ret, cached);
 		//BitDump(ret,n);
 		return ret;
 	}
@@ -63,6 +67,8 @@ public:
 
 	inline void Skip(DWORD n)
 	{
+		//Debug(">BitReader::Skip() skipping n:%d: cached:%d\n", n, cached);
+
 		//If input is bigger than cache
 		while (n>32)
 		{
@@ -84,7 +90,7 @@ public:
 			//Skip cache
 			SkipCached(n);
 		}
-		//Debug("Skiped n:%d: cached:%d\n", n, cached);
+		//Debug("<BitReader::Skip() Skiped n:%d: cached:%d\n", n, cached);
 	}
 
 	inline QWORD Left()
@@ -110,7 +116,7 @@ public:
 			//Get from cache
 			ret = cache >> (32-n);
 		}
-		//Debug("Peeked %d:\n",n);
+		//Debug("-BitReader::Peek() Peeked %d:\n",n);
 		//BitDump(ret,n);
 		return ret;
 	}
@@ -180,6 +186,7 @@ public:
 
 	inline DWORD Flush()
 	{
+		//Debug("-BitReader::Flush()\n");
 		Align();
 		FlushCache();
 		return reader.GetOffset(ini);
@@ -197,7 +204,7 @@ public:
 		//BitDump(cache,cached);
 		// We need to return the cached bits to the buffer
 		auto bytes = cached / 8;
-		//Debug("Flushing Cache cached:%d bytes:%d len:%u pos:%u\n", cached, bytes, bufferLen, bufferPos);
+		//Debug(">BitReader::FlushCache() Flushing Cache cached:%d bytes:%d len:%u pos:%u\n", cached, bytes, reader.GetLeft(), reader.GetOffset(ini));
 
 		//Go back
 		reader.GoTo(reader.Mark() - bytes);
@@ -205,22 +212,18 @@ public:
 		//Nothing cached
 		cached = 0;
 		cache = 0;
-		//Debug("Flushed cache len:%u pos:%u\n", bufferLen, bufferPos);
+		//Debug("<BitReader::FlushCache() Flushed cache len:%u pos:%u\n", reader.GetLeft(), reader.GetOffset(ini));
 	}
 
 	inline void Align()
 	{
-		if (cached % 8 == 0)
-			return;
+		//Debug(">Align() cache len:%u pos:%u\n", reader.GetLeft(), reader.GetOffset(ini));
 
-		if (cached > 24)
-			Skip(32 - cached);
-		else if (cached > 16)
-			Skip(24 - cached);
-		else if (cached > 8)
-			Skip(16 - cached);
-		else
-			Skip(8 - cached);
+		//Go to next byte
+		Skip(cached % 8);
+
+		//Debug("<BitReader::Align() cache len:%u pos:%u\n", reader.GetLeft(), reader.GetOffset(ini));
+
 	}
 
 private:
@@ -253,7 +256,7 @@ private:
 		}
 			
 
-		//Debug("Reading int cache %x:%d\n",cache,cached);
+		//Debug("-BitReader::Cache() Reading int cache %x:%d\n",cache,cached);
 		//BitDump(cache>>(32-cached),cached);
 
 		//return number of bits
@@ -285,6 +288,8 @@ private:
 	{
 		assert(n <= cached);
 
+		//Debug(">BitReader::SkipCached() n:%d cache %x:%d\n", n, cache, cached);
+
 		//Check length
 		if (!n) return;
 
@@ -299,6 +304,8 @@ private:
 			cache = 0;
 			cached = 0;
 		}
+
+		//Debug("<BitReader::SkipCached() cache %x:%d\n",cache,cached);
 			
 	}
 
