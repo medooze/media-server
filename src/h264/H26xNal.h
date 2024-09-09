@@ -5,7 +5,12 @@
 #include <limits>
 #include <optional>
 #include <functional>
-#include "bitstream.h"
+
+#include "config.h"
+#include "log.h"
+#include "tools.h"
+#include "Buffer.h"
+#include "BufferReader.h"
 
 constexpr uint32_t AnnexBStartCode = 0x01;
 
@@ -30,6 +35,14 @@ inline DWORD NalUnescapeRbsp(BYTE *dst, const BYTE *src, DWORD size)
 		}
 	}
 	return len;
+}
+
+inline Buffer NalUnescapeRbsp(const BYTE* src, DWORD size)
+{
+	Buffer escaped(size);
+	DWORD len = NalUnescapeRbsp(escaped.GetData(), src, size);
+	escaped.SetSize(len);
+	return escaped;
 }
 
 inline std::optional<DWORD> NalEscapeRbsp(BYTE *dst, DWORD dstsize, const BYTE *src, DWORD size)
@@ -83,8 +96,16 @@ inline void NalSliceAnnexB(BufferReader& reader, std::function<void(BufferReader
 			{
 				//Get nalu reader
 				BufferReader nalu = reader.GetReader(start, end - start);
-				//Process current NALU
-				onNalu(nalu);
+
+				try 
+				{
+					//Process current NALU
+					onNalu(nalu);
+				}
+				catch (const std::exception& e)
+				{
+					Warning("-NalSliceAnnexB() exception on onNalu()\n");
+				}
 			}
 			//Skip start code
 			reader.Skip(startCodeLength);
@@ -104,8 +125,15 @@ inline void NalSliceAnnexB(BufferReader& reader, std::function<void(BufferReader
 	{
 		//Get nalu reader
 		BufferReader nalu = reader.GetReader(start, end - start);
-		//Process current NALU
-		onNalu(nalu);
+		try
+		{
+			//Process current NALU
+			onNalu(nalu);
+		}
+		catch (const std::exception& e)
+		{
+			Warning("-NalSliceAnnexB() exception on onNalu()\n");
+		}
 	}
 }
 

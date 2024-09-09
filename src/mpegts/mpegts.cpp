@@ -1,6 +1,8 @@
 #include "mpegts/mpegts.h"
 #include "log.h"
-#include "bitstream.h"
+#include "bitstream/BitReader.h"
+#include "bitstream/BitWriter.h"
+
 namespace mpegts
 {
 
@@ -9,7 +11,7 @@ void Header::Encode(BufferWritter& writer)
 	if (writer.GetLeft() < Size())
 		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
 		
-	BitWritter bitwriter(writer, 4);
+	BitWriter bitwriter(writer, 4);
 	bitwriter.Put(8, syncByte);
 	bitwriter.Put(1, transportErrorIndication);
 	bitwriter.Put(1, payloadUnitStartIndication);
@@ -95,7 +97,7 @@ void AdaptationField::Encode(BufferWritter& writer)
 	
 	if (adaptationFieldLength > 0)
 	{
-		BitWritter bitwriter(writer, 1);
+		BitWriter bitwriter(writer, 1);
 		
 		bitwriter.Put(1, discontinuityIndicator);
 		bitwriter.Put(1, randomAccessIndicator);
@@ -250,7 +252,7 @@ void HeaderExtension::Encode(BufferWritter& writer)
 	if (writer.GetLeft() < Size())
 		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
 	
-	BitWritter bitwriter(writer, 3);
+	BitWriter bitwriter(writer, 3);
 	
 	bitwriter.Put(2, markerBits);
 	bitwriter.Put(2, scramblingControl);
@@ -269,7 +271,7 @@ void HeaderExtension::Encode(BufferWritter& writer)
 	
 	if (pts)
 	{
-		BitWritter bitwriter(writer, 5);
+		BitWriter bitwriter(writer, 5);
 		bitwriter.Put(4, 0x0010);
 		bitwriter.Put(3, (*pts >> 30) & 0x7);
 		bitwriter.Put(1, 0x1);
@@ -280,7 +282,7 @@ void HeaderExtension::Encode(BufferWritter& writer)
 	
 	if (dts)
 	{
-		BitWritter bitwriter(writer, 5);
+		BitWriter bitwriter(writer, 5);
 		bitwriter.Put(4, 0x0001);
 		bitwriter.Put(3, (*dts >> 30) & 0x7);
 		bitwriter.Put(1, 0x1);
@@ -442,7 +444,7 @@ namespace adts
 		if (writer.GetLeft() < Size())
 			throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
 		
-		BitWritter bitwriter(writer, 7);
+		BitWriter bitwriter(writer, 7);
 		
 		bitwriter.Put(12, syncWord);
 		bitwriter.Put(1, version);

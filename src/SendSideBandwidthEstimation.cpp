@@ -302,7 +302,7 @@ uint32_t SendSideBandwidthEstimation::GetTotalSentBitrate() const
 
 void SendSideBandwidthEstimation::SetState(ChangeState state)
 {
-	UltraDebug("-SendSideBandwidthEstimation::SetState() [state:%d,prev:%d,consecutiveChanges:%d]\n",state,this->state,consecutiveChanges);
+	//Log("-SendSideBandwidthEstimation::SetState() [state:%d,prev:%d,consecutiveChanges:%d]\n",state,this->state,consecutiveChanges);
 
 	//Set number of consecutive chantes
 	if (this->state == state)

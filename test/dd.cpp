@@ -1,6 +1,7 @@
 #include "test.h"
 #include "rtp.h"
-#include "bitstream.h"
+#include "bitstream/BitReader.h"
+#include "bitstream/BitWriter.h"
 
 class DependencyDescriptorTestPlan: public TestPlan
 {
@@ -50,7 +51,7 @@ public:
 		4	100	                111
 		*/
 		
-		BitWritter w(buffer,1);
+		BitWriter w(buffer,1);
 		BitReader r(buffer,1);
 		BYTE val;
 		
@@ -96,7 +97,7 @@ public:
 	void testSerializeParser()
 	{
 		BYTE buffer[256];
-		BitWritter writter(buffer,sizeof(buffer));
+		BitWriter writter(buffer,sizeof(buffer));
 		
 		
 		DependencyDescriptor dd;
@@ -165,7 +166,7 @@ public:
 			dd->Dump();
 
 			BYTE buffer[256];
-			BitWritter writter(buffer, sizeof(buffer));
+			BitWriter writter(buffer, sizeof(buffer));
 
 			assert(dd->Serialize(writter));
 

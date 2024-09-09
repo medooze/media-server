@@ -1,6 +1,7 @@
 #include "mpegts/psi.h"
 #include "log.h"
-#include "bitstream.h"
+#include "bitstream/BitReader.h"
+#include "bitstream/BitWriter.h"
 
 #include "crc32c/crc32c.h"
 
@@ -18,12 +19,12 @@ void SyntaxData::Encode(BufferWritter& writer)
 	
 	writer.Set2(tableIdExtension);
 	
-	BitWritter bitwritter(writer, Size() - 2);
-	bitwritter.Put(2, _reserved1);
-	bitwritter.Put(5, versionNumber);
-	bitwritter.Put(1, isCurrent);
-	bitwritter.Put(8, sectionNumber);
-	bitwritter.Put(8, lastSectionNumber);
+	BitWriter BitWriter(writer, Size() - 2);
+	BitWriter.Put(2, _reserved1);
+	BitWriter.Put(5, versionNumber);
+	BitWriter.Put(1, isCurrent);
+	BitWriter.Put(8, sectionNumber);
+	BitWriter.Put(8, lastSectionNumber);
 	
 	auto encodable = std::get_if<std::unique_ptr<Encodable>>(&data);
 	if (encodable)
@@ -98,7 +99,7 @@ void Table::Encode(BufferWritter& writer)
 		
 	writer.Set1(tableId);
 	
-	BitWritter bitwriter(writer, 2);
+	BitWriter bitwriter(writer, 2);
 	
 	bitwriter.Put(1, sectionSyntaxIndicator);
 	bitwriter.Put(1, privateBit);
@@ -187,7 +188,7 @@ void ProgramAssociation::Encode(BufferWritter& writer)
 		
 	writer.Set2(programNum);
 	
-	BitWritter bitwriter(writer, 2);
+	BitWriter bitwriter(writer, 2);
 	
 	bitwriter.Put(3, 0x7); //reserved
 	bitwriter.Put(13, pmtPid);
@@ -222,7 +223,7 @@ ProgramAssociation ProgramAssociation::Parse(BufferReader& reader)
 
 void ProgramMap::ElementaryStream::Encode(BufferWritter& writer)
 {
-	BitWritter bitwriter(writer, 4);
+	BitWriter bitwriter(writer, 4);
 	
 	bitwriter.Put(8, streamType);
 	bitwriter.Put(3, 0x7);	// reserved
@@ -283,7 +284,7 @@ ProgramMap::ElementaryStream ProgramMap::ElementaryStream::Parse(BufferReader& r
 
 void ProgramMap::Encode(BufferWritter& writer)
 {
-	BitWritter bitwriter(writer, 4);
+	BitWriter bitwriter(writer, 4);
 	
 	bitwriter.Put(3, 0x7);		// Reserved
 	bitwriter.Put(13, pcrPid);	// PCR_PID, no PCR

@@ -44,5 +44,56 @@ public:
 	}
 };
 
+
+template <typename T>
+class TimeServiceWrapper : public std::enable_shared_from_this<T>
+{
+public:
+	template <typename Func>
+	void AsyncSafe(TimeService& timeService, Func&& func)
+	{
+		timeService.Async([selfWeak = TimeServiceWrapper<T>::weak_from_this(), func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
+			auto self = selfWeak.lock();
+			if (!self) return;
+			
+			func(self, now);
+		});
+	}
+	
+	template <typename Func>
+	auto CreateTimerSafe(TimeService& timeService, Func&& func)
+	{
+		return timeService.CreateTimer([selfWeak = TimeServiceWrapper<T>::weak_from_this(), func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
+			auto self = selfWeak.lock();
+			if (!self) return;
+			
+			func(self, now);
+		});
+	}
+	
+	template <typename Func>
+	auto CreateTimerSafe(TimeService& timeService, const std::chrono::milliseconds& ms, Func&& func)
+	{
+		return timeService.CreateTimer(ms, [selfWeak = TimeServiceWrapper<T>::weak_from_this(), func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
+			auto self = selfWeak.lock();
+			if (!self) return;
+			
+			func(self, now);
+		});
+	}
+	
+	template <typename Func>
+	auto FutureSafe(TimeService& timeService, Func&& func)
+	{
+		return timeService.Future([selfWeak = TimeServiceWrapper<T>::weak_from_this(), func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
+			auto self = selfWeak.lock();
+			if (!self) return;
+			
+			func(self, now);
+		});
+	}
+};
+
+
 #endif /* TIMESERVICE_H */
 

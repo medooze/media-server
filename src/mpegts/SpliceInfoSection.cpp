@@ -1,6 +1,7 @@
 #include "SpliceInfoSection.h"
 #include "log.h"
-#include "bitstream.h"
+
+#include "bitstream/BitReader.h"
 
 size_t SpliceInfoSection::Parse(const uint8_t *data, size_t len)
 {
@@ -8,23 +9,31 @@ size_t SpliceInfoSection::Parse(const uint8_t *data, size_t len)
 	if (len < SizeUntilSectionLengthField) return 0;
 	
 	BitReader reader(data, len);
-	
-	table_id = reader.Get(8);
-	constexpr uint8_t SpliceInfoSectionTableId = 0xFC;
-	if (table_id != SpliceInfoSectionTableId)
+
+	try
 	{
-		// Not a splice info section
-		return 0;
+	
+		table_id = reader.Get(8);
+		constexpr uint8_t SpliceInfoSectionTableId = 0xFC;
+		if (table_id != SpliceInfoSectionTableId)
+		{
+			// Not a splice info section
+			return 0;
+		}
+	
+		section_syntax_indicator = reader.Get(1);
+		private_indicator = reader.Get(1);
+		sap_type = reader.Get(2);
+		section_length = reader.Get(12);
+	
+		if (section_length > (len - SizeUntilSectionLengthField))
+		{
+			// The data is not complete
+			return 0;
+		}
 	}
-	
-	section_syntax_indicator = reader.Get(1);
-	private_indicator = reader.Get(1);
-	sap_type = reader.Get(2);
-	section_length = reader.Get(12);
-	
-	if (section_length > (len - SizeUntilSectionLengthField))
+	catch(std::exception &e)
 	{
-		// The data is not complete
 		return 0;
 	}
 

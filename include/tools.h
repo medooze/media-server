@@ -517,6 +517,23 @@ inline size_t CountBits(uint64_t val)
 }
 
 /**
+ * Atomatically write a 128bit integer to an address
+ */
+inline void SyncWriteUint128(__uint128_t *dst, __uint128_t value)
+{
+    __uint128_t dstval = 0;
+    __uint128_t olddst = 0;
+    
+    dstval = *dst;
+    do
+    {
+        olddst = dstval;
+        dstval = __sync_val_compare_and_swap(dst, dstval, value);
+    }
+    while(dstval != olddst);
+}
+
+/**
  * Convert timestamp from one clock rate to another
  * 
  * @param ts The input timestamp
@@ -526,7 +543,7 @@ inline size_t CountBits(uint64_t val)
  * @return The timestamp basing on the target clock rate
  */
 template<typename T>
-static constexpr T convertTimestampClockRate(T ts, uint64_t originalRate, uint64_t targetRate)
+static constexpr T ConvertTimestampClockRate(T ts, uint64_t originalRate, uint64_t targetRate)
 {
 	return originalRate == targetRate ? ts : (ts * T(targetRate) / T(originalRate));
 }

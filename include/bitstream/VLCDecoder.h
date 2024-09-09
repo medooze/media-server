@@ -4,7 +4,7 @@
 #include "tools.h"
 #include <stdexcept>
 #include "bitstream/BitReader.h"
-#include "bitstream/BitWritter.h"
+#include "bitstream/BitWriter.h"
 
 template<typename T>
 class VLCDecoder
@@ -14,7 +14,7 @@ public:
 	{
 		BYTE aux[4];
 		//Create writter
-		BitWritter writter(aux,4);
+		BitWriter writter(aux,4);
 		//Write data
 		writter.Put(len,code);
 		//Flush to memory
