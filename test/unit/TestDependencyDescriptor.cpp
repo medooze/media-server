@@ -61,10 +61,13 @@ TEST(TestDependendyDescriptor, SerializeParser)
 	dd.templateDependencyStructure->decodeTargetProtectedByChain = { 0,0 };
 	dd.activeDecodeTargets = { 1,1 };
 	dd.templateDependencyStructure->CalculateLayerMapping();
+	dd.Dump();
 
-	assert(dd.Serialize(writter));
+	ASSERT_TRUE(dd.Serialize(writter));
 
 	auto len = writter.Flush();
+
+	Dump(buffer, len);
 
 	BufferReader bufferReader(buffer,len);
 	BitReader reader(bufferReader);
@@ -72,13 +75,9 @@ TEST(TestDependendyDescriptor, SerializeParser)
 	auto parsed = DependencyDescriptor::Parse(reader);
 	ASSERT_TRUE(parsed);
 
-	//Debug
-	Dump(buffer, len);
-	dd.Dump();
 	parsed->Dump();
 
 	EXPECT_EQ(dd,parsed.value());
-
 
 	writter.Reset();
 	DependencyDescriptor dd2;
