@@ -12,66 +12,23 @@
 class BitReader
 {
 public:
-	BitReader()
+
+	/***
+	* BitReader() will read eagerly from the BufferReader,
+	* so caller MUST call Flush() to return
+	*/
+	BitReader(BufferReader& reader) : reader(reader)
 	{
-		//Nothing
-		buffer = nullptr;
-		bufferLen = 0;
-		//nothing in the cache
-		cached = 0;
-		cache = 0;
-		bufferPos = 0;
+		ini = reader.Mark();
 	}
 
-	BitReader(const BYTE *data,const DWORD size)
-	{
-		//Store
-		buffer = data;
-		bufferLen = size;
-		//nothing in the cache
-		cached = 0;
-		cache = 0;
-		bufferPos = 0;
-	}
-
-	BitReader(BufferReader& reader, const DWORD size) :
-		BitReader(reader.GetData(size), size)
-	{
-	}
-
-	BitReader(const Buffer& reader) :
-		BitReader(reader.GetData(), reader.GetSize())
-	{
-	}
-
-	inline void Wrap(const BYTE *data,const DWORD size)
-	{
-		//Store
-		buffer = data;
-		bufferLen = size;
-		//nothing in the cache
-		cached = 0;
-		cache = 0;
-		bufferPos = 0;
-	}
-	
-	inline void Release()
-	{
-		//Nothing
-		buffer = nullptr;
-		bufferLen = 0;
-		//nothing in the cache
-		cached = 0;
-		cache = 0;
-		bufferPos = 0;
-	}
-	
 	inline void Reset()
 	{
 		//nothing in the cache
 		cached = 0;
 		cache = 0;
-		bufferPos = 0;
+		//Reset position
+		reader.GoTo(ini);
 	}
 
 	inline DWORD Get(DWORD n)
@@ -132,7 +89,7 @@ public:
 
 	inline QWORD Left()
 	{
-		return QWORD(bufferLen - bufferPos) * 8 - cached;
+		return QWORD(reader.GetLeft()) * 8 - cached;
 	}
 
 	inline DWORD Peek(DWORD n)
@@ -158,9 +115,9 @@ public:
 		return ret;
 	}
 
-	inline DWORD GetPos()
+	inline QWORD GetPos()
 	{
-		return bufferPos*8-cached;
+		return reader.GetOffset(ini)*8-cached;
 	}
 
 	inline uint32_t GetNonSymmetric(uint8_t n) 
@@ -225,12 +182,12 @@ public:
 	{
 		Align();
 		FlushCache();
-		return bufferPos;
+		return reader.GetOffset(ini);
 	}
 
 	inline void FlushCache()
 	{
-		assert (cached <= bufferPos * 8);
+		assert (cached <= GetPos() * 8);
 
 		//Check if we have already finished
 		if (!cached)
@@ -242,10 +199,8 @@ public:
 		auto bytes = cached / 8;
 		//Debug("Flushing Cache cached:%d bytes:%d len:%u pos:%u\n", cached, bytes, bufferLen, bufferPos);
 
-		//Increase pointers
-		bufferLen += bytes;
-		buffer -= bytes;
-		bufferPos -= bytes;
+		//Go back
+		reader.GoTo(reader.Mark() - bytes);
 
 		//Nothing cached
 		cached = 0;
@@ -272,36 +227,27 @@ private:
 	inline DWORD Cache()
 	{
 		//Check left buffer
-		if (bufferLen-bufferPos>3)
+		if (reader.Assert(4))
 		{
 			//Update cache
-			cache = get4(buffer+bufferPos,0);
+			cache = reader.Get4();
 			//Update bit count
 			cached = 32;
-			//Increase pointer
-			bufferPos += 4;
-
-		} else if(bufferLen-bufferPos==3) {
+		} else if(reader.Assert(3)) {
 			//Update cache
-			cache = get3(buffer+bufferPos,0)<<8;
+			cache = reader.Get3() << 8;
 			//Update bit count
 			cached = 24;
-			//Increase pointer
-			bufferPos += 3;
-		} else if (bufferLen-bufferPos==2) {
+		} else if (reader.Assert(2)) {
 			//Update cache
-			cache = get2(buffer+bufferPos,0)<<16;
+			cache = reader.Get2() << 16;
 			//Update bit count
 			cached = 16;
-			//Increase pointer
-			bufferPos += 2;
-		} else if (bufferLen-bufferPos==1) {
+		} else if (reader.Assert(1)) {
 			//Update cache
-			cache  = get1(buffer+bufferPos,0)<<24;
+			cache  = reader.Get1()<<24;
 			//Update bit count
 			cached = 8;
-			//Increase pointer
-			bufferPos++;
 		} else {
 			throw std::range_error("no more bytes to read from");
 		}
@@ -317,19 +263,19 @@ private:
 	inline DWORD PeekNextCached()
 	{
 		//Check left buffer
-		if (bufferLen-bufferPos>3)
+		if (reader.Assert(4))
 		{
-			//return  cached
-			return get4(buffer+bufferPos,0);
-		} else if(bufferLen-bufferPos==3) {
-			//return  cached
-			return get3(buffer+bufferPos,0)<<8;
-		} else if (bufferLen-bufferPos==2) {
-			//return  cached
-			return get2(buffer+bufferPos,0)<<16;
-		} else if (bufferLen-bufferPos==1) {
-			//return  cached
-			return get1(buffer+bufferPos,0)<<24;
+			//Peek next bytes
+			return reader.Peek4();
+		} else if(reader.Assert(3)) {
+			//Peek next bytes
+			return reader.Peek3() << 8;
+		} else if (reader.Assert(2)) {
+			//Peek next bytes
+			return reader.Peek2() << 16;
+		} else if (reader.Assert(1)) {
+			//Peek next bytes
+			return reader.Peek1() << 24;
 		} else {
 			throw std::range_error("no more bytes to read from");
 		}
@@ -371,11 +317,10 @@ private:
 	}
 	
 private:
-	const BYTE* buffer;
-	DWORD bufferLen;
-	DWORD bufferPos;
-	DWORD cache;
-	BYTE  cached;
+	BufferReader& reader;
+	DWORD ini	= 0;
+	DWORD cache	= 0;
+	BYTE  cached	= 0;
 };
 
 

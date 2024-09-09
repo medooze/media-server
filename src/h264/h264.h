@@ -12,8 +12,8 @@ public:
 	{
 		//SHould be done otherway, like modifying the BitReader to escape the input NAL, but anyway.. duplicate memory
 		Buffer escaped = NalUnescapeRbsp(buffer, bufferSize);
-		//Create bit reader
-		BitReader r(escaped);
+		BufferReader reader(escaped);
+		BitReader r(reader);
 
 		try {
 			//Read SPS
@@ -192,8 +192,8 @@ public:
 	{
 		//SHould be done otherway, like modifying the BitReader to escape the input NAL, but anyway.. duplicate memory
 		Buffer escaped = NalUnescapeRbsp(buffer, bufferSize);
-		//Create bit reader
-		BitReader r(escaped);
+		BufferReader reader(escaped);
+		BitReader r(reader);
 
 		try
 		{
@@ -315,7 +315,10 @@ public:
 
 	bool Decode(const BYTE* buffer, DWORD bufferSize, const H264SeqParameterSet& sps)
 	{	
-		BitReader r(buffer, bufferSize);
+		//SHould be done otherway, like modifying the BitReader to escape the input NAL, but anyway.. duplicate memory
+		Buffer escaped = NalUnescapeRbsp(buffer, bufferSize);
+		BufferReader reader(escaped);
+		BitReader r(reader);
 		
 		try
 		{

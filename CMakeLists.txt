@@ -179,6 +179,7 @@ add_executable(MediaServerUnitTest
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAccumulator.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestCircularBuffer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestCircularQueue.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestDependencyDescriptor.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestFrameDelayCalculator.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestFrameDispatchCoordinator.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestMovingCounter.cpp
@@ -218,7 +219,6 @@ add_executable(MediaServerLegacyTest
     ${CMAKE_CURRENT_LIST_DIR}/test/main.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/test.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/cpim.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/test/dd.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/ddls.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/eventloop.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/fec.cpp

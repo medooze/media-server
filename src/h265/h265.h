@@ -440,44 +440,8 @@ class H265SliceHeader
 {
 public:
 
-	bool Decode(const BYTE* buffer, DWORD bufferSize, uint8_t nalUnitType, const H265PictureParameterSet& pps, const H265SeqParameterSet& sps)
-	{	
-		BitReader r(buffer, bufferSize);
-		
-		try
-		{
-			firstSliceSegmentInPicFlag = r.Get(1);
-			if (nalUnitType >= HEVC_RTP_NALU_Type::BLA_W_LP && nalUnitType <= HEVC_RTP_NALU_Type::RSV_IRAP_VCL23)
-			{
-				noOutputOfPriorPicsFlag = r.Get(1);
-			}
-			slicePpsId = r.GetExpGolomb();
-		
-			if (!firstSliceSegmentInPicFlag)
-			{
-				if (pps.GetDependentSliceSegmentsEnabledFlag())
-				{
-					dependentSliceSegmentFlag = r.Get(1);
-				}
-			
-				sliceSegmentAddress = r.Get(sps.GetLog2PicSizeInCtbsY());
-			}
-		
-			if (!dependentSliceSegmentFlag)
-			{
-				r.Get(pps.GetNumExtraSliceHeaderBits());
-			
-				sliceType =  r.GetExpGolomb();
-			}
-		}
-		catch (std::exception& e) 
-		{
-			return false;
-		}
-		
-		return true;
-	}
-	
+	bool Decode(const BYTE* buffer, DWORD bufferSize, uint8_t nalUnitType, const H265PictureParameterSet& pps, const H265SeqParameterSet& sps);
+
 	uint8_t GetFirstSliceSegmentInPicFlag() const { return firstSliceSegmentInPicFlag; }
 	
 	uint8_t GetNoOutputOfPriorPicsFlag() const { return noOutputOfPriorPicsFlag; }	

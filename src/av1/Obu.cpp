@@ -67,7 +67,7 @@ bool ObuHeader::Parse(BufferReader& reader)
 {
 	if (!reader.Assert(1)) return false;
 	
-	BitReader bitreader(reader.PeekData(),reader.GetLeft());
+	BitReader bitreader(reader);
 	
 	try
 	{
@@ -89,8 +89,6 @@ bool ObuHeader::Parse(BufferReader& reader)
 			};
 			bitreader.Skip(3);
 		}
-
-		reader.Skip(bitreader.Flush());
 
 		if (hasSizeField)
 			length = reader.DecodeLev128();
