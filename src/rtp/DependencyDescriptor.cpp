@@ -166,124 +166,117 @@ std::optional<DependencyDescriptor> DependencyDescriptor::Parse(BitReader& reade
 	auto dd = std::make_optional<DependencyDescriptor>({});
 	
 	try {
-		//check min size
-		if (reader.Left()<24)
-			//error
-			return std::nullopt;
-	
 		//mandatory_descriptor_fields()
 		dd->startOfFrame		= reader.Get(1);  
 		dd->endOfFrame			= reader.Get(1);  
 		dd->frameDependencyTemplateId	= reader.Get(6);  
 		dd->frameNumber			= reader.Get(16); 
 	
-		if (reader.Left()) 
+		//extended_descriptor_fields()	
+		bool templateDependencyStructurePresent	= reader.Get(1); 
+		bool activeDecodeTargetsPresent		= reader.Get(1); 
+		bool customDtis				= reader.Get(1); 
+		bool customFrameDiffs			= reader.Get(1); 
+		bool customChains			= reader.Get(1); 
+		uint32_t dtsCount			= 0;
+		uint32_t chainsCount			= 0;
+		uint32_t activeDecodeTargetsBitmask	= 0;
+		
+		if (templateDependencyStructurePresent)
 		{
-			//extended_descriptor_fields()	
-			bool templateDependencyStructurePresent	= reader.Get(1); 
-			bool activeDecodeTargetsPresent		= reader.Get(1); 
-			bool customDtis				= reader.Get(1); 
-			bool customFrameDiffs			= reader.Get(1); 
-			bool customChains			= reader.Get(1); 
-			uint32_t dtsCount			= 0;
-			uint32_t chainsCount			= 0;
-			uint32_t activeDecodeTargetsBitmask	= 0;
-		
-			if (templateDependencyStructurePresent)
-			{
-				//Parse template dependency
-				dd->templateDependencyStructure = TemplateDependencyStructure::Parse(reader); 
-				//If failed
-				if (!dd->templateDependencyStructure)
-					//Error
-					return std::nullopt;
-				//Set counts
-				dtsCount	= dd->templateDependencyStructure->dtsCount;
-				chainsCount	= dd->templateDependencyStructure->chainsCount;
-			} else if (templateDependencyStructure) {
-				//Set counts
-				dtsCount	= templateDependencyStructure->dtsCount;
-				chainsCount	= templateDependencyStructure->chainsCount;
-			}
+			//Parse template dependency
+			dd->templateDependencyStructure = TemplateDependencyStructure::Parse(reader); 
+			//Set counts
+			dtsCount	= dd->templateDependencyStructure->dtsCount;
+			chainsCount	= dd->templateDependencyStructure->chainsCount;
+		} else if (templateDependencyStructure) {
+			//Set counts
+			dtsCount	= templateDependencyStructure->dtsCount;
+			chainsCount	= templateDependencyStructure->chainsCount;
+		}
 
-			if (activeDecodeTargetsPresent) 
+		if (activeDecodeTargetsPresent) 
+		{
+			//check decode targets are set
+			if (!dtsCount)
+				//Error
+				return std::nullopt;
+			//Get bitmask
+			activeDecodeTargetsBitmask = reader.Get(dtsCount); 
+			//Create empty field
+			dd->activeDecodeTargets.emplace(dtsCount);
+		}
+		
+		//If got active decode targets info
+		if (dd->activeDecodeTargets)
+			//Parse mask
+			for (uint8_t i = 0; i < dtsCount; ++i)
+				//Read bits from end to first, so push front in field
+				dd->activeDecodeTargets.value()[i] = (activeDecodeTargetsBitmask >> i ) & 1;
+		
+		if (customDtis)
+		{
+			//check decode target count is set
+			if (!dtsCount)
+				//Error
+				return std::nullopt;
+			//Create custom dtis
+			dd->customDecodeTargetIndications.emplace();
+			//Fill custom dtis up to count
+			while (dd->customDecodeTargetIndications->size() < customDtis)
 			{
-				//check decode targets are set
-				if (!dtsCount)
-					//Error
-					return std::nullopt;
-				//Get bitmask
-				activeDecodeTargetsBitmask = reader.Get(dtsCount); 
-				//Create empty field
-				dd->activeDecodeTargets.emplace(dtsCount);
-			}
-		
-			//If got active decode targets info
-			if (dd->activeDecodeTargets)
-				//Parse mask
-				for (uint8_t i = 0; i < dtsCount; ++i)
-					//Read bits from end to first, so push front in field
-					dd->activeDecodeTargets.value()[i] = (activeDecodeTargetsBitmask >> i ) & 1;
-		
-			if (customDtis)
-			{
-				//check decode target count is set
-				if (!dtsCount)
-					//Error
-					return std::nullopt;
-				//Create custom dtis
-				dd->customDecodeTargetIndications.emplace();
-				//Fill custom dtis up to count
-				while (dd->customDecodeTargetIndications->size() < customDtis)
-				{
-					//frame_dti[dtIndex] = f(2)
-					dd->customDecodeTargetIndications->push_back((DecodeTargetIndication)reader.Get(2)); 
-				}
-			}
-		
-		
-			if (customFrameDiffs)
-			{
-				//Create custom frame diffs
-				dd->customFrameDiffs.emplace();
-			
-				//Get next value size
-				uint32_t nextFrameDiffSize = reader.Get(2); 
-				//While not last
-				while (nextFrameDiffSize) 
-				{
-					//Get frame diff
-					uint32_t frameDiffMinusOne = reader.Get(4 * nextFrameDiffSize); 
-					//Push back
-					dd->customFrameDiffs->push_back(frameDiffMinusOne + 1);
-					//Get next value size
-					nextFrameDiffSize = reader.Get(2); 
-				}
-			}
-		
-			if (customChains)
-			{
-				//check count is set
-				if (!chainsCount)
-					//Error
-					return std::nullopt;
-				
-				//Create custom chains
-				dd->customFrameDiffsChains.emplace();
-				//Fill custom chain frame diffs up to count
-				while (dd->customFrameDiffsChains->size() < chainsCount)
-				{
-					//frame_chain_fdiff[chainIndex] = f(8)
-					dd->customFrameDiffsChains->push_back(reader.Get(8)); 
-				}
+				//frame_dti[dtIndex] = f(2)
+				dd->customDecodeTargetIndications->push_back((DecodeTargetIndication)reader.Get(2)); 
 			}
 		}
+		
+		
+		if (customFrameDiffs)
+		{
+			//Create custom frame diffs
+			dd->customFrameDiffs.emplace();
+			
+			//Get next value size
+			uint32_t nextFrameDiffSize = reader.Get(2); 
+			//While not last
+			while (nextFrameDiffSize) 
+			{
+				//Get frame diff
+				uint32_t frameDiffMinusOne = reader.Get(4 * nextFrameDiffSize); 
+				//Push back
+				dd->customFrameDiffs->push_back(frameDiffMinusOne + 1);
+				//Get next value size
+				nextFrameDiffSize = reader.Get(2); 
+			}
+		}
+		
+		if (customChains)
+		{
+			//check count is set
+			if (!chainsCount)
+				//Error
+				return std::nullopt;
+				
+			//Create custom chains
+			dd->customFrameDiffsChains.emplace();
+			//Fill custom chain frame diffs up to count
+			while (dd->customFrameDiffsChains->size() < chainsCount)
+			{
+				//frame_chain_fdiff[chainIndex] = f(8)
+				dd->customFrameDiffsChains->push_back(reader.Get(8)); 
+			}
+		}
+
+		//frame_dependency_definition()
+		//zero_padding = f(sz * 8 - TotalConsumedBits)
+		reader.Flush();
+
 	} catch (std::exception& e) {
+		
 		return dd;
 	}
 	
-	//frame_dependency_definition()
-	//zero_padding = f(sz * 8 - TotalConsumedBits)
+	
 	return dd;
 }
 
