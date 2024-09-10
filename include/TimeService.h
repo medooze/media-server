@@ -48,6 +48,9 @@ public:
 template <typename T>
 class TimeServiceWrapper : public std::enable_shared_from_this<T>
 {
+protected:
+	struct Protected{ explicit Protected() = default; };
+	
 public:
 	template <typename Func>
 	void AsyncSafe(TimeService& timeService, Func&& func)
@@ -91,6 +94,12 @@ public:
 			
 			func(self, now);
 		});
+	}
+	
+	template <typename... ARGS>
+	static std::shared_ptr<T> Create(ARGS&&... args)
+	{
+		return std::make_shared<T>(Protected(), std::forward<ARGS>(args)...);
 	}
 };
 

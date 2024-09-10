@@ -9,11 +9,11 @@
 #include <queue>
 #include <algorithm>
 
-class FrameDelayCalculator : public std::enable_shared_from_this<FrameDelayCalculator>
+class FrameDelayCalculator : public TimeServiceWrapper<FrameDelayCalculator>
 {
 public:
 
-	FrameDelayCalculator(int aUpdateRefsPacketLateThresholdMs, std::chrono::milliseconds aUpdateRefsStepPacketEarlyMs, TimeService& timeService);
+	FrameDelayCalculator(Protected prt, int aUpdateRefsPacketLateThresholdMs, std::chrono::milliseconds aUpdateRefsStepPacketEarlyMs, TimeService& timeService);
 	
 	/**
 	 * Calculate the dispatch delay for the arrived frame. This function is thread safe.
