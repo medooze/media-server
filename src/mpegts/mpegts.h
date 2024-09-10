@@ -137,7 +137,6 @@ struct HeaderExtension : public Encodable
 	bool	aditionalInfoFlag = false;
 	bool	crcFlag = false;
 	bool	extensionFlag = false;
-	uint8_t remainderHeaderLength = 0;
 
 	std::optional<uint64_t> pts = {};
 	std::optional<uint64_t> dts = {};

@@ -265,7 +265,7 @@ void HeaderExtension::Encode(BufferWritter& writer)
 	bitwriter.Put(1, aditionalInfoFlag);
 	bitwriter.Put(1, crcFlag);
 	bitwriter.Put(1, extensionFlag);
-	bitwriter.Put(8, remainderHeaderLength);
+	bitwriter.Put(8, Size() - 3);
 	
 	if (pts)
 	{
@@ -337,7 +337,7 @@ HeaderExtension HeaderExtension::Parse(BufferReader& reader)
 	headerExtension.aditionalInfoFlag	= bitreader.Get(1);
 	headerExtension.crcFlag			= bitreader.Get(1);
 	headerExtension.extensionFlag		= bitreader.Get(1);
-	headerExtension.remainderHeaderLength	= bitreader.Get(8);
+	auto remainderHeaderLength		= bitreader.Get(8);
 
 	//Get current postition
 	auto pos = reader.Mark();
@@ -381,7 +381,7 @@ HeaderExtension HeaderExtension::Parse(BufferReader& reader)
 	}
 
 	//Skip the rest of the header
-	reader.GoTo(pos + headerExtension.remainderHeaderLength);
+	reader.GoTo(pos + remainderHeaderLength);
 
 	return headerExtension;
 }
