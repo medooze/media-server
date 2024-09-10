@@ -76,8 +76,8 @@ public:
 			
 			// Fill the writer as much as possible
 			auto len = std::min(buffer->GetSize() - pos, writer.GetLeft());
-			memcpy(const_cast<uint8_t*>(writer.GetData()), &buffer->GetData()[pos], len);
-			writer.Consume(len);
+			auto current = writer.Consume(len);
+			memcpy(current, &buffer->GetData()[pos], len);
 			
 			pos += len;
 		}
