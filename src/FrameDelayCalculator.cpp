@@ -31,6 +31,7 @@ static constexpr uint64_t MaxClockDesync = 100 * UnifiedClockRate; //100s
 
 FrameDelayCalculator::FrameDelayCalculator(Protected prt, int aUpdateRefsPacketLateThresholdMs, 
 					std::chrono::milliseconds aUpdateRefsStepPacketEarlyMs, TimeService& timeService) :
+	TimeServiceWrapper<FrameDelayCalculator>(prt),
 	updateRefsPacketLateThresholdMs(aUpdateRefsPacketLateThresholdMs),
 	updateRefsStepPacketEarlyMs(aUpdateRefsStepPacketEarlyMs),
 	timeService(timeService)

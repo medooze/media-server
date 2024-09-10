@@ -52,6 +52,9 @@ protected:
 	struct Protected{ explicit Protected() = default; };
 	
 public:
+	
+	TimeServiceWrapper(Protected prt) {}
+
 	template <typename Func>
 	void AsyncSafe(TimeService& timeService, Func&& func)
 	{
