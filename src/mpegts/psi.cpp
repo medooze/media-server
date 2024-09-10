@@ -230,14 +230,14 @@ void ProgramMap::ElementaryStream::Encode(BufferWritter& writer)
 	bitwriter.Put(3, 0x7);	// reserved
 	bitwriter.Put(13, pid);
 	bitwriter.Put(4, 0xf); // reserved
-	bitwriter.Put(12, pid);
+	bitwriter.Put(12, descriptor.GetLeft());
 	
 	if (descriptor.GetLeft() > 0)
 	{
 		auto reader = descriptor;
 		auto buffer = reader.GetBuffer(reader.GetLeft());
 	
-		writer.Set(0, buffer);
+		writer.Set(buffer);
 	}
 }
 
@@ -290,7 +290,7 @@ void ProgramMap::Encode(BufferWritter& writer)
 	bitwriter.Put(3, 0x7);		// Reserved
 	bitwriter.Put(13, pcrPid);	// PCR_PID, no PCR
 	bitwriter.Put(4, 0xf);		// reserved
-	bitwriter.Put(12, piLength);	// program info length
+	bitwriter.Put(12, 0);		// program info length
 	
 	for (auto& es : streams) 
 	{
