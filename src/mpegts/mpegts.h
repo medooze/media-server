@@ -98,8 +98,8 @@ enum StreamType
 
 StreamType GetStreamType(const uint8_t& streamId);
 
-constexpr uint8_t CreateAudioStreamID(uint8_t streamNumber) { return 0xc | (streamNumber & 0x1f); };
-constexpr uint8_t CreateVideoStreamID(uint8_t streamNumber) { return 0xe | (streamNumber & 0xf); };
+constexpr uint8_t CreateAudioStreamID(uint8_t streamNumber) { return 0xc0 | (streamNumber & 0x1f); };
+constexpr uint8_t CreateVideoStreamID(uint8_t streamNumber) { return 0xe0 | (streamNumber & 0xf); };
 
 enum PTSDTSIndicator
 {
