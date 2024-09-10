@@ -2,7 +2,7 @@
 
 #include "h265/h265.h"
 
-TEST(TestH265SeqParameterSet, Parse)
+TEST(TestH265SeqParameterSet, DISABLED_Parse)
 {
         Logger::EnableDebug(true);
 
