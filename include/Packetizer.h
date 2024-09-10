@@ -66,8 +66,9 @@ public:
 				lock.unlock();
 				
 				// Create a new buffer for the message
-				buffer = std::make_unique<Buffer>(encodable->Size());
-				BufferWritter awriter(*buffer);
+				auto sz = encodable->Size();
+				buffer = std::make_unique<Buffer>(sz);
+				BufferWritter awriter(buffer->GetData(), sz);
 				encodable->Encode(awriter);
 				
 				buffer->SetSize(awriter.GetLength());

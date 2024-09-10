@@ -93,29 +93,28 @@ void AdaptationField::Encode(BufferWritter& writer)
 	if (writer.GetLeft() < Size())
 		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
 	
-	writer.Set1(adaptationFieldLength);
+	writer.Set1(1);
 	
-	if (adaptationFieldLength > 0)
-	{
-		BitWriter bitwriter(writer, 1);
-		
-		bitwriter.Put(1, discontinuityIndicator);
-		bitwriter.Put(1, randomAccessIndicator);
-		bitwriter.Put(1, elementaryStreamPriorityIndicator);
-		bitwriter.Put(1, pcrFlag);
-		
-		bitwriter.Put(1, opcrFlag);
-		bitwriter.Put(1, splicingPointFlag);
-		bitwriter.Put(1, transportPrivateDataFlag);
-		bitwriter.Put(1, adaptationFieldExtensionFlag);
-	}
+	BitWriter bitwriter(writer, 1);
 	
-	// @todo padd until adaptationFieldLength
+	bitwriter.Put(1, discontinuityIndicator);
+	bitwriter.Put(1, randomAccessIndicator);
+	bitwriter.Put(1, elementaryStreamPriorityIndicator);
+	
+	// @todo encode properly for flags
+	// bitwriter.Put(1, pcrFlag);
+	// bitwriter.Put(1, opcrFlag);
+	// bitwriter.Put(1, splicingPointFlag);
+	// bitwriter.Put(1, transportPrivateDataFlag);
+	// bitwriter.Put(1, adaptationFieldExtensionFlag);
+	
+	// Set all flags to 0
+	bitwriter.Put(5, 0);
 }
 
 size_t AdaptationField::Size() const
 {
-	return 1 + adaptationFieldLength;
+	return 1 + 1;
 }
 
 AdaptationField AdaptationField::Parse(BufferReader& reader)
@@ -144,7 +143,6 @@ AdaptationField AdaptationField::Parse(BufferReader& reader)
 	uint32_t start = reader.Mark();
 
 	AdaptationField adaptationField = {};
-	adaptationField.adaptationFieldLength = adaptationFieldLength;
 
 	//Get bit reader
 	BitReader bitreader(reader.GetData(1), 1);

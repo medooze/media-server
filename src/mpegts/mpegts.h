@@ -55,7 +55,6 @@ struct Header : public Encodable
 
 struct AdaptationField : public Encodable
 {
-	uint8_t adaptationFieldLength = 0;
 	bool discontinuityIndicator = false;
 	bool randomAccessIndicator = false;
 	bool elementaryStreamPriorityIndicator = false;

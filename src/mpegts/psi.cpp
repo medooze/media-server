@@ -14,30 +14,24 @@ void SyntaxData::Encode(BufferWritter& writer)
 {
 	if (writer.GetLeft() < Size())
 		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
-		
-	auto mark = writer.Mark();
 	
 	writer.Set2(tableIdExtension);
 	
-	BitWriter BitWriter(writer, Size() - 2);
-	BitWriter.Put(2, _reserved1);
-	BitWriter.Put(5, versionNumber);
-	BitWriter.Put(1, isCurrent);
-	BitWriter.Put(8, sectionNumber);
-	BitWriter.Put(8, lastSectionNumber);
+	BitWriter bitWriter(writer, 3);
+	bitWriter.Put(2, _reserved1);
+	bitWriter.Put(5, versionNumber);
+	bitWriter.Put(1, isCurrent);
+	bitWriter.Put(8, sectionNumber);
+	bitWriter.Put(8, lastSectionNumber);
 	
 	auto encodable = std::get_if<std::unique_ptr<Encodable>>(&data);
 	if (encodable)
 		(*encodable)->Encode(writer);
-	
-	CRC32Calc crc32;
-	uint32_t crc = crc32.Update(writer.GetData() + mark, writer.GetLength() - mark);
-	writer.Set4(crc);
 }
 
 size_t SyntaxData::Size() const
 {
-	size_t totalSize = 5 + 4;
+	size_t totalSize = 5;
 		
 	std::visit([&totalSize](auto&& arg){
 		using T = std::decay_t<decltype(arg)>;
@@ -97,7 +91,9 @@ void Table::Encode(BufferWritter& writer)
 {
 	if (writer.GetLeft() < Size())
 		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
-		
+	
+	auto mark = writer.Mark();
+	
 	writer.Set1(tableId);
 	
 	BitWriter bitwriter(writer, 2);
@@ -110,11 +106,15 @@ void Table::Encode(BufferWritter& writer)
 	auto encodable = std::get_if<std::unique_ptr<Encodable>>(&data);
 	if (encodable)
 		(*encodable)->Encode(writer);
+		
+	CRC32Calc crc32;
+	uint32_t crc = crc32.Update(writer.GetData() + mark, writer.GetLength() - mark);
+	writer.Set4(crc);
 }
 
 size_t Table::Size() const
 {
-	size_t totalSize = 3;
+	size_t totalSize = 3 + 4;  // header + crc
 	
 	std::visit([&totalSize](auto&& arg){
 		using T = std::decay_t<decltype(arg)>;
