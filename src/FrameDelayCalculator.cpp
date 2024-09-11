@@ -29,12 +29,11 @@ static constexpr uint64_t UnifiedClockRate = 90 * 1000;
 static constexpr uint64_t MaxClockDesync = 100 * UnifiedClockRate; //100s
 }
 
-FrameDelayCalculator::FrameDelayCalculator(Protected prt, int aUpdateRefsPacketLateThresholdMs, 
+FrameDelayCalculator::FrameDelayCalculator(int aUpdateRefsPacketLateThresholdMs, 
 					std::chrono::milliseconds aUpdateRefsStepPacketEarlyMs, TimeService& timeService) :
-	TimeServiceWrapper<FrameDelayCalculator>(prt),
+	TimeServiceWrapper<FrameDelayCalculator>(timeService),
 	updateRefsPacketLateThresholdMs(aUpdateRefsPacketLateThresholdMs),
-	updateRefsStepPacketEarlyMs(aUpdateRefsStepPacketEarlyMs),
-	timeService(timeService)
+	updateRefsStepPacketEarlyMs(aUpdateRefsStepPacketEarlyMs)
 {
 }
 
@@ -89,7 +88,7 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 	}
 	
 	// Asynchronously check if we can reduce latency if all frames comes early
-	AsyncSafe(timeService, [early, now, unifiedTs, refTime, refTimestamp, 
+	AsyncSafe([early, now, unifiedTs, refTime, refTimestamp, 
 				streamIdentifier, updateRefsPacketEarlyThresholdMs, state = state](auto self, std::chrono::milliseconds) {
 		
 		if (state == State::Reset)

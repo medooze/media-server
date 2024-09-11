@@ -48,15 +48,13 @@ public:
 template <typename T>
 class TimeServiceWrapper : public std::enable_shared_from_this<T>
 {
-protected:
-	struct Protected{ explicit Protected() = default; };
-	
 public:
+	TimeServiceWrapper(TimeService& timeService) : timeService(timeService)
+	{
+	}
 	
-	TimeServiceWrapper(Protected prt) {}
-
 	template <typename Func>
-	void AsyncSafe(TimeService& timeService, Func&& func)
+	void AsyncSafe(Func&& func)
 	{
 		timeService.Async([selfWeak = TimeServiceWrapper<T>::weak_from_this(), func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
 			auto self = selfWeak.lock();
@@ -67,7 +65,7 @@ public:
 	}
 	
 	template <typename Func>
-	auto CreateTimerSafe(TimeService& timeService, Func&& func)
+	auto CreateTimerSafe(Func&& func)
 	{
 		return timeService.CreateTimer([selfWeak = TimeServiceWrapper<T>::weak_from_this(), func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
 			auto self = selfWeak.lock();
@@ -78,7 +76,7 @@ public:
 	}
 	
 	template <typename Func>
-	auto CreateTimerSafe(TimeService& timeService, const std::chrono::milliseconds& ms, Func&& func)
+	auto CreateTimerSafe(const std::chrono::milliseconds& ms, Func&& func)
 	{
 		return timeService.CreateTimer(ms, [selfWeak = TimeServiceWrapper<T>::weak_from_this(), func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
 			auto self = selfWeak.lock();
@@ -89,7 +87,7 @@ public:
 	}
 	
 	template <typename Func>
-	auto FutureSafe(TimeService& timeService, Func&& func)
+	auto FutureSafe(Func&& func)
 	{
 		return timeService.Future([selfWeak = TimeServiceWrapper<T>::weak_from_this(), func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
 			auto self = selfWeak.lock();
@@ -102,8 +100,11 @@ public:
 	template <typename... ARGS>
 	static std::shared_ptr<T> Create(ARGS&&... args)
 	{
-		return std::make_shared<T>(Protected(), std::forward<ARGS>(args)...);
+		return std::shared_ptr<T>(new T(std::forward<ARGS>(args)...));
 	}
+
+private:
+	TimeService& timeService;
 };
 
 
