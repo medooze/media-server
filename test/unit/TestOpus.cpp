@@ -8,7 +8,7 @@ TEST(TestOpusCodec, OpusEncodeSameSampleRate)
 {
 	AudioCodec::Type codecType = AudioCodec::GetCodecForName("OPUS");
 	Properties props;
-    props.SetProperty("opus.application.audio", true);
+	props.SetProperty("opus.application.audio", true);
 
 	// params for generating raw pcm data
 	int numAudioFrames = 99, decoderFrameSize = 1024, inputSampleRate=48000, inputNumChannels=1;

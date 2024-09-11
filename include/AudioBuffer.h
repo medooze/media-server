@@ -50,20 +50,15 @@ public:
 		return totalSamples;
 	}
 
-	void Resize(int numSamples) 
-	{
-		pcmBuffer.resize(numSamples*numChannels);
-	}
-
 	int CopyResampled(SWORD* in, int numSamples)
 	{
 		if(!in) 
 			return Error("AudioBuffer::CopyResampled() empty input buffer\n");
 
 		int totalResampled = numSamples * numChannels;
-		if(numSamples*numChannels != pcmBuffer.size())
+		if(totalResampled != pcmBuffer.size())
 		{
-			Warning("AudioBuffer::CopyResampled buffer resized, resized to =%d\n", totalResampled);
+			Debug("AudioBuffer::CopyResampled buffer resized, resized to =%d\n", totalResampled);
 			pcmBuffer.resize(totalResampled);
 		}
 			
@@ -77,7 +72,7 @@ public:
 			return Error("-AudioBuffer::CopyDecodedData() invalid frame data pointer\n");
 	
 		if(numSamples*numChannels > pcmBuffer.size()) 
-			return Error("-AudioBuffer::CopyDecodedData() exceed audio buffer capacity\n");
+			return Error("-AudioBuffer::CopyDecodedData() exceed audio buffer size\n");
 		
 		int totalWrittenSamples = 0;
 		for (size_t i = 0; i < numSamples; ++i)
@@ -86,18 +81,22 @@ public:
 			for (size_t ch = 0; ch < numChannels; ++ch)
 			{
 				//Interleave
-				pcmBuffer[i * numChannels + ch] = ((float*)(pcmData[ch]))[i] * (1 << 15);
+				if(pcmData[ch])
+					pcmBuffer[i * numChannels + ch] = ((float*)(pcmData[ch]))[i] * (1 << 15);
+				else 
+					return Error("-AudioBuffer::CopyDecodedData() invalid data pointer for ch %d\n", ch);
 				totalWrittenSamples++;
 			}
 
 		}
 		return totalWrittenSamples / numChannels;		
 	}
-	void AddPCM(SWORD val, int pos) 
+	bool AddPCM(SWORD val, int pos) 
 	{ 
 		if(pos >= pcmBuffer.size()) 
-			Error("-AudioBuffer::AddPCM() write position exceeds buffer size\n");
+			return Error("-AudioBuffer::AddPCM() write position exceeds buffer size\n");
 		pcmBuffer[pos] = val;
+		return true;
 	}
 	const int GetNumChannels() const { return numChannels; }
 	const int GetNumSamples() const { return pcmBuffer.size() / numChannels; }

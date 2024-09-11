@@ -67,11 +67,10 @@ class AudioDecoderForTest
 {
 public:
 	AudioDecoderForTest(AVCodecID codec, int sampleRate, int numChannels): 
-		codec(codec),
+		codecID(codec),
 		sampleRate(sampleRate),
 		numChannels(numChannels)
 	{
-		av_log_set_level(AV_LOG_DEBUG);
 		prepareDecoderContext();
 	}
 	~AudioDecoderForTest()
@@ -122,7 +121,7 @@ public:
 	std::vector<float> GetDecodedAudio() {return pcmAudio;};
 	
 private:
-	AVCodecID codec;
+	AVCodecID codecID;
 	int sampleRate;
 	int numChannels;
 	AVPacket* pkt;
@@ -131,9 +130,9 @@ private:
 	AVCodecContext *decoderCtx;
 	std::vector<float> pcmAudio;
 	
-	int prepareDecoderContext()
+	void prepareDecoderContext()
 	{
-		decoder = const_cast<AVCodec *>(avcodec_find_decoder(codec));
+		decoder = avcodec_find_decoder(codecID);
 		if (!decoder)
 		{
 			printf("failed to find the codec");
@@ -261,13 +260,11 @@ static void TestAudioEncoder(AudioCodec::Type codecType, const Properties& props
 			return;
 	}
 	int numFrames = params.numFrames, decoderFrameSize = params.decoderFrameSize;
-
 	// generated audio buffers are used for encoding
-	// SineToneGenerator audioGen(params.sampleRate, params.numChannels, params.freq, params.amplitude, decoderFrameSize);
 	AudioBufferGenerator audioBufferGen(params.sampleRate, params.numChannels, params.freq, params.amplitude);
 	// simple decoder used to decode encoded audio for test purpose
-	AudioDecoderForTest audioDecoder(codec, sampleRate, numChannels);
-	
+	AudioDecoderForTest audioDecoderForTest(codec, sampleRate, numChannels);
+
 	AudioPipe audPipe(sampleRate);
 
 	AudioEncoderWorker encoderWorker;
@@ -280,6 +277,7 @@ static void TestAudioEncoder(AudioCodec::Type codecType, const Properties& props
 	
 	audPipe.StartRecording(sampleRate);
 	audPipe.StartPlaying(params.sampleRate, params.numChannels);
+	
 	// offset is used to create continuous sine tone that is stored in audio buffer
 	int pts = params.startPTS, expectedEncoderPTS = params.startPTS, offset=0;
 	for(int i = 0;i < numFrames;i++)
@@ -290,7 +288,6 @@ static void TestAudioEncoder(AudioCodec::Type codecType, const Properties& props
 		pts+=decoderFrameSize;
 		offset+=decoderFrameSize;
 	}
-
 	auto mediaFrameListener = std::static_pointer_cast<MediaFrameListenerForAudioEncoderTest>(myMFListener);
 	auto startTime = std::chrono::steady_clock::now();
 	int maxWaitInSeconds = 2;
@@ -309,12 +306,12 @@ static void TestAudioEncoder(AudioCodec::Type codecType, const Properties& props
 	{
 		auto currFrame = audioFrames.front();
 		audioFramePTS.push_back(currFrame->GetTimestamp());
-		audioDecoder.Decode(currFrame);
+		audioDecoderForTest.Decode(currFrame);
 		audioFrames.pop();
 	}
 
-	auto decodedAudio = audioDecoder.GetDecodedAudio();
-	auto numDecodedSamples = audioDecoder.GetDecodedAudio().size();
+	auto decodedAudio = audioDecoderForTest.GetDecodedAudio();
+	auto numDecodedSamples = audioDecoderForTest.GetDecodedAudio().size();
 	auto res = findPeakFrequency(decodedAudio.data(), sampleRate, numDecodedSamples);
 
 	EXPECT_NEAR(res.first, params.freq, 10) << "unexpected difference in frequency between generated sine tone and decoded sine tone: expected = " << params.freq << ", actual = " << res.first; 

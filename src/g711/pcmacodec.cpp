@@ -61,8 +61,10 @@ AudioBuffer::shared PCMADecoder::GetDecodedAudioFrame()
 	auto audioBuffer = std::make_shared<AudioBuffer>(inLen, 1);
 	for (int j = 0; j< inLen;j++)
 	{
-		audioBuffer->AddPCM(alaw2linear(*in), j);
-		in++;
+		if(audioBuffer->AddPCM(alaw2linear(*in), j))
+			in++;
+		else	
+			return {};
 	}
 	return audioBuffer;
 }

@@ -77,9 +77,11 @@ AudioBuffer::shared GSMDecoder::GetDecodedAudioFrame()
 		//Decodificamso
 		if (gsm_decode(g,(gsm_byte *)in,(gsm_signal *)audioBuffer->GetData())<0)
 			return {};
-
+			
 		return audioBuffer;
-	} else if (inLen==65) {
+	} 
+	else if (inLen==65) 
+	{
 
 		//ponemos el modo wav
 		int wav=1;
@@ -96,4 +98,5 @@ AudioBuffer::shared GSMDecoder::GetDecodedAudioFrame()
 
 		return audioBuffer;	
 	} 
+	return {};
 }

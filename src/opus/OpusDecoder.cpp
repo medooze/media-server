@@ -58,6 +58,7 @@ int OpusDecoder::Decode(const AudioFrame::const_shared& audioFrame)
 		return 0;
 	audioFrameInfo.first = in;
 	audioFrameInfo.second = inLen;
+	return 1;
 }
 
 AudioBuffer::shared OpusDecoder::GetDecodedAudioFrame()

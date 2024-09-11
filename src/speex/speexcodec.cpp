@@ -136,6 +136,7 @@ int SpeexDecoder::Decode(const AudioFrame::const_shared& audioFrame)
 	
 	//Read bits
 	speex_bits_read_from(&decbits, (char*)in, inLen);
+	return 1;
 }
 
 AudioBuffer::shared SpeexDecoder::GetDecodedAudioFrame()
