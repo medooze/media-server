@@ -24,7 +24,7 @@ SyntaxData SyntaxData::Parse(BufferReader& reader)
 	if (reader.GetLeft()<5+4)
 		throw std::runtime_error("Not enough data to read mpegts psi syntax section");
 
-	BitReader bitreader(reader, 5);
+	BitReader bitreader(reader);
 
 	syntaxData.tableIdExtension	= bitreader.Get(16);
 	syntaxData._reserved1		= bitreader.Get(2);
@@ -32,6 +32,8 @@ SyntaxData SyntaxData::Parse(BufferReader& reader)
 	syntaxData.isCurrent		= bitreader.Get(1) != 0;
 	syntaxData.sectionNumber	= bitreader.Get(8);
 	syntaxData.lastSectionNumber	= bitreader.Get(8);
+
+	bitreader.Flush();
 
 	size_t dataSize = reader.GetLeft() - 4;
 	syntaxData.data			= BufferReader(reader.GetData(dataSize), dataSize);
@@ -63,7 +65,7 @@ Table Table::Parse(BufferReader& reader)
 	if (reader.GetLeft()<3)
 		throw std::runtime_error("Not enough data to read mpegts psi table header");
 
-	BitReader bitreader(reader, 3);
+	BitReader bitreader(reader);
 
 	table.tableId			= bitreader.Get(8);
 	bool sectionSyntaxIndicator	= bitreader.Get(1) != 0;
@@ -71,6 +73,8 @@ Table Table::Parse(BufferReader& reader)
 	table._reserved1		= bitreader.Get(2);
 	bitreader.Skip(2);		//length unused bits
 	uint16_t sectionLength		= bitreader.Get(10);
+
+	bitreader.Flush();
 
 	// read table contents (either syntax section or just data)
 	if (reader.GetLeft()<sectionLength)
@@ -125,11 +129,13 @@ ProgramAssociation ProgramAssociation::Parse(BufferReader& reader)
 	if (reader.GetLeft()<4)
 		throw std::runtime_error("Not enough data to read mpegts pat entry");
 	
-	BitReader bitreader(reader, 4);
+	BitReader bitreader(reader);
 
 	programAssociation.programNum	= bitreader.Get(16);
 	bitreader.Skip(3);		//Reserved
 	programAssociation.pmtPid	= bitreader.Get(13);
+
+	bitreader.Flush();
 
 	return programAssociation;
 }
@@ -177,7 +183,7 @@ ProgramMap::ElementaryStream ProgramMap::ElementaryStream::Parse(BufferReader& r
 	if (reader.GetLeft()<5)
 		throw std::runtime_error("Not enough data to read mpegts pmt ES entry header");
 
-	BitReader bitreader(reader, 5);
+	BitReader bitreader(reader);
 
 	elementaryStream.streamType	= bitreader.Get(8);
 	bitreader.Skip(3);		//Reserved
@@ -185,6 +191,8 @@ ProgramMap::ElementaryStream ProgramMap::ElementaryStream::Parse(BufferReader& r
 	bitreader.Skip(4);		//Reserved
 	bitreader.Skip(2);		//Unused
 	uint16_t esLength		= bitreader.Get(10);
+
+	bitreader.Flush();
 
 	if (reader.GetLeft()<esLength)
 		throw std::runtime_error("Not enough data to read mpegts pmt ES entry descriptor");
@@ -213,13 +221,15 @@ ProgramMap ProgramMap::Parse(BufferReader& reader)
 	if (reader.GetLeft()<4)
 		throw std::runtime_error("Not enough data to read mpegts pmt header");
 
-	BitReader bitreader(reader, 4);
+	BitReader bitreader(reader);
 
 	bitreader.Skip(3);	//Reserved
 	programMap.pcrPid	= bitreader.Get(13);
 	bitreader.Skip(4);	//Reserved
 	bitreader.Skip(2);	//Unused
 	uint16_t piLength	= bitreader.Get(10);
+
+	bitreader.Flush();
 
 	if (reader.GetLeft()<piLength)
 		throw std::runtime_error("Not enough data to read mpegts pmt descriptor");
