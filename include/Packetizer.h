@@ -35,7 +35,9 @@ public:
 	
 	bool IsMessageStart() const
 	{
-		return !buffer || pos == buffer->GetSize();
+		Log("buffer: %d pos: %d\n", !!buffer, pos);
+		
+		return !buffer || pos == 0;
 	}
 	
 	virtual void GetNextPacket(BufferWritter& writer)
@@ -47,19 +49,15 @@ public:
 				std::unique_lock lock(mutex);
 				
 				if (messages.empty())
+				{
+					buffer.reset();
+					pos = 0;
 					return;
+				}
 				
 				// Grap the first message
 				auto& msg = messages.front();
 				auto [encodable, forceSeparate] = msg;
-				
-				// check force sperate flag
-				if (forceSeparate && buffer && pos != 0)
-				{
-					pos = 0;
-					buffer.reset();
-					return;
-				}
 				
 				// Remove the message
 				messages.erase(messages.begin());
@@ -72,9 +70,17 @@ public:
 				BufferWritter awriter(buffer->GetData(), sz);
 				encodable->Encode(awriter);
 				
-				Log("Calculated size: %u, written: %u\n", awriter.GetLength());
+				Log("Calculated size: %u, written: %u\n", sz, awriter.GetLength());
 				
 				buffer->SetSize(awriter.GetLength());
+				
+				// check force sperate flag
+				if (forceSeparate && pos > 0)
+				{
+					pos = 0;
+					return;
+				}
+				
 				pos = 0;
 			}
 			
@@ -82,7 +88,7 @@ public:
 			auto len = std::min(buffer->GetSize() - pos, writer.GetLeft());
 			auto current = writer.Consume(len);
 			memcpy(current, &buffer->GetData()[pos], len);
-			Log("packet: %u\n", len);
+			Log("packet: %u pos: %u\n", len, pos);
 			
 			pos += len;
 		}
