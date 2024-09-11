@@ -77,6 +77,9 @@ TEST(TestVideoLayersAllocation, CanWriteAndParse2SpatialWith2TemporalLayers)
 
 TEST(TestVideoLayersAllocation, CanWriteAndParseAllocationWithDifferentNumerOfSpatialLayers) 
 {
+	Logger::EnableDebug(true);
+	Logger::EnableUltraDebug(true);
+
 	RTPMap	extMap;
 	extMap.SetCodecForType(RTPHeaderExtension::VideoLayersAllocation, RTPHeaderExtension::VideoLayersAllocation);
 
@@ -115,10 +118,12 @@ TEST(TestVideoLayersAllocation, CanWriteAndParseAllocationWithDifferentNumerOfSp
 	EXPECT_GE(len, 0);
 
 	//Parse
-	EXPECT_GE(parsed.Parse(extMap, buffer.data(), len), 0);
+	ASSERT_GE(parsed.Parse(extMap, buffer.data(), len), 0);
 	EXPECT_TRUE(parsed.hasVideoLayersAllocation);
-	EXPECT_TRUE(parsed.videoLayersAllocation.has_value());
+	ASSERT_TRUE(parsed.videoLayersAllocation.has_value());
 	EXPECT_EQ(extension.videoLayersAllocation, parsed.videoLayersAllocation.value());
+	extension.videoLayersAllocation->Dump();
+	parsed.videoLayersAllocation->Dump();
 }
 
 

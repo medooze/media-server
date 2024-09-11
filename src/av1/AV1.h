@@ -118,7 +118,7 @@ struct SequenceHeaderObu
 
 	bool Parse(BufferReader& reader)
 	{
-		BitReader r(reader.PeekData(), reader.GetLeft());
+		BitReader r(reader);
 
 		try 
 		{
@@ -278,9 +278,6 @@ struct SequenceHeaderObu
 
 			//TODO color_config();
 			//film_grain_params_present = r.Get(1);
-
-			//Skip readed bits
-			reader.Skip(r.Flush());
 		}
 		catch (std::exception& e) 
 		{

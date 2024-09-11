@@ -73,7 +73,8 @@ public:
 
 	bool Parse(const uint8_t *data, uint8_t size)
 	{
-		BitReader reader(data, size);
+		BufferReader bufferReader(data,size);
+		BitReader reader(bufferReader);
 
 		try
 		{

@@ -186,8 +186,8 @@ bool H265VideoParameterSet::Decode(const BYTE* buffer,DWORD bufferSize)
 {
 	//SHould be done otherway, like modifying the BitReader to escape the input NAL, but anyway.. duplicate memory
 	Buffer escaped = NalUnescapeRbsp(buffer, bufferSize);
-	//Create bit reader
-	BitReader r(escaped);
+	BufferReader reader(escaped);
+	BitReader r(reader);
 
 	try 
 	{
@@ -223,8 +223,8 @@ bool H265SeqParameterSet::Decode(const BYTE* buffer,DWORD bufferSize)
 {
 	//SHould be done otherway, like modifying the BitReader to escape the input NAL, but anyway.. duplicate memory
 	Buffer escaped = NalUnescapeRbsp(buffer, bufferSize);
-	//Create bit reader
-	BitReader r(escaped);
+	BufferReader reader(escaped);
+	BitReader r(reader);
 
 	try
 	{
@@ -324,8 +324,8 @@ bool H265PictureParameterSet::Decode(const BYTE* buffer,DWORD bufferSize)
 {
 	//SHould be done otherway, like modifying the BitReader to escape the input NAL, but anyway.. duplicate memory
 	Buffer escaped = NalUnescapeRbsp(buffer, bufferSize);
-	//Create bit reader
-	BitReader r(escaped);
+	BufferReader reader(escaped);
+	BitReader r(reader);
 
 	try
 	{
@@ -357,6 +357,47 @@ bool H265PictureParameterSet::Decode(const BYTE* buffer,DWORD bufferSize)
 		return false;
 	}
 	//OK
+	return true;
+}
+
+bool H265SliceHeader::Decode(const BYTE* buffer, DWORD bufferSize, uint8_t nalUnitType, const H265PictureParameterSet& pps, const H265SeqParameterSet& sps)
+{
+	//SHould be done otherway, like modifying the BitReader to escape the input NAL, but anyway.. duplicate memory
+	Buffer escaped = NalUnescapeRbsp(buffer, bufferSize);
+	BufferReader reader(escaped);
+	BitReader r(reader);
+
+	try
+	{
+		firstSliceSegmentInPicFlag = r.Get(1);
+		if (nalUnitType >= HEVC_RTP_NALU_Type::BLA_W_LP && nalUnitType <= HEVC_RTP_NALU_Type::RSV_IRAP_VCL23)
+		{
+			noOutputOfPriorPicsFlag = r.Get(1);
+		}
+		slicePpsId = r.GetExpGolomb();
+
+		if (!firstSliceSegmentInPicFlag)
+		{
+			if (pps.GetDependentSliceSegmentsEnabledFlag())
+			{
+				dependentSliceSegmentFlag = r.Get(1);
+			}
+
+			sliceSegmentAddress = r.Get(sps.GetLog2PicSizeInCtbsY());
+		}
+
+		if (!dependentSliceSegmentFlag)
+		{
+			r.Get(pps.GetNumExtraSliceHeaderBits());
+
+			sliceType = r.GetExpGolomb();
+		}
+	}
+	catch (std::exception& e)
+	{
+		return false;
+	}
+
 	return true;
 }
 

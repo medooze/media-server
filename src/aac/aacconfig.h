@@ -132,7 +132,8 @@ public:
 		BYTE rateIndex;
 		
 		//Create bit reader
-		BitReader r(data,size);
+		BufferReader reader(data,size);
+		BitReader r(reader);
 
 		try{
 		

@@ -8,7 +8,8 @@ size_t SpliceInfoSection::Parse(const uint8_t *data, size_t len)
 	constexpr size_t SizeUntilSectionLengthField = 3;
 	if (len < SizeUntilSectionLengthField) return 0;
 	
-	BitReader reader(data, len);
+	BufferReader bufferReader(data, len);
+	BitReader reader(bufferReader);
 
 	try
 	{

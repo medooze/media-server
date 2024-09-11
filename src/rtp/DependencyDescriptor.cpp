@@ -165,19 +165,13 @@ std::optional<DependencyDescriptor> DependencyDescriptor::Parse(BitReader& reade
 {
 	auto dd = std::make_optional<DependencyDescriptor>({});
 	
-	//check min size
-	if (reader.Left()<24)
-		//error
-		return std::nullopt;
+	try {
+		//mandatory_descriptor_fields()
+		dd->startOfFrame		= reader.Get(1);  
+		dd->endOfFrame			= reader.Get(1);  
+		dd->frameDependencyTemplateId	= reader.Get(6);  
+		dd->frameNumber			= reader.Get(16); 
 	
-	//mandatory_descriptor_fields()
-	dd->startOfFrame		= reader.Get(1);  
-	dd->endOfFrame			= reader.Get(1);  
-	dd->frameDependencyTemplateId	= reader.Get(6);  
-	dd->frameNumber			= reader.Get(16); 
-	
-	if (reader.Left()) 
-	{
 		//extended_descriptor_fields()	
 		bool templateDependencyStructurePresent	= reader.Get(1); 
 		bool activeDecodeTargetsPresent		= reader.Get(1); 
@@ -192,10 +186,6 @@ std::optional<DependencyDescriptor> DependencyDescriptor::Parse(BitReader& reade
 		{
 			//Parse template dependency
 			dd->templateDependencyStructure = TemplateDependencyStructure::Parse(reader); 
-			//If failed
-			if (!dd->templateDependencyStructure)
-				//Error
-				return std::nullopt;
 			//Set counts
 			dtsCount	= dd->templateDependencyStructure->dtsCount;
 			chainsCount	= dd->templateDependencyStructure->chainsCount;
@@ -210,7 +200,7 @@ std::optional<DependencyDescriptor> DependencyDescriptor::Parse(BitReader& reade
 			//check decode targets are set
 			if (!dtsCount)
 				//Error
-				return std::nullopt;
+				throw std::runtime_error("activeDecodeTargetsPresent but no dtsCount");
 			//Get bitmask
 			activeDecodeTargetsBitmask = reader.Get(dtsCount); 
 			//Create empty field
@@ -229,7 +219,7 @@ std::optional<DependencyDescriptor> DependencyDescriptor::Parse(BitReader& reade
 			//check decode target count is set
 			if (!dtsCount)
 				//Error
-				return std::nullopt;
+				throw std::runtime_error("customDtis but no dtsCount");
 			//Create custom dtis
 			dd->customDecodeTargetIndications.emplace();
 			//Fill custom dtis up to count
@@ -265,7 +255,7 @@ std::optional<DependencyDescriptor> DependencyDescriptor::Parse(BitReader& reade
 			//check count is set
 			if (!chainsCount)
 				//Error
-				return std::nullopt;
+				throw std::runtime_error("customChains but no chainsCount");
 				
 			//Create custom chains
 			dd->customFrameDiffsChains.emplace();
@@ -276,10 +266,17 @@ std::optional<DependencyDescriptor> DependencyDescriptor::Parse(BitReader& reade
 				dd->customFrameDiffsChains->push_back(reader.Get(8)); 
 			}
 		}
+
+		//frame_dependency_definition()
+		//zero_padding = f(sz * 8 - TotalConsumedBits)
+		reader.Flush();
+
+	} catch (std::exception& e) {
+		UltraDebug("-DependencyDescriptor::Parse() parse error:%s", e.what());
+		return dd;
 	}
 	
-	//frame_dependency_definition()
-	//zero_padding = f(sz * 8 - TotalConsumedBits)
+	
 	return dd;
 }
 
