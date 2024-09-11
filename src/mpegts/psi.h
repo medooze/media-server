@@ -44,7 +44,6 @@ struct Table : public Encodable
 	bool sectionSyntaxIndicator = false;
 	bool privateBit = false;
 	uint8_t _reserved1 = 0x3;
-	uint16_t sectionLength = 0;
 	
 	std::variant<BufferReader, std::unique_ptr<Encodable>> data;
 	

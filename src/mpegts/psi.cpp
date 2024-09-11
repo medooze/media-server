@@ -3,7 +3,7 @@
 #include "bitstream/BitReader.h"
 #include "bitstream/BitWriter.h"
 
-#include "crc32calc.h"
+#include "crc.h"
 
 namespace mpegts
 {
@@ -101,15 +101,16 @@ void Table::Encode(BufferWritter& writer)
 	bitwriter.Put(1, sectionSyntaxIndicator);
 	bitwriter.Put(1, privateBit);
 	bitwriter.Put(2, _reserved1);
-	bitwriter.Put(12, sectionLength);
+	bitwriter.Put(12, Size() - 3);
 	
 	auto encodable = std::get_if<std::unique_ptr<Encodable>>(&data);
 	if (encodable)
 		(*encodable)->Encode(writer);
 		
-	CRC32Calc crc32;
-	uint32_t crc = crc32.Update(writer.GetData() + mark, writer.GetLength() - mark);
+	uint32_t crc = crc32(writer.GetData() + mark, writer.GetLength() - mark);
 	writer.Set4(crc);
+	
+	Log("Size: %d crc: 0x%x\n",  writer.GetLength() - mark, crc);
 }
 
 size_t Table::Size() const
@@ -159,13 +160,13 @@ std::unique_ptr<Table> Table::Parse(BufferReader& reader)
 	table.privateBit		= bitreader.Get(1) != 0;
 	table._reserved1		= bitreader.Get(2);
 	bitreader.Skip(2);		//length unused bits
-	table.sectionLength		= bitreader.Get(10);
+	auto sectionLength		= bitreader.Get(10);
 
 	// read table contents (either syntax section or just data)
-	if (reader.GetLeft()<table.sectionLength)
+	if (reader.GetLeft()<sectionLength)
 		throw std::runtime_error("Not enough data to read mpegts psi table data");
 
-	BufferReader dataReader (reader.GetData(table.sectionLength), table.sectionLength);
+	BufferReader dataReader (reader.GetData(sectionLength), sectionLength);
 
 	if (table.sectionSyntaxIndicator) 
 	{

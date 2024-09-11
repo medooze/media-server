@@ -8,6 +8,7 @@
 #include <list>
 #include <mutex>
 
+#include "log.h"
 template<typename T>
 class Packetizer
 {
@@ -71,6 +72,8 @@ public:
 				BufferWritter awriter(buffer->GetData(), sz);
 				encodable->Encode(awriter);
 				
+				Log("Calculated size: %u, written: %u\n", awriter.GetLength());
+				
 				buffer->SetSize(awriter.GetLength());
 				pos = 0;
 			}
@@ -79,6 +82,7 @@ public:
 			auto len = std::min(buffer->GetSize() - pos, writer.GetLeft());
 			auto current = writer.Consume(len);
 			memcpy(current, &buffer->GetData()[pos], len);
+			Log("packet: %u\n", len);
 			
 			pos += len;
 		}
