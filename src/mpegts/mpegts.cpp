@@ -288,11 +288,13 @@ void HeaderExtension::Encode(BufferWritter& writer)
 		bitwriter.Put(1, 0x1);
 		bitwriter.Put(15, (*dts) & 0x7fff);
 	}
+	
+	writer.PadTo(writer.GetLength() + stuffingCount, 0xff);
 }
 
 size_t HeaderExtension::Size() const
 {
-	return 3 + (pts ? 5 : 0) + (dts ? 5 : 0);
+	return 3 + (pts ? 5 : 0) + (dts ? 5 : 0) + stuffingCount;
 }
 
 HeaderExtension HeaderExtension::Parse(BufferReader& reader)
@@ -466,7 +468,7 @@ namespace adts
 	
 	size_t Header::Size() const
 	{
-		return 7 + protectionAbsence ? 1 : 0;
+		return 7 + (protectionAbsence ? 0 : 2);
 	}
 
 	Header Header::Parse(BufferReader& reader)

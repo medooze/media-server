@@ -140,6 +140,8 @@ struct HeaderExtension : public Encodable
 
 	std::optional<uint64_t> pts = {};
 	std::optional<uint64_t> dts = {};
+	
+	size_t	stuffingCount = 0;
 
 	// Encodable overrides
 	void Encode(BufferWritter& writer) override;
