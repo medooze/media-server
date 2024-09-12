@@ -51,8 +51,8 @@ constexpr auto MaxProbingHistorySize		= 50;
 constexpr auto RtxRttThresholdMs 		= 300;
 
 DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService, ObjectPool<Packet>& packetPool) :
+	timeServiceWrapper<DTLSICETransport>(timeService),
 	sender(sender),
-	timeService(timeService),
 	packetPool(packetPool),
 	endpoint(timeService),
 	dtls(*this,timeService,endpoint.GetTransport()),
@@ -1870,7 +1870,7 @@ bool DTLSICETransport::AddOutgoingSourceGroup(const RTPOutgoingSourceGroup::shar
 	Log("-DTLSICETransport::AddOutgoingSourceGroup() [group:%p,ssrc:%u,fec:%u,rtx:%u]\n",group.get(), group->media.ssrc, group->fec.ssrc, group->rtx.ssrc);
 	
 	//Dispatch to the event loop thread
-	timeService.Async([=](auto now){
+	AsyncSafe([=](auto self, std::chrono::milliseconds now){
 
 		//Get ssrcs
 		const auto media = group->media.ssrc;
@@ -1938,7 +1938,7 @@ bool DTLSICETransport::RemoveOutgoingSourceGroup(const RTPOutgoingSourceGroup::s
 	Log("-DTLSICETransport::RemoveOutgoingSourceGroup() [ssrc:%u,fec:%u,rtx:%u]\n", group->media.ssrc, group->fec.ssrc, group->rtx.ssrc);
 
 	//Dispatch to the event loop thread
-	timeService.Async([=](auto now){
+	AsyncSafe([=](auto self, std::chrono::milliseconds now){
 		Log("-DTLSICETransport::RemoveOutgoingSourceGroup() | Async [ssrc:%u,fec:%u,rtx:%u]\n", group->media.ssrc, group->fec.ssrc, group->rtx.ssrc);
 		//Get ssrcs
 		std::vector<DWORD> ssrcs;
@@ -2012,7 +2012,7 @@ bool DTLSICETransport::AddIncomingSourceGroup(const RTPIncomingSourceGroup::shar
 		return Error("No media ssrc or rid defined, stream will not be added\n");
 	
 	//Dispatch to the event loop thread
-	timeService.Async([=](auto now){
+	AsyncSafe([=](auto self, std::chrono::milliseconds now){
 		//Get ssrcs
 		const auto media = group->media.ssrc;
 		const auto rtx   = group->rtx.ssrc;
@@ -2083,7 +2083,7 @@ bool DTLSICETransport::RemoveIncomingSourceGroup(const RTPIncomingSourceGroup::s
 	Log("-DTLSICETransport::RemoveIncomingSourceGroup() [mid:'%s',rid:'%s',ssrc:%u,rtx:%u]\n",group->mid.c_str(),group->rid.c_str(),group->media.ssrc,group->rtx.ssrc);
 	
 	//Dispatch to the event loop thread
-	timeService.Async([=](auto now){
+	AsyncSafe([=](auto self, std::chrono::milliseconds now){
 
 		//Remove rid if any
 		if (!group->rid.empty())
@@ -2215,7 +2215,7 @@ int DTLSICETransport::SendPLI(DWORD ssrc)
 	Debug("-DTLSICETransport::SendPLI() | [ssrc:%u]\n",ssrc);
 	
 	//Execute on the event loop thread and do not wait
-	timeService.Async([=](auto now){
+	AsyncSafe([=](auto self, std::chrono::milliseconds now){
 		//Get group
 		RTPIncomingSourceGroup* group = GetIncomingSourceGroup(ssrc);
 
@@ -3046,7 +3046,7 @@ int DTLSICETransport::Enqueue(const RTPPacket::shared& packet)
 
 	//TODO: check if we are actuall sending from a different thread ocasionally
 	//Send async
-	//timeService.Async([=](auto now){
+	//AsyncSafe([=](auto self, std::chrono::milliseconds now){
 		//Send
 		Send(packet);
 	//});
@@ -3215,7 +3215,7 @@ void DTLSICETransport::SetListener(const Listener::shared& listener)
 {
 	Debug(">DTLSICETransport::SetListener() [this:%p,listener:%p]\n", this, listener.get());
 	//Add in main thread async
-	timeService.Async([=](auto now){
+	AsyncSafe([=](auto self, std::chrono::milliseconds now){
 		//Store listener
 		this->listener = listener;
 	});

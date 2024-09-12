@@ -13,7 +13,8 @@
 #include "log.h"
 #include "Datachannels.h"
 
-class DTLSConnection
+class DTLSConnection :
+	public TimeServiceWrapper<DTLSConnection>
 {
 public:
 	enum Setup
@@ -115,8 +116,9 @@ private:
 	static AvailableHashes	availableHashes;
 	static bool		hasDTLS;
 
-public:
+private:
 	DTLSConnection(Listener& listener,TimeService& timeService,datachannels::Transport& sctp);
+public:
 	~DTLSConnection();
 
 	void SetSRTPProtectionProfiles(const std::string& profiles);
@@ -143,7 +145,6 @@ protected:
 	void CheckPending();
 private:
 	Listener& listener;
-	TimeService& timeService;
 	Timer::shared timeout;			// DTLS timout handler
 	datachannels::Transport &sctp;		// SCTP transport
 	SSL *ssl	= nullptr;		// SSL session 

@@ -14,6 +14,7 @@
 using namespace std::chrono_literals;
 
 class MediaFrameListenerBridge :
+	public TimeServiceWrapper<MediaFrameListenerBridge>,
 	public MediaFrame::Listener,
 	public MediaFrame::Producer,
 	public RTPIncomingMediaStream,
@@ -37,8 +38,9 @@ public:
 		std::chrono::milliseconds duration;
 	};	
 	
-public:
+private:
 	MediaFrameListenerBridge(TimeService& timeService, DWORD ssrc, bool smooth = false, bool checkTimestamp = false);
+public:
 	virtual ~MediaFrameListenerBridge();
 
 	void SetFrameDispatchCoordinator(const std::shared_ptr<FrameDispatchCoordinator>& coordinator);
@@ -65,7 +67,7 @@ public:
 	virtual void AddListener(RTPIncomingMediaStream::Listener* listener) override;
 	virtual void RemoveListener(RTPIncomingMediaStream::Listener* listener) override;
 	virtual DWORD GetMediaSSRC() const override { return ssrc; }
-	virtual TimeService& GetTimeService() override { return timeService; }
+	virtual TimeService& GetTimeService() override { return TimeServiceWrapper<MediaFrameListenerBridge>::GetTimeService(); }
 	virtual void Mute(bool muting) override;
 
 	// RTPReceiver interface
@@ -73,10 +75,15 @@ public:
 	virtual int Reset(DWORD ssrc) override { return 1; };
 
 private:
-	void Dispatch(const std::vector<RTPPacket::shared>& packet);
-        
+	//To be run on timeservice thread
+	void onMediaFrameAsync(std::chrono::milliseconds now, DWORD ignored, const std::shared_ptr<MediaFrame>& frame);
+	void Dispatch(std::chrono::milliseconds now);
+	void Update(std::chrono::milliseconds now);
+
+	void DispatchPackets(const std::vector<RTPPacket::shared>& packet);
+
+	
 public:
-	TimeService& timeService;
 	Timer::shared dispatchTimer;
 
 	std::queue<PacketScheduleInfo> packets;	
@@ -134,6 +141,9 @@ public:
 	std::unique_ptr<TimestampChecker> tsChecker;
 	std::unique_ptr<TimestampChecker> ptsChecker;
 	std::shared_ptr<FrameDispatchCoordinator> coordinator;
+
+
+	friend class TimeServiceWrapper<MediaFrameListenerBridge>;
 };
 
 #endif /* MEDIAFRAMELISTENERBRIDGE_H */

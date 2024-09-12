@@ -52,6 +52,12 @@ public:
 	TimeServiceWrapper(TimeService& timeService) : timeService(timeService)
 	{
 	}
+
+
+	inline void Sync(const std::function<void(std::chrono::milliseconds)>& func)
+	{
+		timeService.Sync(func);
+	}
 	
 	template <typename Func>
 	void AsyncSafe(Func&& func)
@@ -62,6 +68,17 @@ public:
 			
 			func(self, now);
 		});
+	}
+
+	template <typename Func>
+	void AsyncSafe(Func&& func, const std::function<void(std::chrono::milliseconds)>& callback)
+	{
+		timeService.Async([selfWeak = TimeServiceWrapper<T>::weak_from_this(), func = std::forward<Func>(func)](std::chrono::milliseconds now) mutable {
+			auto self = selfWeak.lock();
+			if (!self) return;
+
+			func(self, now);
+		}, callback);
 	}
 	
 	template <typename Func>
@@ -102,6 +119,8 @@ public:
 	{
 		return std::shared_ptr<T>(new T(std::forward<ARGS>(args)...));
 	}
+
+	TimeService& GetTimeService()	{ return timeService; }
 
 private:
 	TimeService& timeService;

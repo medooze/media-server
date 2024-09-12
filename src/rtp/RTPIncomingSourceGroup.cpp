@@ -8,7 +8,7 @@
 using namespace std::chrono_literals;
 
 RTPIncomingSourceGroup::RTPIncomingSourceGroup(MediaFrame::Type type,TimeService& timeService) :
-	timeService(timeService),
+	TimeServiceWrapper<RTPIncomingSourceGroup>(timeService),
 	losts(1024)
 {
 	//Store type
@@ -41,8 +41,8 @@ void RTPIncomingSourceGroup::AddListener(RTPIncomingMediaStream::Listener* liste
 	Debug("-RTPIncomingSourceGroup::AddListener() [listener:%p]\n",listener);
 	
 	//Add it sync
-	timeService.Async([=](auto){
-		listeners.insert(listener);
+	AsyncSafe([=](auto self, std::chrono::milliseconds now) {
+		self->listeners.insert(listener);
 	});
 }
 
@@ -51,7 +51,7 @@ void RTPIncomingSourceGroup::RemoveListener(RTPIncomingMediaStream::Listener* li
 	Debug("-RTPIncomingSourceGroup::RemoveListener() [listener:%p]\n",listener);
 	
 	//Remove it sync
-	timeService.Sync([=](auto) {
+	Sync([=](auto) {
 		listeners.erase(listener);
 	});
 }
@@ -146,7 +146,7 @@ void RTPIncomingSourceGroup::Bye(DWORD ssrc)
 		//Reset 
 		{
 			//Add it sync
-			timeService.Sync([=](auto) {
+			Sync([=](auto) {
 				//Deliver to all listeners
 				for (auto listener : listeners)
 					//Dispatch rtp packet
@@ -170,7 +170,7 @@ void RTPIncomingSourceGroup::Update()
 	TRACE_EVENT("rtp", "RTPIncomingSourceGroup::Update");
 
 	//Update it sync
-	timeService.Sync([=](std::chrono::milliseconds now) {
+	Sync([=](std::chrono::milliseconds now) {
 		//Set last updated time
 		lastUpdated = now.count();
 		//Update
@@ -186,33 +186,33 @@ void RTPIncomingSourceGroup::UpdateAsync(std::function<void(std::chrono::millise
 	TRACE_EVENT("rtp", "RTPIncomingSourceGroup::Update");
 
 	//Update it sync
-	timeService.Async([=](std::chrono::milliseconds now) {
+	AsyncSafe([=](auto self, std::chrono::milliseconds now) {
 		//Set last updated time
-		lastUpdated = now.count();
+		self->lastUpdated = now.count();
 		//Update
-		media.Update(now.count());
+		self->media.Update(now.count());
 		//Update
-		rtx.Update(now.count());
+		self->rtx.Update(now.count());
 	}, callback);
 }
 
 void RTPIncomingSourceGroup::SetMaxWaitTime(DWORD maxWaitingTime)
 {
 	//Update it sync
-	timeService.Async([=](std::chrono::milliseconds now) {
+	AsyncSafe([=](auto self, std::chrono::milliseconds now) {
 		//Set it
-		packets.SetMaxWaitTime(maxWaitingTime);
+		self->packets.SetMaxWaitTime(maxWaitingTime);
 		//Store overriden value
-		this->maxWaitingTime = maxWaitingTime;
+		self->maxWaitingTime = maxWaitingTime;
 	});
 }
 
 void RTPIncomingSourceGroup::ResetMaxWaitTime()
 {
 	//Update it sync
-	timeService.Async([=](std::chrono::milliseconds now) {
+	AsyncSafe([=](auto self, std::chrono::milliseconds now) {
 		//Remove override
-		maxWaitingTime.reset();
+		self->maxWaitingTime.reset();
 	});
 }
 
@@ -255,7 +255,7 @@ void RTPIncomingSourceGroup::Start(bool remb)
 	Debug("-RTPIncomingSourceGroup::Start() | [remb:%d]\n",remb);
 
 	//Create dispatch timer
-	dispatchTimer = timeService.CreateTimer([this](auto now) { DispatchPackets(now.count()); });
+	dispatchTimer = CreateTimerSafe([=](auto self, auto now) { self->DispatchPackets(now.count()); });
 	//Set name for debug
 	dispatchTimer->SetName("RTPIncomingSourceGroup - dispatch");
 	
@@ -323,7 +323,7 @@ void RTPIncomingSourceGroup::Stop()
 	if (dispatchTimer) dispatchTimer->Cancel();
 
 	//Stop listeners sync
-	timeService.Sync([=](auto) {
+	Sync([=](auto) {
 		//Deliver to all listeners
 		for (auto listener : listeners)
 			//Dispatch rtp packet

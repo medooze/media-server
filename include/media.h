@@ -355,7 +355,7 @@ public:
 	void  SetClockRate(DWORD clockRate)		{ this->clockRate = clockRate;			}
 
 
-	std::string TimeInfoToString()
+	std::string TimeInfoToString() const
 	{
 		std::stringstream ss;
 		ss << MediaFrame::TypeToString(GetType()) << ", ";

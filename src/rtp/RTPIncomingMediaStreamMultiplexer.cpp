@@ -4,8 +4,8 @@
 
 	
 RTPIncomingMediaStreamMultiplexer::RTPIncomingMediaStreamMultiplexer(const RTPIncomingMediaStream::shared& incomingMediaStream,TimeService& timeService) :
-	incomingMediaStream(incomingMediaStream),
-	timeService(timeService)
+	TimeServiceWrapper<RTPIncomingMediaStreamMultiplexer>(timeService),
+	incomingMediaStream(incomingMediaStream)
 {
 
 	Debug("-RTPIncomingMediaStreamMultiplexer::RTPIncomingMediaStreamMultiplexer() [stream:%p,this:%p]\n", incomingMediaStream, this);
@@ -22,7 +22,7 @@ void RTPIncomingMediaStreamMultiplexer::Stop()
 	Debug("-RTPIncomingMediaStreamMultiplexer::Stop() [this:%p]\n", this);
 
 	//Wait until all the previous async have finished as async calls are executed in order
-	timeService.Sync([=](auto now){
+	Sync([=](auto now){
 		//Trace method
 		TRACE_EVENT("rtp", "RTPIncomingMediaStreamMultiplexer::Stop async", "ssrc", GetMediaSSRC());
 		//If the source stream is alive
@@ -43,8 +43,8 @@ void RTPIncomingMediaStreamMultiplexer::AddListener(RTPIncomingMediaStream::List
 	Debug("-RTPIncomingMediaStreamMultiplexer::AddListener() [listener:%p,this:%p]\n",listener,this);
 	
 	//Dispatch in thread sync
-	timeService.Async([=](auto now){
-		listeners.insert(listener);
+	AsyncSafe([=](auto self, auto now){
+		self->listeners.insert(listener);
 	});
 }
 
@@ -53,7 +53,7 @@ void RTPIncomingMediaStreamMultiplexer::RemoveListener(RTPIncomingMediaStream::L
 	Debug("-RTPIncomingMediaStreamMultiplexer::RemoveListener() [listener:%p,this:%p]\n", listener, this);
 		
 	//Dispatch in thread sync
-	timeService.Sync([=](auto now){
+	Sync([=](auto now){
 		listeners.erase(listener);
 	});
 }
@@ -67,11 +67,11 @@ void RTPIncomingMediaStreamMultiplexer::onRTP(const RTPIncomingMediaStream* stre
 	if (!muted)
 	{
 		//Dispatch in thread async
-		timeService.Async([=](auto now){
+		AsyncSafe([=](auto self, auto now){
 			//Deliver to all listeners
-			for (auto listener : listeners)
+			for (auto listener : self->listeners)
 				//Dispatch rtp packet
-				listener->onRTP(this,packet);
+				listener->onRTP(self.get(), packet);
 		});
 	}
 }
@@ -85,15 +85,15 @@ void RTPIncomingMediaStreamMultiplexer::onRTP(const RTPIncomingMediaStream* stre
 	if (!muted)
 	{
 		//Dispatch in thread async
-		timeService.Async([=,ssrc = stream->GetMediaSSRC()](auto now){
+		AsyncSafe([=,ssrc = stream->GetMediaSSRC()](auto self, auto now){
 			//Trace method
 			TRACE_EVENT("rtp", "RTPIncomingMediaStreamMultiplexer::onRTP async", "ssrc", ssrc, "packets", packets.size());
 			//Process each packet in order, if we reverse the order of the loops, the last listeners would have a lot of delay
 			for (const auto& packet : packets)
 				//Deliver to all listeners
-				for (auto listener : listeners)
+				for (auto listener : self->listeners)
 					//Dispatch rtp packet
-					listener->onRTP(this,packet);
+					listener->onRTP(self.get(), packet);
 		});
 	}
 }
@@ -105,13 +105,13 @@ void RTPIncomingMediaStreamMultiplexer::onBye(const RTPIncomingMediaStream* stre
 	TRACE_EVENT("rtp", "RTPIncomingMediaStreamMultiplexer::onBye", "ssrc", stream->GetMediaSSRC());
 
 	//Dispatch in thread async
-	timeService.Async([=, ssrc = stream->GetMediaSSRC()](auto now){
+	AsyncSafe([=, ssrc = stream->GetMediaSSRC()](auto self, auto now){
 		//Trace method
 		TRACE_EVENT("rtp", "RTPIncomingMediaStreamMultiplexer::onBye async", "ssrc", ssrc);
 		//Deliver to all listeners
-		for (auto listener : listeners)
+		for (auto listener : self->listeners)
 			//Dispatch rtp packet
-			listener->onBye(this);
+			listener->onBye(self.get());
 	});
 }
 
@@ -121,7 +121,7 @@ void RTPIncomingMediaStreamMultiplexer::onEnded(const RTPIncomingMediaStream* st
 	Debug("-RTPIncomingMediaStreamMultiplexer::onEnded() [stream:%p,this:%p]\n", stream, this);
 
 	//Dispatch in thread sync
-	timeService.Sync([=](auto now) {
+	Sync([=](auto now) {
 		//Check
 		if (incomingMediaStream.get() == stream)
 			//No stream

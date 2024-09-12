@@ -10,7 +10,7 @@ static const uint64_t	ScorePerMiliScond = 10;
 static const auto	MinInterval = 10ms;
 
 ActiveSpeakerMultiplexer::ActiveSpeakerMultiplexer(TimeService& timeService, Listener* listener) :
-	timeService(timeService),
+	timeServiceWrapper<ActiveSpeakerMultiplexer>(timeService),
 	listener(listener)
 {
 	//Create processing timer
@@ -156,7 +156,7 @@ void ActiveSpeakerMultiplexer::onRTP(const RTPIncomingMediaStream* incoming, con
 		//Exit
 		return;
 
-	timeService.Async([=, packet = packet](auto) {
+	AsyncSafe([&, packet = packet](auto) {
 		//Double check we have audio level
 		if (!packet->HasAudioLevel())
 			return;
@@ -215,7 +215,7 @@ void ActiveSpeakerMultiplexer::onEnded(const RTPIncomingMediaStream* incoming)
 	if (!incoming)
 		return;
 
-	timeService.Async([=](auto) {
+	AsyncSafe([&](auto self, auto now) {
 
 		Debug("-ActiveSpeakerDetectorFacade::onEnded() async [incoming:%p]\n", incoming);
 

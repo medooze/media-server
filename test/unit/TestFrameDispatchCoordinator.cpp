@@ -32,11 +32,11 @@ void TestFrameDispatchCoordinator::TestDispatch(const std::vector<std::tuple<Med
 	std::queue<std::pair<RTPPacket::shared, std::chrono::milliseconds>> videoPackets;
 	
 	TestTimeService eventLoop;
-	MediaFrameListenerBridge videoBridge(eventLoop, 1);
-	MediaFrameListenerBridge audioBridge(eventLoop, 2);
+	MediaFrameListenerBridge::shared videoBridge = MediaFrameListenerBridge::Create(eventLoop, 1);
+	MediaFrameListenerBridge::shared audioBridge = MediaFrameListenerBridge::Create(eventLoop, 2);
 	
-	videoBridge.AddListener(this);
-	audioBridge.AddListener(this);
+	videoBridge->AddListener(this);
+	audioBridge->AddListener(this);
 	
 	// Loop through all frames
 	for (auto& f : framesInfo)
@@ -50,7 +50,7 @@ void TestFrameDispatchCoordinator::TestDispatch(const std::vector<std::tuple<Med
 		dispatch->OnFrame(now,
 				std::get<2>(f),
 				std::get<3>(f),
-				bridge);
+				*bridge);
 		
 		std::unique_ptr<MediaFrame> frame;
 		
@@ -68,7 +68,7 @@ void TestFrameDispatchCoordinator::TestDispatch(const std::vector<std::tuple<Med
 		frame->SetLength(100);
 		frame->AddRtpPacket(0, 100);
 	
-		bridge.onMediaFrame(*frame.get());
+		bridge->onMediaFrame(*frame.get());
 	}
 	
 	eventLoop.SetNow(std::chrono::milliseconds(std::numeric_limits<int64_t>::max()));

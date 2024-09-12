@@ -371,8 +371,8 @@ std::string DTLSConnection::GetCertificateFingerPrint(Hash hash)
 
 
 DTLSConnection::DTLSConnection(Listener& listener,TimeService& timeService,datachannels::Transport& sctp) :
+	timeServiceWrapper<DTLSConnection>(timeService),
 	listener(listener),
-	timeService(timeService),
 	sctp(sctp),
 	inited(false)
 {
@@ -713,13 +713,13 @@ int DTLSConnection::Renegotiate()
 {
 	TRACE_EVENT("dtls", "DTLSConnection::Renegotiate");
 	//Run in event loop thread
-	timeService.Async([this](auto now){
+	AsyncSafe([&](auto self, auto now){
 		if (ssl)
 		{
 
 			TRACE_EVENT("dtls", "DTLSConnection::Renegotiate::Work");
-			SSL_renegotiate(ssl);
-			SSL_do_handshake(ssl);
+			SSL_renegotiate(self->ssl);
+			SSL_do_handshake(self->ssl);
 		}
 	});
 	

@@ -13,13 +13,13 @@
 #include <unordered_map>
 
 class SimulcastMediaFrameListener :
+	public TimeServiceWrapper<SimulcastMediaFrameListener>,
 	public MediaFrame::Listener,
-	public MediaFrame::Producer,
-	public std::enable_shared_from_this<SimulcastMediaFrameListener>
-
+	public MediaFrame::Producer
 {
-public:
+private:
 	SimulcastMediaFrameListener(TimeService& timeService,DWORD ssrc, DWORD numLayers);
+public:
 	virtual ~SimulcastMediaFrameListener();
 
 	void SetNumLayers(DWORD numLayers);
@@ -39,13 +39,15 @@ public:
 	void Stop();
 
 private:
+	//To be run on timerService thread
+	void PushAsync(std::chrono::milliseconds now, std::shared_ptr<VideoFrame>&& frame);
+
 	void ForwardFrame(VideoFrame& frame);
 
 	void Push(std::shared_ptr<VideoFrame>&& frame);
 	void Enqueue(std::shared_ptr<VideoFrame>&& frame);
 	void Flush();
 private:
-	TimeService& timeService;
 	DWORD forwardSsrc = 0;
 	std::unordered_set<MediaFrame::Listener::shared> listeners;
 	std::unordered_set<MediaFrame::Producer::shared> producers;
@@ -67,6 +69,8 @@ private:
 
 	// Latest timestamps for each layer
 	std::unordered_map<uint32_t, uint64_t> layerTimestamps;
+
+	friend class TimeServiceWrapper<SimulcastMediaFrameListener>;
 };
 
 #endif /* SIMULCASTMEDIAFRAMELISTENER_H */

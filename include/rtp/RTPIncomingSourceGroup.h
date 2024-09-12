@@ -16,20 +16,22 @@
 #include "TimeService.h"
 
 class RTPIncomingSourceGroup :
+	public TimeServiceWrapper<RTPIncomingSourceGroup>,
 	public RTPIncomingMediaStream,
 	public RemoteRateEstimator::Listener
 {
 public:
 	using shared = std::shared_ptr<RTPIncomingSourceGroup>;
-public:	
+private:	
 	RTPIncomingSourceGroup(MediaFrame::Type type,TimeService& timeService);
+public:
 	virtual ~RTPIncomingSourceGroup();
 	
 	RTPIncomingSource* GetSource(DWORD ssrc);
 	virtual void AddListener(RTPIncomingMediaStream::Listener* listener) override;
 	virtual void RemoveListener(RTPIncomingMediaStream::Listener* listener) override;
 	virtual DWORD GetMediaSSRC() const	override { return media.ssrc;	}
-	virtual TimeService& GetTimeService()	override { return timeService;	}
+	virtual TimeService& GetTimeService()	override { return TimeServiceWrapper<RTPIncomingSourceGroup>::GetTimeService();	}
 	virtual void Mute(bool muting);
 	int AddPacket(const RTPPacket::shared &packet, DWORD size, QWORD now);
 	RTPIncomingSource* Process(RTPPacket::shared &packet);
@@ -78,7 +80,6 @@ public:
 	//TODO: FIx
 	RemoteRateEstimator remoteRateEstimator;
 private:
-	TimeService&	timeService;
 	Timer::shared	dispatchTimer;
 	RTPLostPackets	losts;
 	RTPBuffer	packets;
@@ -92,7 +93,8 @@ private:
 	bool remb	 = false;
 	std::optional<DWORD> maxWaitingTime;
 	volatile bool muted = false;
-	
+
+	friend class TimeServiceWrapper<RTPIncomingSourceGroup>;
 };
 
 #endif /* RTPINCOMINGSOURCEGROUP_H */
