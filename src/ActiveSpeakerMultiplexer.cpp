@@ -10,7 +10,7 @@ static const uint64_t	ScorePerMiliScond = 10;
 static const auto	MinInterval = 10ms;
 
 ActiveSpeakerMultiplexer::ActiveSpeakerMultiplexer(TimeService& timeService, Listener* listener) :
-	timeServiceWrapper<ActiveSpeakerMultiplexer>(timeService),
+	TimeServiceWrapper<ActiveSpeakerMultiplexer>(timeService),
 	listener(listener)
 {
 	//Create processing timer
@@ -33,7 +33,7 @@ void ActiveSpeakerMultiplexer::Stop()
 	timer->Cancel();
 
 	//Stop other stuff sync
-	timeService.Sync([=](auto) {
+	Sync([=](auto) {
 		//TODO:Clean stuff
 
 		//Release incoming sources
@@ -57,7 +57,7 @@ void ActiveSpeakerMultiplexer::AddRTPStreamTransponder(RTPStreamTransponder* tra
 	if (!transpoder)
 		return;
 
-	timeService.Sync([=](const auto& now) {
+	Sync([=](const auto& now) {
 		//Insert new 
 		destinations.try_emplace(transpoder, Destination{id,transpoder});
 	});
@@ -69,7 +69,7 @@ void ActiveSpeakerMultiplexer::RemoveRTPStreamTransponder(RTPStreamTransponder* 
 	if (!transpoder)
 		return;
 
-	timeService.Sync([=](const auto& now) {
+	Sync([=](const auto& now) {
 		//Remove
 		destinations.erase(transpoder);
 	});
@@ -82,7 +82,7 @@ void ActiveSpeakerMultiplexer::AddIncomingSourceGroup(RTPIncomingMediaStream::sh
 	if (!incoming)
 		return;
 
-	timeService.Sync([=](const auto& now){
+	Sync([=](const auto& now){
 		//Insert new 
 		auto [it, inserted] = sources.try_emplace(incoming.get(), Source{id, incoming});
 		//If already present
@@ -101,7 +101,7 @@ void ActiveSpeakerMultiplexer::RemoveIncomingSourceGroup(RTPIncomingMediaStream:
 	if (!incoming)
 		return;
 
-	timeService.Sync([=](const auto& now) {
+	Sync([=](const auto& now) {
 		Debug("-ActiveSpeakerMultiplexer::RemoveIncomingSourceGroup() async [incoming:%p]\n", incoming.get());
 		//Find source
 		auto it = sources.find(incoming.get());
@@ -156,7 +156,7 @@ void ActiveSpeakerMultiplexer::onRTP(const RTPIncomingMediaStream* incoming, con
 		//Exit
 		return;
 
-	AsyncSafe([&, packet = packet](auto) {
+	AsyncSafe([&, packet = packet](auto self, auto now) {
 		//Double check we have audio level
 		if (!packet->HasAudioLevel())
 			return;
@@ -164,10 +164,9 @@ void ActiveSpeakerMultiplexer::onRTP(const RTPIncomingMediaStream* incoming, con
 		//Get vad level
 		auto vad = packet->GetVAD();
 		auto db	 = packet->GetLevel();
-		auto now = getTimeMS();
 
 		//Check voice is detected and not muted
-		auto speaking = vad && db != 127 && (!noiseGatingThreshold || db < noiseGatingThreshold);
+		auto speaking = vad && db != 127 && (!self->noiseGatingThreshold || db < self->noiseGatingThreshold);
 
 		//Debug("-ActiveSpeakerMultiplexer::onRTP() [vad:%d,db:%d,speaking:%d]\n", vad,db,speaking);
 
@@ -175,9 +174,9 @@ void ActiveSpeakerMultiplexer::onRTP(const RTPIncomingMediaStream* incoming, con
 		if (speaking)
 		{
 			//Get incoming source
-			auto it = sources.find(incoming);
+			auto it = self->sources.find(incoming);
 			//check it was present
-			if (it == sources.end())
+			if (it == self->sources.end())
 				//Do nothing
 				return;
 
@@ -189,12 +188,12 @@ void ActiveSpeakerMultiplexer::onRTP(const RTPIncomingMediaStream* incoming, con
 			WORD level = 64 + (127 - db) / 2;
 
 			//Get time diff from last score, we consider 1s as max to coincide with initial bump
-			uint64_t diff = std::min(now - it->second.ts, (uint64_t)1000ul);
+			uint64_t diff = std::min(now.count() - it->second.ts, (uint64_t)1000ul);
 		
 			//Do not accumulate too much so we can switch faster
-			it->second.score = std::min(it->second.score + diff * level / ScorePerMiliScond, maxAcummulatedScore);
+			it->second.score = std::min(it->second.score + diff * level / ScorePerMiliScond, self->maxAcummulatedScore);
 			//Set last update time
-			it->second.ts = now;
+			it->second.ts = now.count();
 			//Add packets for forwarding in case it is selected for multiplex
 			it->second.packets.push_back(packet);
 
@@ -220,9 +219,9 @@ void ActiveSpeakerMultiplexer::onEnded(const RTPIncomingMediaStream* incoming)
 		Debug("-ActiveSpeakerDetectorFacade::onEnded() async [incoming:%p]\n", incoming);
 
 		//Find source
-		auto it = sources.find(incoming);
+		auto it = self->sources.find(incoming);
 		//check it was not present
-		if (it == sources.end())
+		if (it == self->sources.end())
 		{
 			Debug("-ActiveSpeakerMultiplexer::onEnded() async not found[incoming:%p]\n", incoming);
 			//Do nothing, probably called onEnded before
@@ -231,9 +230,9 @@ void ActiveSpeakerMultiplexer::onEnded(const RTPIncomingMediaStream* incoming)
 		//Get source id
 		auto sourceId = it->second.id;
 		//Remove it
-		sources.erase(it);
+		self->sources.erase(it);
 		//For each destination transpoder
-		for (auto& [transponder, destination] : destinations)
+		for (auto& [transponder, destination] : self->destinations)
 		{
 			//If attached to it
 			if (destination.sourceId == sourceId)
