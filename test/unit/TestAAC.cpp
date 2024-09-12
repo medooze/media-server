@@ -63,7 +63,9 @@ TEST(TestAACCodec, AACDecode)
 				av_packet_free(&packet);
 				inputPackets.pop();
 			};
-
+			auto frame = std::make_unique<AudioFrame>(type);
+			frame->AppendMedia(dummy->data, dummy->size);
+			worker.onMediaFrame(*frame);
 		});
 
 		for (int i = 0; i < numPackets; ++i)

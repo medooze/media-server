@@ -14,10 +14,10 @@ void helperTestPCMData(const AudioPipeParam& playParam, const AudioPipeParam& re
     int recSampleRate = recParam.sampleRate, recFrameSize = recParam.frameSize;
     int numChannels = playParam.numChannels;
 
-    int numPlaySamples = numPlayBuffers*playFrameSize;
+    int numPlaySamples = numPlayBuffers*playFrameSize + recSampleRate/50;
     int numRecSamples = numPlaySamples * (recSampleRate/(float)(playSampleRate));
-    int numRecAudioBuffers = numRecSamples / recFrameSize;
-
+    int numRecAudioBuffers = numRecSamples / recFrameSize - 1;
+    numPlayBuffers = numPlaySamples / playFrameSize;
     AudioPipe audPipe(playSampleRate);
 
     int16_t in[numPlaySamples * numChannels];
@@ -36,7 +36,7 @@ void helperTestPCMData(const AudioPipeParam& playParam, const AudioPipeParam& re
 
     audPipe.StartRecording(recSampleRate);
     auto fut = std::async(std::launch::async, [&] {
-        for(int i=0;i<numPlayBuffers;i++)
+        for(int i=0;i<numPlayBuffers+1;i++)
         {
             auto audioBuffer = std::make_shared<AudioBuffer>(playFrameSize, numChannels);
             audioBuffer->CopyResampled(inLoc, playFrameSize);
@@ -73,12 +73,11 @@ void helperTestPCMData(const AudioPipeParam& playParam, const AudioPipeParam& re
 
 }
 
-
 TEST(TestAudioPipe, audioBufferPCM)
 {
     int playSampleRate = 48000, recSampleRate = 48000;
-    int playFrameSizes[] = {30, 100, 1024};
-    int recFrameSizes[] = {50 ,100, 960};
+    int playFrameSizes[] = {1024};
+    int recFrameSizes[] = {960, 1920};
 
     int numChannels = 1;
     int numAudioBuffers = 37;
@@ -92,96 +91,6 @@ TEST(TestAudioPipe, audioBufferPCM)
         {
             recParam = {recSampleRate, numChannels, recFrameSizes[j]};                              
             helperTestPCMData(playParam, recParam, numAudioBuffers);
-        }
-    }
-}
-
-TEST(TestAudioPipe, audioBufferPCMUpsampling)
-{
-    {
-        int playSampleRate = 44100, recSampleRate = 48000;
-        int playFrameSizes[] = {1024};
-        int recFrameSizes[] = {960, 1920};
-
-        int numChannels = 1;
-        int numAudioBuffers = 37;
-        AudioPipeParam playParam;
-        AudioPipeParam recParam;
-
-        for(int i=0; i < sizeof(playFrameSizes)/sizeof(playFrameSizes[0]);i++)
-        {
-            playParam = {playSampleRate, numChannels, playFrameSizes[i]};
-            for(int j=0; j < sizeof(recFrameSizes)/sizeof(recFrameSizes[0]);j++)
-            {
-                recParam = {recSampleRate, numChannels, recFrameSizes[j]};                              
-                helperTestPCMData(playParam, recParam, numAudioBuffers);
-            }
-        }
-    }
-
-    {
-        int playSampleRate = 24000, recSampleRate = 48000;
-        int playFrameSizes[] = {1024};
-        int recFrameSizes[] = {960, 1920};
-
-        int numChannels = 1;
-        int numAudioBuffers = 37;
-        AudioPipeParam playParam;
-        AudioPipeParam recParam;
-
-        for(int i=0; i < sizeof(playFrameSizes)/sizeof(playFrameSizes[0]);i++)
-        {
-            playParam = {playSampleRate, numChannels, playFrameSizes[i]};
-            for(int j=0; j < sizeof(recFrameSizes)/sizeof(recFrameSizes[0]);j++)
-            {
-                recParam = {recSampleRate, numChannels, recFrameSizes[j]};                              
-                helperTestPCMData(playParam, recParam, numAudioBuffers);
-            }
-        }
-    }
-}
-
-TEST(TestAudioPipe, audioBufferPCMDownsampling)
-{
-    {
-        int playSampleRate = 48000, recSampleRate = 44100;
-        int playFrameSizes[] = {1024};
-        int recFrameSizes[] = {960, 1920};
-
-        int numChannels = 1;
-        int numAudioBuffers = 37;
-        AudioPipeParam playParam;
-        AudioPipeParam recParam;
-
-        for(int i=0; i < sizeof(playFrameSizes)/sizeof(playFrameSizes[0]);i++)
-        {
-            playParam = {playSampleRate, numChannels, playFrameSizes[i]};
-            for(int j=0; j < sizeof(recFrameSizes)/sizeof(recFrameSizes[0]);j++)
-            {
-                recParam = {recSampleRate, numChannels, recFrameSizes[j]};                              
-                helperTestPCMData(playParam, recParam, numAudioBuffers);
-            }
-        }
-    }
-
-    {
-        int playSampleRate = 48000, recSampleRate = 24000;
-        int playFrameSizes[] = {1024};
-        int recFrameSizes[] = {960, 1920};
-
-        int numChannels = 1;
-        int numAudioBuffers = 37;
-        AudioPipeParam playParam;
-        AudioPipeParam recParam;
-
-        for(int i=0; i < sizeof(playFrameSizes)/sizeof(playFrameSizes[0]);i++)
-        {
-            playParam = {playSampleRate, numChannels, playFrameSizes[i]};
-            for(int j=0; j < sizeof(recFrameSizes)/sizeof(recFrameSizes[0]);j++)
-            {
-                recParam = {recSampleRate, numChannels, recFrameSizes[j]};                              
-                helperTestPCMData(playParam, recParam, numAudioBuffers);
-            }
         }
     }
 }

@@ -38,14 +38,8 @@ private:
 	//Los mutex y condiciones
 	pthread_mutex_t mutex;
 	pthread_cond_t  cond;
-	QWORD availableNumSamples = 0;
-
-	CircularQueue<AudioBuffer::const_shared> queue;
 	//Members
 	fifo<SWORD,48000*4>	rateBlockBuffer;
-
-	QWORD decoderFrameSize = 0;
-	QWORD decoderPTSOffset = std::numeric_limits<QWORD>::max();
 	QWORD encoderPTS = 0;
 
 	bool			recording = false;
