@@ -22,6 +22,7 @@ public:
 	virtual DWORD GetRate()			{ return rate;	}
 	virtual DWORD GetNumChannels()		{ return numChannels; }
 	virtual DWORD GetClockRate()		{ return 48000;	}
+	virtual void SetConfig(DWORD rate, DWORD numChannels);
 private:
 	OpusEncoder *enc;
 	AudioFrame audioFrame;

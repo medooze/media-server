@@ -12,7 +12,7 @@
 #include "audio.h"
 #include "AudioEncoderWorker.h"
 #include "AudioCodecFactory.h"
-#include "opus/opusconfig.h"
+#include "opus/OpusEncoder.h"
 
 
 /**********************************
@@ -194,6 +194,14 @@ int AudioEncoderWorker::Encode()
 			numChannels = audioInput->GetNumChannels();
 			//Set new channel count on codec
 			codec->TrySetRate(rate, numChannels);
+
+			if (audioCodec==AudioCodec::OPUS)
+			{
+				//Convert it to Opus encoder
+				auto opusEnc = static_cast<OpusEncoder*>(codec);
+				//Set config there
+				opusEnc->SetConfig(rate, numChannels);
+			}
 		}
 		//Lo codificamos
 		AudioFrame* frame = codec->Encode(audioBuffer);

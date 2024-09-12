@@ -97,3 +97,13 @@ AudioFrame* OpusEncoder::Encode(const AudioBuffer::const_shared& audioBuffer)
 	audioFrame.SetLength(len);
 	return &audioFrame;
 }
+
+void OpusEncoder::SetConfig(DWORD rate, DWORD numChannels)
+{
+	config.SetSampleRate(rate);
+	config.SetOutputChannelCount(numChannels);
+	if(audioFrame.HasCodecConfig())
+		audioFrame.ClearCodecConfig();
+	audioFrame.AllocateCodecConfig(config.GetSize());
+	config.Serialize(audioFrame.GetCodecConfigData(), audioFrame.GetCodecConfigSize());
+}
