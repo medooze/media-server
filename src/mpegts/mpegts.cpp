@@ -267,26 +267,44 @@ void HeaderExtension::Encode(BufferWritter& writer)
 	bitwriter.Put(1, extensionFlag);
 	bitwriter.Put(8, Size() - 3);
 	
-	if (pts)
+	assert(ptsdtsIndicator != PTSDTSIndicator::Forbiden);
+	
+	if (ptsdtsIndicator == PTSDTSIndicator::Both)
+	{
+		assert(pts && dts);
+		
+		{
+			BitWriter bitwriter(writer, 5);
+			bitwriter.Put(4, 0x3);
+			bitwriter.Put(3, (*pts >> 30) & 0x7);
+			bitwriter.Put(1, 0x1);
+			bitwriter.Put(15, (*pts >> 15) & 0x7fff);
+			bitwriter.Put(1, 0x1);
+			bitwriter.Put(15, (*pts) & 0x7fff);
+			bitwriter.Put(1, 0x1);
+		}
+		
+		{
+			BitWriter bitwriter(writer, 5);
+			bitwriter.Put(4, 0x1);
+			bitwriter.Put(3, (*dts >> 30) & 0x7);
+			bitwriter.Put(1, 0x1);
+			bitwriter.Put(15, (*dts >> 15) & 0x7fff);
+			bitwriter.Put(1, 0x1);
+			bitwriter.Put(15, (*dts) & 0x7fff);
+			bitwriter.Put(1, 0x1);
+		}
+	}
+	else if (ptsdtsIndicator == PTSDTSIndicator::OnlyPTS)
 	{
 		BitWriter bitwriter(writer, 5);
-		bitwriter.Put(4, 0x0010);
+		bitwriter.Put(4, 0x2);
 		bitwriter.Put(3, (*pts >> 30) & 0x7);
 		bitwriter.Put(1, 0x1);
 		bitwriter.Put(15, (*pts >> 15) & 0x7fff);
 		bitwriter.Put(1, 0x1);
 		bitwriter.Put(15, (*pts) & 0x7fff);
-	}
-	
-	if (dts)
-	{
-		BitWriter bitwriter(writer, 5);
-		bitwriter.Put(4, 0x0001);
-		bitwriter.Put(3, (*dts >> 30) & 0x7);
 		bitwriter.Put(1, 0x1);
-		bitwriter.Put(15, (*dts >> 15) & 0x7fff);
-		bitwriter.Put(1, 0x1);
-		bitwriter.Put(15, (*dts) & 0x7fff);
 	}
 	
 	writer.PadTo(writer.GetLength() + stuffingCount, 0xff);
