@@ -9,6 +9,8 @@
 namespace mpegts
 {
 
+constexpr size_t MPEGTSPacketSize = 188;
+
 enum AdaptationFieldControl
 {
 	Reserved = 0,
@@ -56,9 +58,7 @@ struct AdaptationField : public Encodable
 };
 
 struct Packet
-{
-	static constexpr size_t PacketSize = 188;
-	
+{	
 	Header header;
 	std::optional<AdaptationField> adaptationField = {};
 	std::optional<uint8_t> payloadPointer = {};
