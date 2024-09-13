@@ -4,13 +4,13 @@
 #include "Buffer.h"
 #include "BufferWritter.h"
 #include "CircularQueue.h"
+#include "log.h"
 
 #include <stdint.h>
 #include <list>
 #include <mutex>
 #include <atomic>
 
-#include "log.h"
 template<typename T>
 class Packetizer
 {
