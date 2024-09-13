@@ -1,6 +1,10 @@
 #ifndef ENCODABLE_H
 #define ENCODABLE_H
 
+#include <cstddef>
+
+class BufferWritter;
+
 class Encodable
 {
 public:
