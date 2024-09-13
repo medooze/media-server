@@ -46,7 +46,6 @@ public:
 				
 				if (messages.empty())
 				{
-					buffer.reset();
 					pos = 0;
 					
 					hasData.store(false, std::memory_order_release);
@@ -64,7 +63,10 @@ public:
 				
 				// Create a new buffer for the message
 				auto sz = encodable->Size();
-				buffer = std::make_unique<Buffer>(sz);
+				
+				if (sz > buffer->GetCapacity())
+					buffer = std::make_unique<Buffer>(sz);
+				
 				BufferWritter awriter(buffer->GetData(), sz);
 				encodable->Encode(awriter);
 				
