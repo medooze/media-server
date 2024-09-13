@@ -39,7 +39,8 @@ public:
 
 	inline DWORD Get(DWORD n)
 	{
-		assert(n <= 32);
+		if (n > 32)
+			throw std::invalid_argument("BitReader::Get() n > 32");
 
 		//Debug(">BitReader::Get() n:%d cached:%d\n", n, cached);
 		//BitDump(cache, cached);
@@ -105,7 +106,8 @@ public:
 
 	inline DWORD Peek(DWORD n)
 	{
-		assert(n <= 32);
+		if (n > 32)
+			throw std::invalid_argument("BitReader::Peek() n > 32");
 
 		DWORD ret = 0;
 
