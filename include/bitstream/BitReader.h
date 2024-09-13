@@ -27,7 +27,7 @@ public:
 		assert(n <= 32);
 
 		//Debug(">BitReader::Get() n:%d cached:%d\n", n, cached);
-		//BitDump(cache, cached);
+		//BitDump(cache >> (32 - cached), cached);
 
 		DWORD ret = 0;
 			
@@ -36,11 +36,11 @@ public:
 			//What we have to read next
 			BYTE a = n-cached;
 			//Get remaining in the cache
-			ret = GetCached(cached);
+			ret = GetCached(cached) << a;
 			//Cache next
 			Cache();
 			//Get the remaining
-			ret =  ret | GetCached(a);
+			ret |= GetCached(a);
 		} else if (n) {
 			//Get from cache
 			ret = GetCached(n);
@@ -58,7 +58,7 @@ public:
 	inline void Skip(DWORD n)
 	{
 		//Debug(">BitReader::Skip() skipping n:%d: cached:%d\n", n, cached);
-		//BitDump(cache, cached);
+		//BitDump(cache >> (32 - cached), cached);
 
 		//If input is bigger than cache
 		while (n>32)
@@ -289,7 +289,7 @@ private:
 		}
 
 		//Debug("<BitReader::SkipCached() cache:%x cached:%d consumed:%d\n",cache,cached,consumed);
-		//BitDump(cache, cached);
+		//BitDump(cache >> (32 - cached), cached);
 	}
 
 	inline DWORD GetCached(DWORD n)
@@ -302,6 +302,8 @@ private:
 		DWORD ret = cache >> (32-n);
 		//Skip those bits
 		SkipCached(n);
+
+		//Debug("-BitReader::GetCached() Readed n:%d ret:%d cached:%d\n", n, ret, cached);
 		//Return bits
 		return ret;
 	}
