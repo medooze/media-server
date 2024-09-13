@@ -3,6 +3,7 @@
 
 #include "Buffer.h"
 #include "BufferWritter.h"
+#include "CircularQueue.h"
 
 #include <stdint.h>
 #include <list>
@@ -14,10 +15,20 @@ template<typename T>
 class Packetizer
 {
 public:
+	static constexpr size_t MaxMesssageQueueSize = 256;
+	
+	Packetizer() : messages(MaxMesssageQueueSize, false)
+	{
+	}
 	
 	void AddMessage(const T& message, bool forceSeparatePacket = false)
 	{
 		std::lock_guard lock(mutex);
+		
+		if (messages.full())
+		{
+			Warning("-Packetizer::AddMessage Message queue full. Dropping oldes message.");
+		}
 		
 		messages.emplace_back(message, forceSeparatePacket);
 		
@@ -57,7 +68,7 @@ public:
 				auto [encodable, forceSeparate] = msg;
 				
 				// Remove the message
-				messages.erase(messages.begin());
+				(void)messages.pop_front();
 				
 				lock.unlock();
 				
@@ -92,7 +103,7 @@ public:
 	}
 	
 private:
-	std::list<std::pair<T, bool>> messages;
+	CircularQueue<std::pair<T, bool>> messages;
 	
 	mutable std::mutex mutex;
 	
