@@ -27,7 +27,7 @@ public:
 		
 		if (messages.full())
 		{
-			Warning("-Packetizer::AddMessage Message queue full. Dropping oldes message.");
+			Warning("-Packetizer::AddMessage Message queue full. Dropping oldest message.");
 		}
 		
 		messages.emplace_back(message, forceSeparatePacket);
