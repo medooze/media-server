@@ -7,40 +7,36 @@
 #include <stdint.h>
 #include <list>
 #include <mutex>
+#include <atomic>
 
 #include "log.h"
 template<typename T>
 class Packetizer
 {
 public:
-	Packetizer()
-	{
-	}
 	
 	void AddMessage(const T& message, bool forceSeparatePacket = false)
 	{
 		std::lock_guard lock(mutex);
 		
 		messages.emplace_back(message, forceSeparatePacket);
+		
+		hasData.store(true, std::memory_order_release);
 	}
 	
-	bool HasData() const
+	inline bool HasData() const
 	{
-		std::lock_guard lock(mutex);
-		
-		if (!messages.empty()) return true;
-		
-		return buffer && pos < buffer->GetSize();
+		return hasData.load(std::memory_order_acquire);
 	}
-	
-	bool IsMessageStart() const
+
+	// Note IsMessageStart() and GetNextPacket must be called in same thread
+
+	inline bool IsMessageStart() const
 	{
-		Log("buffer: %d pos: %d\n", !!buffer, pos);
-		
 		return !buffer || pos == 0;
 	}
 	
-	virtual void GetNextPacket(BufferWritter& writer)
+	void GetNextPacket(BufferWritter& writer)
 	{
 		while (writer.GetLeft())
 		{
@@ -52,6 +48,8 @@ public:
 				{
 					buffer.reset();
 					pos = 0;
+					
+					hasData.store(false, std::memory_order_release);
 					return;
 				}
 				
@@ -70,8 +68,6 @@ public:
 				BufferWritter awriter(buffer->GetData(), sz);
 				encodable->Encode(awriter);
 				
-				Log("Calculated size: %u, written: %u\n", sz, awriter.GetLength());
-				
 				buffer->SetSize(awriter.GetLength());
 				
 				// check force sperate flag
@@ -88,7 +84,6 @@ public:
 			auto len = std::min(buffer->GetSize() - pos, writer.GetLeft());
 			auto current = writer.Consume(len);
 			memcpy(current, &buffer->GetData()[pos], len);
-			Log("packet: %u pos: %u\n", len, pos);
 			
 			pos += len;
 		}
@@ -101,6 +96,8 @@ private:
 	
 	std::unique_ptr<Buffer> buffer;
 	size_t pos = 0;
+	
+	std::atomic<bool> hasData = { false };
 };
 
 #endif

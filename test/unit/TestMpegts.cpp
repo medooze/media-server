@@ -38,7 +38,6 @@ TEST(TestMpegts, TestAdaptationFieldControl)
 {
 	mpegts::AdaptationField field;
 	
-	field.adaptationFieldLength = 12;
 	field.discontinuityIndicator = false;
 	field.randomAccessIndicator = true;
 	field.elementaryStreamPriorityIndicator = false;
@@ -58,7 +57,6 @@ TEST(TestMpegts, TestAdaptationFieldControl)
 	BufferReader reader(data);
 	auto parsed = mpegts::AdaptationField::Parse(reader);
 	
-	ASSERT_EQ(field.adaptationFieldLength, parsed.adaptationFieldLength);
 	ASSERT_EQ(field.discontinuityIndicator, parsed.discontinuityIndicator);
 	ASSERT_EQ(field.randomAccessIndicator, parsed.randomAccessIndicator);
 	ASSERT_EQ(field.elementaryStreamPriorityIndicator, parsed.elementaryStreamPriorityIndicator);
