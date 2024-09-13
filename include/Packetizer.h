@@ -22,7 +22,7 @@ public:
 	
 	virtual ~Packetizer() = default;
 	
-	void AddMessage(const T& message, bool forceSeparatePacket = false)
+	void AddMessage(const std::shared_ptr<T>& message, bool forceSeparatePacket = false)
 	{
 		std::lock_guard lock(mutex);
 		
@@ -103,7 +103,7 @@ public:
 	}
 	
 private:
-	CircularQueue<std::pair<T, bool>> messages;
+	CircularQueue<std::pair<std::shared_ptr<T>, bool>> messages;
 	
 	mutable std::mutex mutex;
 	
