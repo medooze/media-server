@@ -22,7 +22,10 @@ MediaFrameListenerBridge::MediaFrameListenerBridge(TimeService& timeService,DWOR
 	ptsChecker(checkTimestamp? new TimestampChecker : nullptr)
 {
 	Debug("-MediaFrameListenerBridge::MediaFrameListenerBridge() [this:%p]\n", this);
+}
 
+void MediaFrameListenerBridge::OnCreated()
+{
 	//Create packet dispatch timer
 	dispatchTimer = CreateTimerSafe([](auto self, auto now){
 		self->Dispatch(now);

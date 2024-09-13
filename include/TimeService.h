@@ -6,7 +6,7 @@
 #include <string>
 #include <functional>
 #include <future>
-
+#include <cassert>
 class Timer
 {
 public:
@@ -53,13 +53,20 @@ public:
 	template <typename... ARGS>
 	static std::shared_ptr<T> Create(ARGS&&... args)
 	{
-		return std::shared_ptr<T>(new T(std::forward<ARGS>(args)...));
+		auto obj = std::shared_ptr<T>(new T(std::forward<ARGS>(args)...));
+		obj->OnCreated();
+		return obj;
 	}
 
 
 	TimeServiceWrapper(TimeService& timeService) : timeService(timeService)
 	{
 	}
+	
+	virtual ~TimeServiceWrapper() = default;
+	
+	// Override this to call functions of this base class in constructors
+	virtual void OnCreated() {}
 
 	template <typename Func>
 	inline void Sync(Func&& func)
@@ -70,7 +77,11 @@ public:
 	template <typename Func>
 	void AsyncSafe(Func&& func)
 	{
-		timeService.Async([selfWeak = TimeServiceWrapper<T>::weak_from_this(), func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
+		auto selfWeak = TimeServiceWrapper<T>::weak_from_this();
+		// If following assert failed, the function might be called in constructor
+		assert(!selfWeak.expired());
+		
+		timeService.Async([selfWeak, func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
 			auto self = selfWeak.lock();
 			if (!self) return;
 			
@@ -81,7 +92,11 @@ public:
 	template <typename Func, typename Callback>
 	void AsyncSafe(Func&& func, Callback&& callback)
 	{
-		timeService.Async([selfWeak = TimeServiceWrapper<T>::weak_from_this(), func = std::forward<Func>(func)](std::chrono::milliseconds now) mutable {
+		auto selfWeak = TimeServiceWrapper<T>::weak_from_this();
+		// If following assert failed, the function might be called in constructor
+		assert(!selfWeak.expired());
+		
+		timeService.Async([selfWeak, func = std::forward<Func>(func)](std::chrono::milliseconds now) mutable {
 			auto self = selfWeak.lock();
 			if (!self) return;
 
@@ -92,7 +107,11 @@ public:
 	template <typename Func>
 	auto CreateTimerSafe(Func&& func)
 	{
-		return timeService.CreateTimer([selfWeak = TimeServiceWrapper<T>::weak_from_this(), func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
+		auto selfWeak = TimeServiceWrapper<T>::weak_from_this();
+		// If following assert failed, the function might be called in constructor
+		assert(!selfWeak.expired());
+		
+		return timeService.CreateTimer([selfWeak, func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
 			auto self = selfWeak.lock();
 			if (!self) return;
 			
@@ -103,7 +122,11 @@ public:
 	template <typename Func>
 	auto CreateTimerSafe(const std::chrono::milliseconds& ms, Func&& func)
 	{
-		return timeService.CreateTimer(ms, [selfWeak = TimeServiceWrapper<T>::weak_from_this(), func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
+		auto selfWeak = TimeServiceWrapper<T>::weak_from_this();
+		// If following assert failed, the function might be called in constructor
+		assert(!selfWeak.expired());
+		
+		return timeService.CreateTimer(ms, [selfWeak, func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
 			auto self = selfWeak.lock();
 			if (!self) return;
 			
@@ -114,7 +137,11 @@ public:
 	template <typename Func>
 	auto CreateTimerSafe(const std::chrono::milliseconds& ms, const std::chrono::milliseconds& repeat, Func&& func)
 	{
-		return timeService.CreateTimer(ms, repeat, [selfWeak = TimeServiceWrapper<T>::weak_from_this(), func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
+		auto selfWeak = TimeServiceWrapper<T>::weak_from_this();
+		// If following assert failed, the function might be called in constructor
+		assert(!selfWeak.expired());
+		
+		return timeService.CreateTimer(ms, repeat, [selfWeak, func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
 			auto self = selfWeak.lock();
 			if (!self) return;
 			
@@ -125,7 +152,11 @@ public:
 	template <typename Func>
 	auto FutureSafe(Func&& func)
 	{
-		return timeService.Future([selfWeak = TimeServiceWrapper<T>::weak_from_this(), func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
+		auto selfWeak = TimeServiceWrapper<T>::weak_from_this();
+		// If following assert failed, the function might be called in constructor
+		assert(!selfWeak.expired());
+		
+		return timeService.Future([selfWeak, func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
 			auto self = selfWeak.lock();
 			if (!self) return;
 			

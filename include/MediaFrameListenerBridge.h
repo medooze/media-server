@@ -47,6 +47,8 @@ private:
 public:
 	virtual ~MediaFrameListenerBridge();
 
+	virtual void OnCreated() override;
+	
 	void SetFrameDispatchCoordinator(const std::shared_ptr<FrameDispatchCoordinator>& coordinator);
 	
 	void Reset();
