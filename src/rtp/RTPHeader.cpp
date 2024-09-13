@@ -23,15 +23,18 @@
  */
 DWORD RTPHeader::Parse(const BYTE* data,const DWORD size)
 {
-	//Ensure minumim size
-	if (size<12)
-		return 0;
 	
 	//Bite reader
-	BitReader r(data,2); 
+	BufferReader reader(data,size);
+
+	//Ensure minumim size
+	if (!reader.Assert(12))
+		return 0;
 
 	try
 	{
+		BitReader r(reader);
+
 		//If not an rtp packet
 		if (r.Peek(2) != 2)
 			return 0;
@@ -44,32 +47,38 @@ DWORD RTPHeader::Parse(const BYTE* data,const DWORD size)
 		mark		= r.Get(1);
 		payloadType	= r.Get(7);
 
+		//Done reading
+		r.Flush();
+
 		//Get sequence number
-		sequenceNumber = get2(data, 2);
+		sequenceNumber = reader.Get2();
 
 		//Get timestamp
-		timestamp = get4(data, 4);
+		timestamp = reader.Get4();
 
 		//Get ssrc
-		ssrc = get4(data, 8);
+		ssrc = reader.Get4();
 
 		//Ensure size
-		if (size < 12u + cc * 4)
+		if (!reader.Assert(cc * 4))
 			//Error
 			return 0;
 
 		//Get all csrcs
 		for (int i = 0; i < cc; ++i)
 			//Get them
-			csrcs.push_back(get4(data, 12 + i * 4));
+			csrcs.push_back(reader.Get4());
 
 		//Return size
-		return 12 + csrcs.size() * 4;
-	}
+		return reader.Mark();
+
+	} 
 	catch (std::exception& e) 
 	{
 		return 0;
 	}
+
+	
 	
 }
 

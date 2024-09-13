@@ -33,7 +33,7 @@ Header Header::Parse(BufferReader& reader)
 		throw std::runtime_error("Not enought data to read mpegts packet header");
 
 	//Get the MPEG TS header bytes
-	BitReader bitreader(reader.GetData(4), 4);
+	BitReader bitreader(reader);
 
 	//The hceader
 	Header header = {};
@@ -67,6 +67,9 @@ Header Header::Parse(BufferReader& reader)
 	header.transportScramblingControl	= bitreader.Get(2);
 	header.adaptationFieldControl		= (AdaptationFieldControl)bitreader.Get(2);
 	header.continuityCounter		= bitreader.Get(4);
+
+	//Done reading
+	bitreader.Flush();
 
 	//Done
 	return header;
@@ -145,7 +148,7 @@ AdaptationField AdaptationField::Parse(BufferReader& reader)
 	AdaptationField adaptationField = {};
 
 	//Get bit reader
-	BitReader bitreader(reader.GetData(1), 1);
+	BitReader bitreader(reader);
 
 	adaptationField.discontinuityIndicator			= bitreader.Get(1);
 	adaptationField.randomAccessIndicator			= bitreader.Get(1);
@@ -155,6 +158,9 @@ AdaptationField AdaptationField::Parse(BufferReader& reader)
 	adaptationField.splicingPointFlag			= bitreader.Get(1);
 	adaptationField.transportPrivateDataFlag		= bitreader.Get(1);
 	adaptationField.adaptationFieldExtensionFlag		= bitreader.Get(1);
+
+	//Done reading
+	bitreader.Flush();
 
 	//Go to the end of the adaptation field
 	reader.GoTo(start + adaptationFieldLength);
@@ -339,7 +345,7 @@ HeaderExtension HeaderExtension::Parse(BufferReader& reader)
 	Stuffing uint8_ts	variable length	0xff
 	*/
 	//Get extended header
-	BitReader bitreader(reader.GetData(3), 3);
+	BitReader bitreader(reader);
 
 	//Parse packet header
 	HeaderExtension headerExtension = {};
@@ -359,6 +365,9 @@ HeaderExtension HeaderExtension::Parse(BufferReader& reader)
 	headerExtension.extensionFlag		= bitreader.Get(1);
 	auto remainderHeaderLength		= bitreader.Get(8);
 
+	//Done reading
+	bitreader.Flush();
+
 	//Get current postition
 	auto pos = reader.Mark();
 
@@ -369,7 +378,7 @@ HeaderExtension HeaderExtension::Parse(BufferReader& reader)
 			throw std::runtime_error("Not enought data to read mpegtsp pes extension header PTS");
 
 		//PTS is 33 bits
-		BitReader ptsreader(reader.GetData(5), 5);
+		BitReader ptsreader(reader);
 		//Read parts
 		ptsreader.Skip(4);
 		uint64_t pts32_30 = ptsreader.Get(3);
@@ -379,6 +388,9 @@ HeaderExtension HeaderExtension::Parse(BufferReader& reader)
 		uint64_t pts14_0 = ptsreader.Get(15);
 		//Get PTS
 		headerExtension.pts = (pts32_30 << 30) | (pts29_15 << 15) | pts14_0;
+
+		//Done reading
+		bitreader.Flush();
 	}
 
 	//Read DTS
@@ -388,7 +400,7 @@ HeaderExtension HeaderExtension::Parse(BufferReader& reader)
 			throw std::runtime_error("Not enought data to read mpegtsp pes extension header DTS");
 
 		//PTS is 33 bits
-		BitReader ptsreader(reader.GetData(5), 5);
+		BitReader ptsreader(reader);
 		//Read parts
 		ptsreader.Skip(4);
 		uint64_t dts32_30 = ptsreader.Get(3);
@@ -398,6 +410,9 @@ HeaderExtension HeaderExtension::Parse(BufferReader& reader)
 		uint64_t dts14_0 = ptsreader.Get(15);
 		//Get PTS
 		headerExtension.dts = (dts32_30 << 30) | (dts29_15 << 15) | dts14_0;
+
+		//Done reading
+		bitreader.Flush();
 	}
 
 	//Skip the rest of the header
@@ -515,7 +530,7 @@ namespace adts
 		Q	16	CRC check (as of ISO/IEC 11172-3, subclause 2.4.3.1), if Protection absent is 0.
 	*/
 		//Get header
-		BitReader bitreader(reader.GetData(7), 7);
+		BitReader bitreader(reader);
 
 		Header header = {};
 
@@ -537,6 +552,9 @@ namespace adts
 
 		if (!header.protectionAbsence)
 			header.crc		 = reader.Get2();
+
+		//Done reading
+		bitreader.Flush();
 
 		//Done
 		return header;

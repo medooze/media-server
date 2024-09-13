@@ -238,7 +238,7 @@ public:
 	std::string rid;
 	std::string repairedId;
 	std::string mid;
-	BitReader dependencyDescryptorReader; 
+	std::optional<BufferReader> dependencyDescryptorReader;
 	std::optional<::DependencyDescriptor> dependencyDescryptor;
 	struct AbsoluteCaptureTime absoluteCaptureTime;
 	struct PlayoutDelay playoutDelay;

@@ -11,7 +11,7 @@ RTPOutgoingSource::RTPOutgoingSource() :
 	numFrames		= 0;
 	numFramesDelta		= 0;
 	lastTimestamp		= 0;
-	ssrc			= random();
+	ssrc			= 0;
 	extSeqNum		= random() & 0xFFFF;
 	lastSenderReport	= 0;
 	lastSenderReportNTP	= 0;

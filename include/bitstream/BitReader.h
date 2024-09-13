@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <cassert>
 
+#include "log.h"
 #include "config.h"
 #include "tools.h"
 #include "BufferReader.h"
@@ -12,71 +13,37 @@
 class BitReader
 {
 public:
-	BitReader()
+
+	/***
+	* BitReader() will read eagerly from the BufferReader,
+	* so caller MUST call Flush() to return
+	*/
+	BitReader(BufferReader& reader) : reader(reader)
 	{
-		//Nothing
-		buffer = nullptr;
-		bufferLen = 0;
-		//nothing in the cache
-		cached = 0;
-		cache = 0;
-		bufferPos = 0;
+		ini = reader.Mark();
 	}
 
-	BitReader(const BYTE *data,const DWORD size)
+	~BitReader()
 	{
-		//Store
-		buffer = data;
-		bufferLen = size;
-		//nothing in the cache
-		cached = 0;
-		cache = 0;
-		bufferPos = 0;
+		Flush();
 	}
 
-	BitReader(BufferReader& reader, const DWORD size) :
-		BitReader(reader.GetData(size), size)
-	{
-	}
-
-	BitReader(const Buffer& reader) :
-		BitReader(reader.GetData(), reader.GetSize())
-	{
-	}
-
-	inline void Wrap(const BYTE *data,const DWORD size)
-	{
-		//Store
-		buffer = data;
-		bufferLen = size;
-		//nothing in the cache
-		cached = 0;
-		cache = 0;
-		bufferPos = 0;
-	}
-	
-	inline void Release()
-	{
-		//Nothing
-		buffer = nullptr;
-		bufferLen = 0;
-		//nothing in the cache
-		cached = 0;
-		cache = 0;
-		bufferPos = 0;
-	}
-	
 	inline void Reset()
 	{
 		//nothing in the cache
 		cached = 0;
 		cache = 0;
-		bufferPos = 0;
+		//Reset position
+		reader.GoTo(ini);
 	}
 
 	inline DWORD Get(DWORD n)
 	{
-		assert(n <= 32);
+		if (n > 32)
+			throw std::invalid_argument("BitReader::Get() n > 32");
+
+		//Debug(">BitReader::Get() n:%d cached:%d\n", n, cached);
+		//BitDump(cache, cached);
 
 		DWORD ret = 0;
 			
@@ -94,7 +61,7 @@ public:
 			//Get from cache
 			ret = GetCached(n);
 		}
-		//Debug("Readed %d: cached:%d\n",n, cached);
+		//Debug("<BitReader::Get() Readed n:%d ret:%d cached:%d\n", n, ret, cached);
 		//BitDump(ret,n);
 		return ret;
 	}
@@ -106,6 +73,8 @@ public:
 
 	inline void Skip(DWORD n)
 	{
+		//Debug(">BitReader::Skip() skipping n:%d: cached:%d\n", n, cached);
+
 		//If input is bigger than cache
 		while (n>32)
 		{
@@ -127,17 +96,18 @@ public:
 			//Skip cache
 			SkipCached(n);
 		}
-		//Debug("Skiped n:%d: cached:%d\n", n, cached);
+		//Debug("<BitReader::Skip() Skiped n:%d: cached:%d\n", n, cached);
 	}
 
 	inline QWORD Left()
 	{
-		return QWORD(bufferLen - bufferPos) * 8 - cached;
+		return QWORD(reader.GetLeft()) * 8 - cached;
 	}
 
 	inline DWORD Peek(DWORD n)
 	{
-		assert(n <= 32);
+		if (n > 32)
+			throw std::invalid_argument("BitReader::Peek() n > 32");
 
 		DWORD ret = 0;
 
@@ -153,14 +123,14 @@ public:
 			//Get from cache
 			ret = cache >> (32-n);
 		}
-		//Debug("Peeked %d:\n",n);
+		//Debug("-BitReader::Peek() Peeked %d:\n",n);
 		//BitDump(ret,n);
 		return ret;
 	}
 
-	inline DWORD GetPos()
+	inline QWORD GetPos()
 	{
-		return bufferPos*8-cached;
+		return reader.GetOffset(ini)*8-cached;
 	}
 
 	inline uint32_t GetNonSymmetric(uint8_t n) 
@@ -223,14 +193,15 @@ public:
 
 	inline DWORD Flush()
 	{
+		//Debug("-BitReader::Flush()\n");
 		Align();
 		FlushCache();
-		return bufferPos;
+		return reader.GetOffset(ini);
 	}
 
 	inline void FlushCache()
 	{
-		assert (cached <= bufferPos * 8);
+		assert (cached <= GetPos() * 8);
 
 		//Check if we have already finished
 		if (!cached)
@@ -240,74 +211,59 @@ public:
 		//BitDump(cache,cached);
 		// We need to return the cached bits to the buffer
 		auto bytes = cached / 8;
-		//Debug("Flushing Cache cached:%d bytes:%d len:%u pos:%u\n", cached, bytes, bufferLen, bufferPos);
+		//Debug(">BitReader::FlushCache() Flushing Cache cached:%d bytes:%d len:%u pos:%u\n", cached, bytes, reader.GetLeft(), reader.GetOffset(ini));
 
-		//Increase pointers
-		bufferLen += bytes;
-		buffer -= bytes;
-		bufferPos -= bytes;
+		//Go back
+		reader.GoTo(reader.Mark() - bytes);
 
 		//Nothing cached
 		cached = 0;
 		cache = 0;
-		//Debug("Flushed cache len:%u pos:%u\n", bufferLen, bufferPos);
+		//Debug("<BitReader::FlushCache() Flushed cache len:%u pos:%u\n", reader.GetLeft(), reader.GetOffset(ini));
 	}
 
 	inline void Align()
 	{
-		if (cached % 8 == 0)
-			return;
+		//Debug(">Align() cache len:%u pos:%u\n", reader.GetLeft(), reader.GetOffset(ini));
 
-		if (cached > 24)
-			Skip(32 - cached);
-		else if (cached > 16)
-			Skip(24 - cached);
-		else if (cached > 8)
-			Skip(16 - cached);
-		else
-			Skip(8 - cached);
+		//Go to next byte
+		Skip(cached % 8);
+
+		//Debug("<BitReader::Align() cache len:%u pos:%u\n", reader.GetLeft(), reader.GetOffset(ini));
+
 	}
 
 private:
 	inline DWORD Cache()
 	{
 		//Check left buffer
-		if (bufferLen-bufferPos>3)
+		if (reader.Assert(4))
 		{
 			//Update cache
-			cache = get4(buffer+bufferPos,0);
+			cache = reader.Get4();
 			//Update bit count
 			cached = 32;
-			//Increase pointer
-			bufferPos += 4;
-
-		} else if(bufferLen-bufferPos==3) {
+		} else if(reader.Assert(3)) {
 			//Update cache
-			cache = get3(buffer+bufferPos,0)<<8;
+			cache = reader.Get3() << 8;
 			//Update bit count
 			cached = 24;
-			//Increase pointer
-			bufferPos += 3;
-		} else if (bufferLen-bufferPos==2) {
+		} else if (reader.Assert(2)) {
 			//Update cache
-			cache = get2(buffer+bufferPos,0)<<16;
+			cache = reader.Get2() << 16;
 			//Update bit count
 			cached = 16;
-			//Increase pointer
-			bufferPos += 2;
-		} else if (bufferLen-bufferPos==1) {
+		} else if (reader.Assert(1)) {
 			//Update cache
-			cache  = get1(buffer+bufferPos,0)<<24;
+			cache  = reader.Get1()<<24;
 			//Update bit count
 			cached = 8;
-			//Increase pointer
-			bufferPos++;
 		} else {
 			throw std::range_error("no more bytes to read from");
 		}
 			
 
-		//Debug("Reading int cache %x:%d\n",cache,cached);
+		//Debug("-BitReader::Cache() Reading int cache %x:%d\n",cache,cached);
 		//BitDump(cache>>(32-cached),cached);
 
 		//return number of bits
@@ -317,19 +273,19 @@ private:
 	inline DWORD PeekNextCached()
 	{
 		//Check left buffer
-		if (bufferLen-bufferPos>3)
+		if (reader.Assert(4))
 		{
-			//return  cached
-			return get4(buffer+bufferPos,0);
-		} else if(bufferLen-bufferPos==3) {
-			//return  cached
-			return get3(buffer+bufferPos,0)<<8;
-		} else if (bufferLen-bufferPos==2) {
-			//return  cached
-			return get2(buffer+bufferPos,0)<<16;
-		} else if (bufferLen-bufferPos==1) {
-			//return  cached
-			return get1(buffer+bufferPos,0)<<24;
+			//Peek next bytes
+			return reader.Peek4();
+		} else if(reader.Assert(3)) {
+			//Peek next bytes
+			return reader.Peek3() << 8;
+		} else if (reader.Assert(2)) {
+			//Peek next bytes
+			return reader.Peek2() << 16;
+		} else if (reader.Assert(1)) {
+			//Peek next bytes
+			return reader.Peek1() << 24;
 		} else {
 			throw std::range_error("no more bytes to read from");
 		}
@@ -338,6 +294,8 @@ private:
 	inline void SkipCached(DWORD n)
 	{
 		assert(n <= cached);
+
+		//Debug(">BitReader::SkipCached() n:%d cache %x:%d\n", n, cache, cached);
 
 		//Check length
 		if (!n) return;
@@ -353,6 +311,8 @@ private:
 			cache = 0;
 			cached = 0;
 		}
+
+		//Debug("<BitReader::SkipCached() cache %x:%d\n",cache,cached);
 			
 	}
 
@@ -371,11 +331,10 @@ private:
 	}
 	
 private:
-	const BYTE* buffer;
-	DWORD bufferLen;
-	DWORD bufferPos;
-	DWORD cache;
-	BYTE  cached;
+	BufferReader& reader;
+	DWORD ini	= 0;
+	DWORD cache	= 0;
+	BYTE  cached	= 0;
 };
 
 

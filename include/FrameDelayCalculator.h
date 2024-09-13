@@ -9,11 +9,9 @@
 #include <queue>
 #include <algorithm>
 
-class FrameDelayCalculator : public std::enable_shared_from_this<FrameDelayCalculator>
+class FrameDelayCalculator : public TimeServiceWrapper<FrameDelayCalculator>
 {
 public:
-
-	FrameDelayCalculator(int aUpdateRefsPacketLateThresholdMs, std::chrono::milliseconds aUpdateRefsStepPacketEarlyMs, TimeService& timeService);
 	
 	/**
 	 * Calculate the dispatch delay for the arrived frame. This function is thread safe.
@@ -54,6 +52,8 @@ private:
 		
 		__uint128_t field = 0;
 	};
+
+	FrameDelayCalculator(int aUpdateRefsPacketLateThresholdMs, std::chrono::milliseconds aUpdateRefsStepPacketEarlyMs, TimeService& timeService);
 	
 	/**
 	 * Get the delay of current frame
@@ -75,11 +75,6 @@ private:
 	// Controls the latency reduction speed
 	std::chrono::milliseconds updateRefsStepPacketEarlyMs {0};
 	
-	/**
-	 * Timeservice for latency reduction
-	 */
-	TimeService& timeService;
-	
 	// Time reference
 	Reference reference;
 
@@ -91,6 +86,7 @@ private:
 	State state = State::Reset;
 	
 	friend class TestFrameDelayCalculator;
+	friend class TimeServiceWrapper<FrameDelayCalculator>;
 };
 
 #endif

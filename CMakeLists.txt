@@ -69,6 +69,8 @@ add_library(MediaServerLib
     ${CMAKE_CURRENT_LIST_DIR}/src/DependencyDescriptorLayerSelector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/av1/AV1LayerSelector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/av1/Obu.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/mpegts/mpegts.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/mpegts/psi.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/mpegts/SpliceInfoSection.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/mpegts/mpegts.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/mpegts/psi.cpp
@@ -116,7 +118,6 @@ add_library(MediaServerLib
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPIncomingSourceGroup.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/avcdescriptor.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/EventLoop.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/NetEventLoop.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/log.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/stunmessage.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/FrameDelayCalculator.cpp
@@ -183,6 +184,7 @@ add_executable(MediaServerUnitTest
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAccumulator.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestCircularBuffer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestCircularQueue.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestDependencyDescriptor.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestFrameDelayCalculator.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestFrameDispatchCoordinator.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestMovingCounter.cpp
@@ -203,6 +205,7 @@ add_executable(MediaServerUnitTest
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestFecProbeGenerator.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestSpliceInfoSection.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestH26xNal.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestHEVCBitstream.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestHEVCDescriptor.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/data/FramesArrivalInfo.cpp
 )
@@ -222,7 +225,6 @@ add_executable(MediaServerLegacyTest
     ${CMAKE_CURRENT_LIST_DIR}/test/main.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/test.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/cpim.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/test/dd.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/ddls.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/eventloop.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/fec.cpp
