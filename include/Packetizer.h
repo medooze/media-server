@@ -21,6 +21,8 @@ public:
 	{
 	}
 	
+	virtual ~Packetizer() = default;
+	
 	void AddMessage(const T& message, bool forceSeparatePacket = false)
 	{
 		std::lock_guard lock(mutex);
