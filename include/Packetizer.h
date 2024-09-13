@@ -50,8 +50,10 @@ public:
 	}
 	
 	// Note IsMessageStart() and GetNextPacket must be called in same thread
-	void GetNextPacket(BufferWritter& writer)
+	virtual size_t GetNextPacket(BufferWritter& writer)
 	{
+		size_t bytes = 0;
+		
 		while (writer.GetLeft())
 		{
 			if (!buffer || pos >= buffer->GetSize())
@@ -63,7 +65,7 @@ public:
 					pos = 0;
 					
 					hasData.store(false, std::memory_order_release);
-					return;
+					return bytes;
 				}
 				
 				// Grap the front message
@@ -89,7 +91,7 @@ public:
 				if (forceSeparate && pos > 0)
 				{
 					pos = 0;
-					return;
+					return bytes;
 				}
 				
 				pos = 0;
@@ -101,7 +103,10 @@ public:
 			memcpy(current, &buffer->GetData()[pos], len);
 			
 			pos += len;
+			bytes += len;
 		}
+		
+		return bytes;
 	}
 	
 private:
