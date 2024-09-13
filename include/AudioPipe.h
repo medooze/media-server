@@ -6,7 +6,6 @@
 #include "AudioTransrater.h"
 #include <AudioBuffer.h>
 #include <limits>
-#include "CircularQueue.h"
 
 
 class AudioPipe : 
@@ -40,7 +39,6 @@ private:
 	pthread_cond_t  cond;
 	//Members
 	fifo<SWORD,48000*4>	rateBlockBuffer;
-	QWORD encoderPTS = 0;
 
 	bool			recording = false;
 	bool			playing = false;

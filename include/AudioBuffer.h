@@ -30,35 +30,24 @@ public:
 	void	SetClockRate(DWORD clockRate) { this->clockRate = clockRate; }
 
 	const SWORD* GetData() const { return pcmBuffer.data(); }
-	SWORD* ConsumeData(int numSamples) 
-	{ 
+	SWORD* ConsumeSamples(int numSamples) 
+	{
 		if(numSamples > left) return nullptr;
 		left -= numSamples;
 		auto currData = data;
 		data += numSamples;
 		return currData;
 	}
-	int CopyAudioBufferData(const AudioBuffer::const_shared& audioBuffer, int numSamples)
-	{
-		SWORD* in = const_cast<SWORD*>(audioBuffer->GetData());
-		if(!in) 
-			return Error("AudioBuffer::CopyAudioBufferData() empty input buffer\n");
-		int totalSamples = numChannels * numSamples;
-		if(totalSamples > pcmBuffer.capacity())
-			return Error("AudioBuffer::CopyAudioBufferData() exceed audio buffer capacity, want=%d, capacity=%d\n", totalSamples, pcmBuffer.capacity());
-		memcpy(this->ConsumeData(totalSamples), in, totalSamples*sizeof(SWORD));
-		return totalSamples;
-	}
-
-	int CopyResampled(SWORD* in, int numSamples)
+	
+	int SetSamples(SWORD* in, int numSamples)
 	{
 		if(!in) 
-			return Error("AudioBuffer::CopyResampled() empty input buffer\n");
+			return Error("AudioBuffer::SetSamples() empty input buffer\n");
 
 		int totalResampled = numSamples * numChannels;
 		if(totalResampled != pcmBuffer.size())
 		{
-			Debug("AudioBuffer::CopyResampled buffer resized, resized to =%d\n", totalResampled);
+			Debug("AudioBuffer::SetSamples buffer resized, resized to =%d\n", totalResampled);
 			pcmBuffer.resize(totalResampled);
 		}
 			
@@ -66,13 +55,13 @@ public:
 		return numSamples;
 	}
 
-	int CopyDecodedData(uint8_t** pcmData, uint32_t numSamples)
+	int SetPCMData(uint8_t** pcmData, uint32_t numSamples)
 	{
 		if(!pcmData || !*pcmData)
-			return Error("-AudioBuffer::CopyDecodedData() invalid frame data pointer\n");
+			return Error("-AudioBuffer::SetPCMData() invalid frame data pointer\n");
 	
 		if(numSamples*numChannels > pcmBuffer.size()) 
-			return Error("-AudioBuffer::CopyDecodedData() exceed audio buffer size\n");
+			return Error("-AudioBuffer::SetPCMData() exceed audio buffer size\n");
 		
 		int totalWrittenSamples = 0;
 		for (size_t i = 0; i < numSamples; ++i)
@@ -84,18 +73,19 @@ public:
 				if(pcmData[ch])
 					pcmBuffer[i * numChannels + ch] = ((float*)(pcmData[ch]))[i] * (1 << 15);
 				else 
-					return Error("-AudioBuffer::CopyDecodedData() invalid data pointer for ch %d\n", ch);
+					return Error("-AudioBuffer::SetPCMData() invalid data pointer for ch %d\n", ch);
 				totalWrittenSamples++;
 			}
 
 		}
 		return totalWrittenSamples / numChannels;		
 	}
-	bool AddPCM(SWORD val, int pos) 
+
+	bool SetSampleAt(size_t pos, SWORD sample) 
 	{ 
 		if(pos >= pcmBuffer.size()) 
-			return Error("-AudioBuffer::AddPCM() write position exceeds buffer size\n");
-		pcmBuffer[pos] = val;
+			return Error("-AudioBuffer::SetSampleAt() write position exceeds buffer size\n");
+		pcmBuffer[pos] = sample;
 		return true;
 	}
 	const int GetNumChannels() const { return numChannels; }

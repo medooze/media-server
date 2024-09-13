@@ -183,10 +183,7 @@ int AudioEncoderWorker::Encode()
 		auto audioBuffer = audioInput->RecBuffer(codec->numFrameSamples);
 		if(!audioBuffer)
 			continue;
-
-		//Incrementamos el tiempo de envio
-		presentationTimestamp = audioBuffer->GetTimestamp();
-
+		
 		//If we have a different channel count
 		if (numChannels != audioInput->GetNumChannels())
 		{
@@ -204,7 +201,7 @@ int AudioEncoderWorker::Encode()
 			}
 		}
 		//Lo codificamos
-		AudioFrame* frame = codec->Encode(audioBuffer);
+		AudioFrame::shared frame = codec->Encode(audioBuffer);
 		//Comprobamos que ha sido correcto
 		if(!frame)
 		{
@@ -212,7 +209,7 @@ int AudioEncoderWorker::Encode()
 			continue;
 		}
 		
-		frame->SetClockRate(audioBuffer->GetClockRate());
+		frame->SetClockRate(rate);
 		//Set frame timestamp
 		frame->SetTimestamp(presentationTimestamp);
 		frame->SetSenderTime(presentationTimestamp * 1000 / codec->GetClockRate());
@@ -226,7 +223,7 @@ int AudioEncoderWorker::Encode()
 		frame->ClearRTPPacketizationInfo();
 		//Add rtp packet
 		frame->AddRtpPacket(0,frame->GetLength(),NULL,0);
-		 
+		presentationTimestamp+=codec->numFrameSamples;
 		//Lock
 		pthread_mutex_lock(&mutex);
 

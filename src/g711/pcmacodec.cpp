@@ -4,7 +4,8 @@
 
 #define NUMFRAMES 160
 
-PCMAEncoder::PCMAEncoder(const Properties &properties) : audioFrame(AudioCodec::PCMA)
+PCMAEncoder::PCMAEncoder(const Properties &properties)
+	: audioFrame(std::make_shared<AudioFrame>(AudioCodec::PCMA))
 {
 	type=AudioCodec::PCMA;
 	numFrameSamples=NUMFRAMES;
@@ -25,7 +26,7 @@ PCMADecoder::~PCMADecoder()
 
 }
 
-AudioFrame* PCMAEncoder::Encode(const AudioBuffer::const_shared& audioBuffer)
+AudioFrame::shared PCMAEncoder::Encode(const AudioBuffer::const_shared& audioBuffer)
 {
 	const SWORD *in = audioBuffer->GetData();
 	int inLen = audioBuffer->GetNumSamples() * audioBuffer->GetNumChannels();
@@ -33,10 +34,10 @@ AudioFrame* PCMAEncoder::Encode(const AudioBuffer::const_shared& audioBuffer)
 	for (int j = 0; j< inLen ;j++)
 	{
 		uint8_t alaw = linear2alaw(in[j]);
-		audioFrame.AppendMedia(&alaw, 1); 
+		audioFrame->AppendMedia(&alaw, 1); 
 	}
-	audioFrame.SetLength(inLen);
-	return &audioFrame;
+	audioFrame->SetLength(inLen);
+	return audioFrame;
 }
 
 
@@ -61,7 +62,7 @@ AudioBuffer::shared PCMADecoder::GetDecodedAudioFrame()
 	auto audioBuffer = std::make_shared<AudioBuffer>(inLen, 1);
 	for (int j = 0; j< inLen;j++)
 	{
-		if(audioBuffer->AddPCM(alaw2linear(*in), j))
+		if(audioBuffer->SetSampleAt(j, alaw2linear(*in)))
 			in++;
 		else	
 			return {};

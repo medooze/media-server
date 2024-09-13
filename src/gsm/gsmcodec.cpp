@@ -2,7 +2,8 @@
 #include "gsmcodec.h"
 
 #define GSM_FRAME_LENGTH 33
-GSMEncoder::GSMEncoder(const Properties &properties) : audioFrame(AudioCodec::GSM)
+GSMEncoder::GSMEncoder(const Properties &properties)
+	: audioFrame(std::make_shared<AudioFrame>(AudioCodec::GSM))
 {
 	int     fast       = 0;
 	int     wav        = 0;
@@ -13,7 +14,7 @@ GSMEncoder::GSMEncoder(const Properties &properties) : audioFrame(AudioCodec::GS
 
 //	gsm_option(g, GSM_OPT_FAST,    &fast);
 	gsm_option(g, GSM_OPT_WAV49,   &wav);
-	audioFrame.DisableSharedBuffer();
+	audioFrame->DisableSharedBuffer();
 }
 
 GSMEncoder::~GSMEncoder()
@@ -21,18 +22,18 @@ GSMEncoder::~GSMEncoder()
 	gsm_destroy(g);
 }
 
-AudioFrame* GSMEncoder::Encode(const AudioBuffer::const_shared& audioBuffer)
+AudioFrame::shared GSMEncoder::Encode(const AudioBuffer::const_shared& audioBuffer)
 {
 
 	const SWORD *in = audioBuffer->GetData();
 	int inLen = audioBuffer->GetNumSamples() * audioBuffer->GetNumChannels();
-	if(inLen != numFrameSamples || audioFrame.GetMaxMediaLength() < GSM_FRAME_LENGTH) 
+	if(inLen != numFrameSamples || audioFrame->GetMaxMediaLength() < GSM_FRAME_LENGTH) 
 		return nullptr;
 
 	//Codificamos
-	gsm_encode(g,(gsm_signal *)in,(gsm_byte *)audioFrame.GetData());
-	audioFrame.SetLength(GSM_FRAME_LENGTH);
-	return &audioFrame;
+	gsm_encode(g,(gsm_signal *)in,(gsm_byte *)audioFrame->GetData());
+	audioFrame->SetLength(GSM_FRAME_LENGTH);
+	return audioFrame;
 }
 
 
@@ -89,11 +90,11 @@ AudioBuffer::shared GSMDecoder::GetDecodedAudioFrame()
 		int outLen = 160*2;
 		auto audioBuffer = std::make_shared<AudioBuffer>(outLen, 1);
 		//Decodificamos el primero
-		if (gsm_decode(g,(gsm_byte *)in,(gsm_signal *)audioBuffer->ConsumeData(160))<0)
+		if (gsm_decode(g,(gsm_byte *)in,(gsm_signal *)audioBuffer->ConsumeSamples(160))<0)
 			return {};
 
 		//Y el segundo
-		if (gsm_decode(g,(gsm_byte *)&in[33],(gsm_signal *)audioBuffer->ConsumeData(160))<0)
+		if (gsm_decode(g,(gsm_byte *)&in[33],(gsm_signal *)audioBuffer->ConsumeSamples(160))<0)
 			return {};
 
 		return audioBuffer;	

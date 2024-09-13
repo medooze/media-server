@@ -262,15 +262,7 @@ end:
 	pthread_mutex_unlock(&mutex);
 	
 	//Debug("-poped %d cache %d\n",size,fifoBuffer.length());
-	if (len)
-	{
-		audioBuffer->SetClockRate(recordRate);
-		audioBuffer->SetTimestamp(encoderPTS);
-		encoderPTS += frameSize;
-		return audioBuffer;
-	}
-	else
-		return {};
+	return len ? audioBuffer : AudioBuffer::shared{};
 }
 
 int AudioPipe::ClearBuffer()

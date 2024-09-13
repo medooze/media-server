@@ -9,6 +9,7 @@ class AudioFrame : public MediaFrame
 {
 public:
 	using const_shared = std::shared_ptr<const AudioFrame>;
+	using shared = std::shared_ptr<AudioFrame>;
 	AudioFrame(AudioCodec::Type codec) : MediaFrame(MediaFrame::Audio,2048)
 	{
 		//Store codec
@@ -84,7 +85,7 @@ class AudioEncoder
 public:
 	// Must have virtual destructor to ensure child class's destructor is called
 	virtual ~AudioEncoder(){};
-	virtual AudioFrame* Encode(const AudioBuffer::const_shared& audioBuffer) = 0;
+	virtual AudioFrame::shared Encode(const AudioBuffer::const_shared& audioBuffer) = 0;
 	virtual DWORD TrySetRate(DWORD rate, DWORD numChannels)=0;
 	virtual DWORD GetRate()=0;
 	virtual DWORD GetNumChannels() { return 1; }

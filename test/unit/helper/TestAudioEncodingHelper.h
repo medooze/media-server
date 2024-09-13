@@ -53,7 +53,7 @@ public:
             	interleaved[(i-offset)*numChannels+ch] = (int16_t)(sample * (1 << 15));
             
         }
-		audioBuffer->CopyResampled(interleaved.data(), numSamples);
+		audioBuffer->SetSamples(interleaved.data(), numSamples);
         return audioBuffer;
     }
 private:
@@ -161,7 +161,7 @@ private:
 	int copyDecoded(uint8_t** pcmData, uint32_t numSamples, int numChannels)
 	{
 		if(!pcmData || !*pcmData)
-			return Error("-AudioBuffer::CopyDecodedData() invalid frame data pointer\n");
+			return Error("invalid frame data pointer\n");
 		
 		int totalWrittenSamples = 0;
 		for (size_t i = 0; i < numSamples; ++i)

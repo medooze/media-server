@@ -39,7 +39,7 @@ void helperTestPCMData(const AudioPipeParam& playParam, const AudioPipeParam& re
         for(int i=0;i<numPlayBuffers+1;i++)
         {
             auto audioBuffer = std::make_shared<AudioBuffer>(playFrameSize, numChannels);
-            audioBuffer->CopyResampled(inLoc, playFrameSize);
+            audioBuffer->SetSamples(inLoc, playFrameSize);
 		    audPipe.PlayBuffer(audioBuffer);
             resampledSamples = audioBuffer->GetNumSamples()*numChannels;
             memcpy(resampledLoc, audioBuffer->GetData(), resampledSamples*sizeof(SWORD));
@@ -64,13 +64,6 @@ void helperTestPCMData(const AudioPipeParam& playParam, const AudioPipeParam& re
     }; 
     for (int i = 0;i < numRecAudioBuffers * recFrameSize;i++)
         EXPECT_EQ(resampled[i], out[i]) << "audio data differ at index " << i;
-    int encoderPTS = 0;
-    for (int i = 0;i < numRecAudioBuffers; i++)
-    {
-        EXPECT_EQ(encoderPTS, audioEncoderPTS[i]) << "audio pts differ at index " << i;
-        encoderPTS += recFrameSize;
-    }
-
 }
 
 TEST(TestAudioPipe, audioBufferPCM)

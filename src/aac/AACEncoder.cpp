@@ -8,7 +8,8 @@
 #include "AACEncoder.h"
 #include "log.h"
 
-AACEncoder::AACEncoder(const Properties &properties): audioFrame(AudioCodec::AAC)
+AACEncoder::AACEncoder(const Properties &properties)
+	: audioFrame(std::make_shared<AudioFrame>(AudioCodec::AAC))
 {
 	//NO ctx yet
 	swr = NULL;
@@ -93,7 +94,7 @@ AACEncoder::AACEncoder(const Properties &properties): audioFrame(AudioCodec::AAC
 	frame->channels = ctx->channels;
 	frame->sample_rate = ctx->sample_rate;
 
-	audioFrame.DisableSharedBuffer();
+	audioFrame->DisableSharedBuffer();
 	//Log
 	Log("-AACEncoder::AACEncoder() Encoder open with frame size %d.\n", numFrameSamples);
 }
@@ -115,7 +116,7 @@ AACEncoder::~AACEncoder()
 		av_frame_free(&frame);
 }
 
-AudioFrame* AACEncoder::Encode(const AudioBuffer::const_shared& audioBuffer)
+AudioFrame::shared AACEncoder::Encode(const AudioBuffer::const_shared& audioBuffer)
 {
 	AVPacket pkt;
 	int ret;
@@ -169,6 +170,6 @@ AudioFrame* AACEncoder::Encode(const AudioBuffer::const_shared& audioBuffer)
 		return nullptr;
 	}
 	else	
-		audioFrame.AppendMedia(pkt.data, pkt.size);
-	return &audioFrame;
+		audioFrame->AppendMedia(pkt.data, pkt.size);
+	return audioFrame;
 } 

@@ -119,7 +119,7 @@ AudioBuffer::shared AACDecoder::GetDecodedAudioFrame()
 	}
 	auto audioBuffer = std::make_shared<AudioBuffer>(frame->nb_samples, frame->channels);
 
-	int len = audioBuffer->CopyDecodedData(frame->extended_data, frame->nb_samples);
+	int len = audioBuffer->SetPCMData(frame->extended_data, frame->nb_samples);
 
 	if(len<frame->nb_samples) 
 		Error("-AACDecoder::GetDecodedAudioFrame less decoded data copied:actual=%d - should=%d\n", len, frame->nb_samples);

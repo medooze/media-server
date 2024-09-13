@@ -8,12 +8,12 @@ class PCMAEncoder : public AudioEncoder
 public:
 	PCMAEncoder(const Properties &properties);
 	virtual ~PCMAEncoder();
-	virtual AudioFrame* Encode(const AudioBuffer::const_shared& audioBuffer);
+	virtual AudioFrame::shared Encode(const AudioBuffer::const_shared& audioBuffer);
 	virtual DWORD TrySetRate(DWORD rate, DWORD numChannels) { return numChannels==1 ? 8000 : 0;	}
 	virtual DWORD GetRate()			{ return 8000;	}
 	virtual DWORD GetClockRate()		{ return 8000;	}
 private:
-	AudioFrame audioFrame;
+	AudioFrame::shared audioFrame;
 };
 
 class PCMADecoder : public AudioDecoder
@@ -34,12 +34,12 @@ class PCMUEncoder : public AudioEncoder
 public:
 	PCMUEncoder(const Properties &properties);
 	virtual ~PCMUEncoder();
-	virtual AudioFrame* Encode(const AudioBuffer::const_shared& audioBuffer);
+	virtual AudioFrame::shared Encode(const AudioBuffer::const_shared& audioBuffer);
 	virtual DWORD TrySetRate(DWORD rate, DWORD numChannels) { return numChannels == 1 ? 8000 : 0; }
 	virtual DWORD GetRate()			{ return 8000;	}
 	virtual DWORD GetClockRate()		{ return 8000;	}
 private:
-	AudioFrame audioFrame;
+	AudioFrame::shared audioFrame;
 };
 
 class PCMUDecoder : public AudioDecoder

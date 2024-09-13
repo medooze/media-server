@@ -104,7 +104,7 @@ AudioBuffer::shared MP3Decoder::GetDecodedAudioFrame()
 	}
 	auto audioBuffer = std::make_shared<AudioBuffer>(frame->nb_samples, frame->channels);
 
-	int len = audioBuffer->CopyDecodedData(frame->extended_data, frame->nb_samples);
+	int len = audioBuffer->SetPCMData(frame->extended_data, frame->nb_samples);
 
 	if(len<frame->nb_samples) 
 	{

@@ -14,7 +14,8 @@
 #include "fifo.h"
 #include "log.h"
 
-G722Encoder::G722Encoder(const Properties &properties) : audioFrame(AudioCodec::G722)
+G722Encoder::G722Encoder(const Properties &properties)
+	: audioFrame(std::make_shared<AudioFrame>(AudioCodec::G722))
 {
 	///Set type
 	type = AudioCodec::G722;
@@ -22,17 +23,17 @@ G722Encoder::G722Encoder(const Properties &properties) : audioFrame(AudioCodec::
 	numFrameSamples = 20 * 16;
 	//Init encoder
 	g722_encode_init(&encoder,64000, 2);
-	audioFrame.DisableSharedBuffer();
+	audioFrame->DisableSharedBuffer();
 }
 
-AudioFrame* G722Encoder::Encode(const AudioBuffer::const_shared& audioBuffer)
+AudioFrame::shared G722Encoder::Encode(const AudioBuffer::const_shared& audioBuffer)
 {
 	const SWORD *in = audioBuffer->GetData();
 	int inLen = audioBuffer->GetNumSamples() * audioBuffer->GetNumChannels();
 	if(!in || inLen<=0) return nullptr;
-	int len = g722_encode(&encoder,audioFrame.GetData(), in, inLen);
-	audioFrame.SetLength(len);
-	return &audioFrame;
+	int len = g722_encode(&encoder,audioFrame->GetData(), in, inLen);
+	audioFrame->SetLength(len);
+	return audioFrame;
 }
 
 G722Decoder::G722Decoder()

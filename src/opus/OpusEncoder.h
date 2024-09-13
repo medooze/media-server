@@ -17,7 +17,7 @@ class OpusEncoder : public AudioEncoder
 public:
 	OpusEncoder(const Properties &properties);
 	virtual ~OpusEncoder();
-	virtual AudioFrame* Encode(const AudioBuffer::const_shared& audioBuffer);
+	virtual AudioFrame::shared Encode(const AudioBuffer::const_shared& audioBuffer);
 	virtual DWORD TrySetRate(DWORD rate, DWORD numChannels);
 	virtual DWORD GetRate()			{ return rate;	}
 	virtual DWORD GetNumChannels()		{ return numChannels; }
@@ -25,7 +25,7 @@ public:
 	virtual void SetConfig(DWORD rate, DWORD numChannels);
 private:
 	OpusEncoder *enc;
-	AudioFrame audioFrame;
+	AudioFrame::shared audioFrame;
 	OpusConfig config = {};
 	DWORD rate;
 	DWORD numChannels;

@@ -4,7 +4,8 @@
 
 #define NUMFRAMES 160
 
-PCMUEncoder::PCMUEncoder(const Properties &properties) : audioFrame(AudioCodec::PCMU)
+PCMUEncoder::PCMUEncoder(const Properties &properties) 
+	: audioFrame(std::make_shared<AudioFrame>(AudioCodec::PCMU))
 {
 	type=AudioCodec::PCMU;
 	numFrameSamples=NUMFRAMES;
@@ -24,7 +25,7 @@ PCMUDecoder::~PCMUDecoder()
 {
 }
 
-AudioFrame* PCMUEncoder::Encode(const AudioBuffer::const_shared& audioBuffer)
+AudioFrame::shared PCMUEncoder::Encode(const AudioBuffer::const_shared& audioBuffer)
 {
 	const SWORD *in = audioBuffer->GetData();
 	int inLen = audioBuffer->GetNumSamples() * audioBuffer->GetNumChannels();
@@ -32,10 +33,10 @@ AudioFrame* PCMUEncoder::Encode(const AudioBuffer::const_shared& audioBuffer)
 	for (int j = 0; j < inLen ;j++)
 	{
 		uint8_t ulaw = linear2ulaw(in[j]);
-		audioFrame.AppendMedia(&ulaw, 1); 
+		audioFrame->AppendMedia(&ulaw, 1); 
 	}
-	audioFrame.SetLength(inLen);
-	return &audioFrame;
+	audioFrame->SetLength(inLen);
+	return audioFrame;
 }
 
 int PCMUDecoder::Decode(const AudioFrame::const_shared& audioFrame)
@@ -59,7 +60,7 @@ AudioBuffer::shared PCMUDecoder::GetDecodedAudioFrame()
 	auto audioBuffer = std::make_shared<AudioBuffer>(inLen, 1);
 	for (int j = 0; j< inLen;j++)
 	{
-		if(audioBuffer->AddPCM(ulaw2linear(*in), j))
+		if(audioBuffer->SetSampleAt(j, ulaw2linear(*in)))
 			in++;
 		else	
 			return {};

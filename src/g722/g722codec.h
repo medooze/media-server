@@ -13,13 +13,13 @@ class G722Encoder : public AudioEncoder
 public:
 	G722Encoder(const Properties &properties);
 	virtual ~G722Encoder() = default;
-	virtual AudioFrame* Encode(const AudioBuffer::const_shared& audioBuffer);
+	virtual AudioFrame::shared Encode(const AudioBuffer::const_shared& audioBuffer);
 	virtual DWORD TrySetRate(DWORD rate, DWORD numChannels)	{ return numChannels == 1 ? 16000 : 0; }
 	virtual DWORD GetRate()			{ return 16000;	}
 	virtual DWORD GetClockRate()		{ return 8000;	}
 private:
 	G722EncoderState encoder = {};
-	AudioFrame audioFrame;
+	AudioFrame::shared audioFrame;
 };
 
 class G722Decoder : public AudioDecoder
