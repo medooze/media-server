@@ -14,12 +14,10 @@ class BitReader
 public:
 
 	/***
-	* BitReader() will read eagerly from the BufferReader,
-	* so caller MUST call Flush() to return
+	* BitReader() will read lazily from the BufferReader
 	*/
 	BitReader(BufferReader& reader) : reader(reader)
 	{
-		ini = reader.Mark();
 	}
 
 	inline DWORD Get(DWORD n)
@@ -174,12 +172,11 @@ public:
 		return codeNum & 0x01 ? codeNum >> 1 : -(codeNum >> 1);
 	}
 
-	inline DWORD Flush()
+	inline void Flush()
 	{
 		//Debug("-BitReader::Flush()\n");
 		Align();
 		FlushCache();
-		return reader.GetOffset(ini);
 	}
 
 	inline void FlushCache()
@@ -191,12 +188,12 @@ public:
 
 	inline void Align()
 	{
-		//Debug(">Align() cache len:%u pos:%u\n", reader.GetLeft(), reader.GetOffset(ini));
+		//Debug(">Align() cache len:%u\n", reader.GetLeft());
 
 		//Go to next byte
 		Skip(cached % 8);
 
-		//Debug("<BitReader::Align() cache len:%u pos:%u\n", reader.GetLeft(), reader.GetOffset(ini));
+		//Debug("<BitReader::Align() cache len:%u\n", reader.GetLeft());
 
 	}
 
@@ -310,7 +307,6 @@ private:
 	
 private:
 	BufferReader& reader;
-	DWORD ini	= 0;
 	DWORD cache	= 0;
 	BYTE  cached	= 0;
 };
