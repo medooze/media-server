@@ -31,36 +31,36 @@ struct AudioPCMParams
 class AudioBufferGenerator
 {
 public:
-    AudioBufferGenerator(int sampleRate, int numChannels, float frequency, float amplitude):
-        sampleRate(sampleRate),
-        numChannels(numChannels),
-        frequency(frequency),
-        amplitude(amplitude)
-    {
+	AudioBufferGenerator(int sampleRate, int numChannels, float frequency, float amplitude):
+		sampleRate(sampleRate),
+		numChannels(numChannels),
+		frequency(frequency),
+		amplitude(amplitude)
+	{
 
-    }
-    ~AudioBufferGenerator() = default;
+	}
+	~AudioBufferGenerator() = default;
 
-    AudioBuffer::shared CreateAudioBuffer(int numSamples, int offset)
-    {
-        auto audioBuffer = std::make_shared<AudioBuffer>(numSamples, numChannels);
-        std::vector<int16_t> interleaved(numSamples*numChannels, 0);
+	AudioBuffer::shared CreateAudioBuffer(int numSamples, int offset)
+	{
+		auto audioBuffer = std::make_shared<AudioBuffer>(numSamples, numChannels);
+		std::vector<int16_t> interleaved(numSamples*numChannels, 0);
 		
-        for(int i=offset;i<numSamples+offset;++i)
-        {
-            float sample = amplitude*sin( 2.0 * M_PI * frequency * i / sampleRate);
-            for(int ch=0;ch<numChannels;++ch)
-            	interleaved[(i-offset)*numChannels+ch] = (int16_t)(sample * (1 << 15));
-            
-        }
+		for(int i=offset;i<numSamples+offset;++i)
+		{
+			float sample = amplitude*sin( 2.0 * M_PI * frequency * i / sampleRate);
+			for(int ch=0;ch<numChannels;++ch)
+				interleaved[(i-offset)*numChannels+ch] = (int16_t)(sample * (1 << 15));
+			
+		}
 		audioBuffer->SetSamples(interleaved.data(), numSamples);
-        return audioBuffer;
-    }
+		return audioBuffer;
+	}
 private:
-    int sampleRate;
-    int numChannels;
-    float frequency;
-    float amplitude;
+	int sampleRate;
+	int numChannels;
+	float frequency;
+	float amplitude;
 };
 
 class AudioDecoderForTest
@@ -95,28 +95,28 @@ public:
 		int response = avcodec_send_packet(decoderCtx, pkt);
 
 		if (response < 0)
-        {
-            printf("Error while sending packet to decoder:%d\n", response);
-            exit(1);
-        }
-       
-        int len = 0;
-        while (response >= 0)
-        {
-            response = avcodec_receive_frame(decoderCtx, decoded);
-            if (response == AVERROR(EAGAIN) || response == AVERROR_EOF)
-            {
-                break;
-            }
-            else if (response < 0)
-            {
-                printf("Error while receiving frame from decoder");
-                exit(1);
-            }
+		{
+			printf("Error while sending packet to decoder:%d\n", response);
+			exit(1);
+		}
+	   
+		int len = 0;
+		while (response >= 0)
+		{
+			response = avcodec_receive_frame(decoderCtx, decoded);
+			if (response == AVERROR(EAGAIN) || response == AVERROR_EOF)
+			{
+				break;
+			}
+			else if (response < 0)
+			{
+				printf("Error while receiving frame from decoder");
+				exit(1);
+			}
 			copyDecoded(decoded->extended_data, decoded->nb_samples, decoded->channels);
-            av_frame_unref(decoded);
-        }
-    }
+			av_frame_unref(decoded);
+		}
+	}
 
 	std::vector<float> GetDecodedAudio() {return pcmAudio;};
 	
@@ -186,7 +186,7 @@ public:
 	{
 
 	}
-    ~MediaFrameListenerForAudioEncoderTest() = default;
+	~MediaFrameListenerForAudioEncoderTest() = default;
 	virtual void onMediaFrame(const MediaFrame &frame) override
 	{
 		std::lock_guard<std::mutex> lock(mtx);
@@ -214,32 +214,32 @@ private:
 class SineToneGenerator
 {
 public:
-    SineToneGenerator(int sampleRate, int numChannels, float frequency, float amplitude, int frameSize):
-        sampleRate(sampleRate),
-        numChannels(numChannels),
-        frequency(frequency),
-        amplitude(amplitude),
+	SineToneGenerator(int sampleRate, int numChannels, float frequency, float amplitude, int frameSize):
+		sampleRate(sampleRate),
+		numChannels(numChannels),
+		frequency(frequency),
+		amplitude(amplitude),
 		interleaved(frameSize*numChannels, 0)
-    {
+	{
 
-    }
-    ~SineToneGenerator() = default;
+	}
+	~SineToneGenerator() = default;
 
 	SWORD* GenerateSineTone(int numSamples, int offset)
 	{
 		for(int i=offset;i<numSamples+offset;++i)
-        {
-            float sample = amplitude*sin( 2.0 * M_PI * frequency * i / sampleRate);
-            for(int ch=0;ch<numChannels;++ch)
-            	interleaved[(i-offset)*numChannels+ch] = (int16_t)(sample * (1 << 15));
-        }
+		{
+			float sample = amplitude*sin( 2.0 * M_PI * frequency * i / sampleRate);
+			for(int ch=0;ch<numChannels;++ch)
+				interleaved[(i-offset)*numChannels+ch] = (int16_t)(sample * (1 << 15));
+		}
 		return interleaved.data();
 	}
 private:
-    int sampleRate;
-    int numChannels;
-    float frequency;
-    float amplitude;
+	int sampleRate;
+	int numChannels;
+	float frequency;
+	float amplitude;
 	std::vector<int16_t> interleaved;
 };
 
