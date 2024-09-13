@@ -96,7 +96,6 @@ struct ProgramMap : public Encodable
 	};
 
 	uint16_t pcrPid = 0;
-	uint16_t piLength = 0;
 	
 	std::vector<ElementaryStream> streams;
 
