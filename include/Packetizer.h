@@ -15,9 +15,8 @@ template<typename T>
 class Packetizer
 {
 public:
-	static constexpr size_t MaxMesssageQueueSize = 256;
 	
-	Packetizer() : messages(MaxMesssageQueueSize, false)
+	Packetizer(size_t maxMessageQueueSize) : messages(maxMessageQueueSize, false)
 	{
 	}
 	
