@@ -4,6 +4,7 @@
 #include <optional>
 #include "BufferReader.h"
 #include "BufferWritter.h"
+#include "Encodable.h"
 
 namespace mpegts
 {
@@ -14,23 +15,6 @@ enum AdaptationFieldControl
 	PayloadOnly = 1,
 	AdaptationFieldOnly = 2,
 	AdaptationFiedlAndPayload = 3
-};
-
-class Encodable
-{
-public:
-	virtual ~Encodable() = default;
-	
-	/**
-	 * Encode the content
-	 */
-	virtual void Encode(BufferWritter& writer) = 0;	
-	
-	/**
-	 * The memory size needed for encoding. It must match
-	 * the exact buffer used after encoding the content.
-	 */
-	virtual size_t Size() const = 0;
 };
 
 struct Header : public Encodable

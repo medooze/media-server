@@ -4,6 +4,7 @@
 #include "Buffer.h"
 #include "BufferWritter.h"
 #include "CircularQueue.h"
+#include "Encodable.h"
 #include "log.h"
 
 #include <stdint.h>
@@ -18,6 +19,7 @@ public:
 	
 	Packetizer(size_t maxMessageQueueSize) : messages(maxMessageQueueSize, false)
 	{
+		static_assert(std::is_base_of_v<Encodable, T>);
 	}
 	
 	virtual ~Packetizer() = default;
