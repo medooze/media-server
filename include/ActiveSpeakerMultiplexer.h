@@ -52,8 +52,12 @@ public:
 		virtual void onActiveSpeakerChanged(uint32_t speakerId, uint32_t multiplexdId) = 0;
 		virtual void onActiveSpeakerRemoved(uint32_t multiplexdId) = 0;
 	};
+
 private:
+	// Private constructor to prevent creating without TimeServiceWrapper::Create() factory
+	friend class TimeServiceWrapper<ActiveSpeakerMultiplexer>;
 	ActiveSpeakerMultiplexer(TimeService& timeService, Listener* listener);
+
 public:
 	virtual ~ActiveSpeakerMultiplexer();
 
@@ -87,8 +91,6 @@ private:
 
 	std::map<RTPIncomingMediaStream*, Source, std::less<>> sources;
 	std::map<RTPStreamTransponder*, Destination> destinations;
-
-	friend class TimeServiceWrapper<ActiveSpeakerMultiplexer>;
 };
 
 #endif /* ACTIVESPEAKERMULTIPLEXER_H */

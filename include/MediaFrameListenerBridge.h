@@ -22,6 +22,7 @@ class MediaFrameListenerBridge :
 {
 public:
 	using shared = std::shared_ptr<MediaFrameListenerBridge>;
+
 public:
 	static constexpr uint32_t NoSeqNum = std::numeric_limits<uint32_t>::max();
 	static constexpr uint64_t NoTimestamp = std::numeric_limits<uint64_t>::max();
@@ -39,7 +40,10 @@ public:
 	};	
 	
 private:
+	// Private constructor to prevent creating without TimeServiceWrapper::Create() factory
+	friend class TimeServiceWrapper<MediaFrameListenerBridge>;
 	MediaFrameListenerBridge(TimeService& timeService, DWORD ssrc, bool smooth = false, bool checkTimestamp = false);
+
 public:
 	virtual ~MediaFrameListenerBridge();
 
@@ -141,9 +145,6 @@ public:
 	std::unique_ptr<TimestampChecker> tsChecker;
 	std::unique_ptr<TimestampChecker> ptsChecker;
 	std::shared_ptr<FrameDispatchCoordinator> coordinator;
-
-
-	friend class TimeServiceWrapper<MediaFrameListenerBridge>;
 };
 
 #endif /* MEDIAFRAMELISTENERBRIDGE_H */

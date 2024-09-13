@@ -14,7 +14,7 @@ ActiveSpeakerMultiplexer::ActiveSpeakerMultiplexer(TimeService& timeService, Lis
 	listener(listener)
 {
 	//Create processing timer
-	timer = timeService.CreateTimer(0ms, MinInterval, [this](auto now) { Process(now.count()); });
+	timer = CreateTimerSafe(0ms, MinInterval, [this](auto self, auto now) { Process(now.count()); });
 	//Set name for debug
 	timer->SetName("ActiveSpeakerMultiplexer - process");
 }

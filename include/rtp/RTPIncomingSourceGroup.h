@@ -22,8 +22,12 @@ class RTPIncomingSourceGroup :
 {
 public:
 	using shared = std::shared_ptr<RTPIncomingSourceGroup>;
+
 private:	
+	// Private constructor to prevent creating without TimeServiceWrapper::Create() factory
+	friend class TimeServiceWrapper<RTPIncomingSourceGroup>;
 	RTPIncomingSourceGroup(MediaFrame::Type type,TimeService& timeService);
+
 public:
 	virtual ~RTPIncomingSourceGroup();
 	
@@ -93,8 +97,6 @@ private:
 	bool remb	 = false;
 	std::optional<DWORD> maxWaitingTime;
 	volatile bool muted = false;
-
-	friend class TimeServiceWrapper<RTPIncomingSourceGroup>;
 };
 
 #endif /* RTPINCOMINGSOURCEGROUP_H */

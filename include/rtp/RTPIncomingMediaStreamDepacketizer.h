@@ -11,10 +11,16 @@
 
 class RTPIncomingMediaStreamDepacketizer :
 	public RTPIncomingMediaStream::Listener,
-	public MediaFrame::Producer
+	public MediaFrame::Producer,
+	TimeServiceWrapper<RTPIncomingMediaStreamDepacketizer>
 {
-public:
+private:
+	// Private constructor to prevent creating without TimeServiceWrapper::Create() factory
+	friend class TimeServiceWrapper<RTPIncomingMediaStreamDepacketizer>;
 	RTPIncomingMediaStreamDepacketizer(const RTPIncomingMediaStream::shared& incomingSource);
+
+public:
+	
 	virtual ~RTPIncomingMediaStreamDepacketizer();
 	
 	// RTPIncomingMediaStream::Listener interface
@@ -32,7 +38,6 @@ private:
 	std::set<MediaFrame::Listener::shared> listeners;
 	std::unique_ptr<RTPDepacketizer> depacketizer;
 	RTPIncomingMediaStream::shared incomingSource;
-	TimeService &timeService;
 	
 	TimestampChecker tsChecker;
 };

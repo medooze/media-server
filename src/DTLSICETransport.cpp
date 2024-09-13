@@ -51,11 +51,11 @@ constexpr auto MaxProbingHistorySize		= 50;
 constexpr auto RtxRttThresholdMs 		= 300;
 
 DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService, ObjectPool<Packet>& packetPool) :
-	timeServiceWrapper<DTLSICETransport>(timeService),
+	TimeServiceWrapper<DTLSICETransport>(timeService),
 	sender(sender),
 	packetPool(packetPool),
 	endpoint(timeService),
-	dtls(*this,timeService,endpoint.GetTransport()),
+	dtls(DTLSConnection::Create(*this,timeService,endpoint.GetTransport())),
 	history(MaxProbingHistorySize, false),
 	fecProbeGenerator(history, sendMaps.ext),
 	outgoingBitrate(250, 1E3, 250),
@@ -84,7 +84,7 @@ void DTLSICETransport::onDTLSPendingData()
 		Packet buffer = packetPool.pick();
 
 		//Read from dtls
-		int len = dtls.Read(buffer.GetData(),buffer.GetCapacity());
+		int len = dtls->Read(buffer.GetData(),buffer.GetCapacity());
 		//Check result
 		if (len<=0)
 		{
@@ -115,7 +115,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	if (DTLSConnection::IsDTLS(data,size))
 	{
 		//Feed it
-		dtls.Write(data,size);
+		dtls->Write(data,size);
 		//Exit
 		return 1;
 	}
@@ -335,7 +335,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 				Log("-DTLSICETransport::onData() | Got unsignaled rtp stream [ssrc:%u,mid:'%s',rid:'%s']\n", ssrc, mid.c_str(), rid.c_str());
 
 				//We need to create a new group
-				RTPIncomingSourceGroup::shared shared = std::make_shared<RTPIncomingSourceGroup>(packet->GetMediaType(), timeService);
+				RTPIncomingSourceGroup::shared shared = RTPIncomingSourceGroup::Create(packet->GetMediaType(), GetTimeService());
 
 				//Set mid & rid
 				shared->mid = mid;
@@ -1343,7 +1343,7 @@ void  DTLSICETransport::ActivateRemoteCandidate(ICERemoteCandidate* candidate,bo
 	if (!active || (useCandidate && candidate!=active))
 	{
 		//Debug
-		Debug("-DTLSICETransport::ActivateRemoteCandidate() | Activating candidate [%s:%hu,use:%d,prio:%d,dtls:%d]\n",candidate->GetIP(),candidate->GetPort(),useCandidate,priority,dtls.GetSetup());	
+		Debug("-DTLSICETransport::ActivateRemoteCandidate() | Activating candidate [%s:%hu,use:%d,prio:%d,dtls:%d]\n",candidate->GetIP(),candidate->GetPort(),useCandidate,priority,dtls->GetSetup());	
 		
 		//Send data to this one from now on
 		active = candidate;
@@ -1353,7 +1353,7 @@ void  DTLSICETransport::ActivateRemoteCandidate(ICERemoteCandidate* candidate,bo
 	}
 	
 	// Needed for DTLS in client mode (otherwise the DTLS "Client Hello" is not sent over the wire)
-	if (dtls.GetSetup()!=DTLSConnection::SETUP_PASSIVE) 
+	if (dtls->GetSetup()!=DTLSConnection::SETUP_PASSIVE) 
 		//Trigger manually
 		onDTLSPendingData();
 }
@@ -1472,7 +1472,7 @@ void DTLSICETransport::SetLocalProperties(const Properties& properties)
 
 void DTLSICETransport::SetSRTPProtectionProfiles(const std::string& profiles)
 {
-	dtls.SetSRTPProtectionProfiles(profiles);
+	dtls->SetSRTPProtectionProfiles(profiles);
 }
 
 void DTLSICETransport::SetRemoteProperties(const Properties& properties)
@@ -1593,7 +1593,7 @@ int DTLSICETransport::Dump(UDPDumper* dumper, bool inbound, bool outbound, bool 
 	//Done
 	int done = 1;
 	//Execute on timer thread
-	timeService.Sync([&](auto now){
+	Sync([&](auto now){
 		//Check we are not dumping
 		if (this->dumper)
 		{
@@ -1622,7 +1622,7 @@ int DTLSICETransport::StopDump()
 	//Done
 	int done = 1;
 	//Execute on timer thread
-	timeService.Sync([&](auto now){
+	Sync([&](auto now){
 		//Check we are not dumping
 		if (!this->dumper)
 		{
@@ -1646,7 +1646,7 @@ int DTLSICETransport::Dump(const char* filename, bool inbound, bool outbound, bo
 	//Done
 	int done = 1;
 	//Execute on timer thread
-	timeService.Sync([&](auto now){
+	Sync([&](auto now){
 		//Check we are not dumping
 		if (this->dumper)
 		{
@@ -1697,7 +1697,7 @@ void DTLSICETransport::Reset()
 	Log("-DTLSICETransport::Reset()\n");
 
 	//Execute on timer thread
-	timeService.Sync([=](auto now){
+	Sync([=](auto now){
 		
 		//Reset srtp
 		send.Reset();
@@ -1764,27 +1764,27 @@ int DTLSICETransport::SetRemoteCryptoDTLS(const char *setup,const char *hash,con
 
 	//Set Suite
 	if (strcasecmp(setup,"active")==0)
-		dtls.SetRemoteSetup(DTLSConnection::SETUP_ACTIVE);
+		dtls->SetRemoteSetup(DTLSConnection::SETUP_ACTIVE);
 	else if (strcasecmp(setup,"passive")==0)
-		dtls.SetRemoteSetup(DTLSConnection::SETUP_PASSIVE);
+		dtls->SetRemoteSetup(DTLSConnection::SETUP_PASSIVE);
 	else if (strcasecmp(setup,"actpass")==0)
-		dtls.SetRemoteSetup(DTLSConnection::SETUP_ACTPASS);
+		dtls->SetRemoteSetup(DTLSConnection::SETUP_ACTPASS);
 	else if (strcasecmp(setup,"holdconn")==0)
-		dtls.SetRemoteSetup(DTLSConnection::SETUP_HOLDCONN);
+		dtls->SetRemoteSetup(DTLSConnection::SETUP_HOLDCONN);
 	else
 		return Error("-DTLSICETransport::SetRemoteCryptoDTLS | Unknown setup");
 
 	//Set fingerprint
 	if (strcasecmp(hash,"SHA-1")==0)
-		dtls.SetRemoteFingerprint(DTLSConnection::SHA1,fingerprint);
+		dtls->SetRemoteFingerprint(DTLSConnection::SHA1,fingerprint);
 	else if (strcasecmp(hash,"SHA-224")==0)
-		dtls.SetRemoteFingerprint(DTLSConnection::SHA224,fingerprint);
+		dtls->SetRemoteFingerprint(DTLSConnection::SHA224,fingerprint);
 	else if (strcasecmp(hash,"SHA-256")==0)
-		dtls.SetRemoteFingerprint(DTLSConnection::SHA256,fingerprint);
+		dtls->SetRemoteFingerprint(DTLSConnection::SHA256,fingerprint);
 	else if (strcasecmp(hash,"SHA-384")==0)
-		dtls.SetRemoteFingerprint(DTLSConnection::SHA384,fingerprint);
+		dtls->SetRemoteFingerprint(DTLSConnection::SHA384,fingerprint);
 	else if (strcasecmp(hash,"SHA-512")==0)
-		dtls.SetRemoteFingerprint(DTLSConnection::SHA512,fingerprint);
+		dtls->SetRemoteFingerprint(DTLSConnection::SHA512,fingerprint);
 	else
 		return Error("-DTLSICETransport::SetRemoteCryptoDTLS | Unknown hash");
 
@@ -2252,9 +2252,10 @@ int DTLSICETransport::Reset(DWORD ssrc)
 	Debug("-DTLSICETransport::Reset() | [ssrc:%u]\n", ssrc);
 
 	//Execute on the event loop thread and do not wait
-	timeService.Async([=](auto now) {
+	AsyncSafe([ssrc](auto self, auto now) {
+
 		//Get group
-		RTPIncomingSourceGroup* group = GetIncomingSourceGroup(ssrc);
+		RTPIncomingSourceGroup* group = self->GetIncomingSourceGroup(ssrc);
 
 		//If not found
 		if (!group)
@@ -2264,8 +2265,8 @@ int DTLSICETransport::Reset(DWORD ssrc)
 		group->ResetPackets();
 
 		//Reset srtp session
-		recv.RemoveStream(group->media.ssrc);
-		recv.AddStream(group->media.ssrc);
+		self->recv.RemoveStream(group->media.ssrc);
+		self->recv.AddStream(group->media.ssrc);
 
 		//Reset
 		group->media.Reset();
@@ -2274,8 +2275,8 @@ int DTLSICETransport::Reset(DWORD ssrc)
 		if (group->rtx.ssrc)
 		{
 			//Reset srtp session
-			recv.RemoveStream(group->rtx.ssrc);
-			recv.AddStream(group->rtx.ssrc);
+			self->recv.RemoveStream(group->rtx.ssrc);
+			self->recv.AddStream(group->rtx.ssrc);
 		}
 
 		//Reset
@@ -2949,34 +2950,34 @@ void DTLSICETransport::Start()
 	Debug("-DTLSICETransport::Start()\n");
 	
 	//Init DTLS
-	dtls.Init();
+	dtls->Init();
 
 	//Get init time
 	initTime = getTime();
 	dcOptions.localPort = 5000;
 	dcOptions.remotePort = 5000;
 	//Run ice timeout timer
-	iceTimeoutTimer = timeService.CreateTimer(IceTimeout,[this](auto now){
+	iceTimeoutTimer = CreateTimerSafe(IceTimeout,[](auto self, auto now){
 		//Log
 		Debug("-DTLSICETransport::onIceTimeoutTimer() ICE timeout\n");
 		//If got listener
-		if (listener)
+		if (self->listener)
 			//Fire timeout 
-			listener->onICETimeout();
+			self->listener->onICETimeout();
 	});
 	//Set name for debug
 	iceTimeoutTimer->SetName("DTLSICETransport - ice timeout");
 	//Create new probe timer
-	probingTimer = timeService.CreateTimer([this](std::chrono::milliseconds ms) {
+	probingTimer = CreateTimerSafe([](auto self, std::chrono::milliseconds ms) {
 		//Do probe
-		Probe(ms.count());
+		self->Probe(ms.count());
 		});
 	//Set name for debug
 	probingTimer->SetName("DTLSICETransport - bwe probe");
 	//Create sse timer
-	sseTimer = timeService.CreateTimer([this](std::chrono::milliseconds ms) {
+	sseTimer = CreateTimerSafe([](auto self, std::chrono::milliseconds ms) {
 		//Send feedback now
-		SendTransportWideFeedbackMessage(lastMediaSSRC);
+		self->SendTransportWideFeedbackMessage(self->lastMediaSSRC);
 	});
 	//Set name for debug
 	sseTimer->SetName("DTLSICETransport - twcc feedback");
@@ -3022,10 +3023,10 @@ void DTLSICETransport::Stop()
 	endpoint.Close();
 
 	//Send dtls shutdown
-	dtls.Reset();
+	dtls->Reset();
 
 	//End DTLS as well
-	dtls.End();
+	dtls->End();
 
 	//No active candiadte
 	active = nullptr;
@@ -3296,15 +3297,15 @@ void DTLSICETransport::CheckProbeTimer()
 	Debug("-DTLSICETransport::CheckProbeTimer() | [probingTimer:%d]\n",!!probingTimer);
 
 	//Dispatch to the event loop thread
-	timeService.Async([=](auto now) {
+	AsyncSafe([](auto self, auto now) {
 		//If we don't have timer anumore
-		if (!probingTimer)
+		if (!self->probingTimer)
 			//Do nothing
 			return;
 		//No video
 		bool video = false;
 		//Check if there is any video source
-		for (const auto& [ssrc,outgoing] : outgoing)
+		for (const auto& [ssrc,outgoing] : self->outgoing)
 		{
 			//If it is video
 			if (outgoing->type == MediaFrame::Video)
@@ -3316,15 +3317,15 @@ void DTLSICETransport::CheckProbeTimer()
 		}
 	
 		//Check if we have to start if
-		if (this->senderSideEstimationEnabled && this->probe && video && state == DTLSState::Connected)
+		if (self->senderSideEstimationEnabled && self->probe && video && self->state == DTLSState::Connected)
 		{
 			//If not already started
-			if (!probingTimer->IsScheduled())
+			if (!self->probingTimer->IsScheduled())
 				//Start probing timer again
-				probingTimer->Repeat(ProbingInterval);
+				self->probingTimer->Repeat(ProbingInterval);
 		} else {
 			//Stop probing
-			probingTimer->Cancel();
+			self->probingTimer->Cancel();
 		}
 	});
 }

@@ -15,7 +15,10 @@ class RTPIncomingMediaStreamMultiplexer :
 	public RTPIncomingMediaStream::Listener
 {
 private:
+	// Private constructor to prevent creating without TimeServiceWrapper::Create() factory
+	friend class TimeServiceWrapper<RTPIncomingMediaStreamMultiplexer>;
 	RTPIncomingMediaStreamMultiplexer(const RTPIncomingMediaStream::shared& incomingMediaStream, TimeService& timeService);
+
 public:
 	virtual ~RTPIncomingMediaStreamMultiplexer() = default;
 	
@@ -37,8 +40,6 @@ private:
 	RTPIncomingMediaStream::shared incomingMediaStream;
 	std::set<RTPIncomingMediaStream::Listener*>  listeners;
 	volatile bool muted = false;
-
-	friend class TimeServiceWrapper<RTPIncomingMediaStreamMultiplexer>;
 };
 
 #endif //RTPINCOMINGMEDIASTREAMMULTIPLEXER_H

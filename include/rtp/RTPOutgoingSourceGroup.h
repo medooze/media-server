@@ -16,6 +16,7 @@ struct RTPOutgoingSourceGroup :
 {
 public:
 	using shared = std::shared_ptr<RTPOutgoingSourceGroup>;
+
 public:
 	class Listener 
 	{
@@ -25,9 +26,13 @@ public:
 			virtual void onEnded(const RTPOutgoingSourceGroup* group) = 0;
 		
 	};
+
 private:
+	// Private constructor to prevent creating without TimeServiceWrapper::Create() factory
+	friend class TimeServiceWrapper<RTPOutgoingSourceGroup>;
 	RTPOutgoingSourceGroup(MediaFrame::Type type,TimeService& timeService);
 	RTPOutgoingSourceGroup(const std::string &mid,MediaFrame::Type type, TimeService& timeService);
+
 public:
 	~RTPOutgoingSourceGroup();
 	
@@ -76,8 +81,6 @@ private:
 	CircularBuffer<QWORD, uint16_t, 512> rtxTimes;
 	std::set<Listener*> listeners;
 	std::optional<struct RTPHeaderExtension::PlayoutDelay> forcedPlayoutDelay;
-
-	friend class TimeServiceWrapper<RTPOutgoingSourceGroup>;
 };
 
 

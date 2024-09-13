@@ -18,7 +18,10 @@ class SimulcastMediaFrameListener :
 	public MediaFrame::Producer
 {
 private:
+	// Private constructor to prevent creating without TimeServiceWrapper::Create() factory
+	friend class TimeServiceWrapper<SimulcastMediaFrameListener>;
 	SimulcastMediaFrameListener(TimeService& timeService,DWORD ssrc, DWORD numLayers);
+
 public:
 	virtual ~SimulcastMediaFrameListener();
 
@@ -69,8 +72,6 @@ private:
 
 	// Latest timestamps for each layer
 	std::unordered_map<uint32_t, uint64_t> layerTimestamps;
-
-	friend class TimeServiceWrapper<SimulcastMediaFrameListener>;
 };
 
 #endif /* SIMULCASTMEDIAFRAMELISTENER_H */

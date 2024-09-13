@@ -117,7 +117,10 @@ private:
 	static bool		hasDTLS;
 
 private:
+	// Private constructor to prevent creating without TimeServiceWrapper::Create() factory
+	friend class TimeServiceWrapper<DTLSConnection>;
 	DTLSConnection(Listener& listener,TimeService& timeService,datachannels::Transport& sctp);
+
 public:
 	~DTLSConnection();
 

@@ -49,6 +49,14 @@ template <typename T>
 class TimeServiceWrapper : public std::enable_shared_from_this<T>
 {
 public:
+
+	template <typename... ARGS>
+	static std::shared_ptr<T> Create(ARGS&&... args)
+	{
+		return std::shared_ptr<T>(new T(std::forward<ARGS>(args)...));
+	}
+
+
 	TimeServiceWrapper(TimeService& timeService) : timeService(timeService)
 	{
 	}
@@ -104,6 +112,17 @@ public:
 	}
 	
 	template <typename Func>
+	auto CreateTimerSafe(const std::chrono::milliseconds& ms, const std::chrono::milliseconds& repeat, Func&& func)
+	{
+		return timeService.CreateTimer(ms, repeat, [selfWeak = TimeServiceWrapper<T>::weak_from_this(), func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
+			auto self = selfWeak.lock();
+			if (!self) return;
+			
+			func(self, now);
+		});
+	}
+
+	template <typename Func>
 	auto FutureSafe(Func&& func)
 	{
 		return timeService.Future([selfWeak = TimeServiceWrapper<T>::weak_from_this(), func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
@@ -114,12 +133,6 @@ public:
 		});
 	}
 	
-	template <typename... ARGS>
-	static std::shared_ptr<T> Create(ARGS&&... args)
-	{
-		return std::shared_ptr<T>(new T(std::forward<ARGS>(args)...));
-	}
-
 	TimeService& GetTimeService()	{ return timeService; }
 
 private:

@@ -11,6 +11,8 @@
 
 class FrameDelayCalculator : public TimeServiceWrapper<FrameDelayCalculator>
 {
+	friend class TestFrameDelayCalculator;
+
 public:
 	
 	/**
@@ -53,6 +55,9 @@ private:
 		__uint128_t field = 0;
 	};
 
+private:
+	// Private constructor to prevent creating without TimeServiceWrapper::Create() factory
+	friend class TimeServiceWrapper<FrameDelayCalculator>;
 	FrameDelayCalculator(int aUpdateRefsPacketLateThresholdMs, std::chrono::milliseconds aUpdateRefsStepPacketEarlyMs, TimeService& timeService);
 	
 	/**
@@ -84,9 +89,6 @@ private:
 	std::unordered_map<uint64_t, std::pair<std::chrono::milliseconds, uint64_t>> frameArrivalInfo;
 	
 	State state = State::Reset;
-	
-	friend class TestFrameDelayCalculator;
-	friend class TimeServiceWrapper<FrameDelayCalculator>;
 };
 
 #endif
