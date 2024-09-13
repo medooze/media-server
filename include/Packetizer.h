@@ -41,12 +41,12 @@ public:
 	}
 
 	// Note IsMessageStart() and GetNextPacket must be called in same thread
-
 	inline bool IsMessageStart() const
 	{
 		return !buffer || pos == 0;
 	}
 	
+	// Note IsMessageStart() and GetNextPacket must be called in same thread
 	void GetNextPacket(BufferWritter& writer)
 	{
 		while (writer.GetLeft())
@@ -63,9 +63,8 @@ public:
 					return;
 				}
 				
-				// Grap the first message
-				auto& msg = messages.front();
-				auto [encodable, forceSeparate] = msg;
+				// Grap the front message
+				auto [encodable, forceSeparate] = messages.front();
 				
 				// Remove the message
 				(void)messages.pop_front();
