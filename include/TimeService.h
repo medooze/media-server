@@ -53,10 +53,10 @@ public:
 	{
 	}
 
-
-	inline void Sync(const std::function<void(std::chrono::milliseconds)>& func)
+	template <typename Func>
+	inline void Sync(Func&& func)
 	{
-		timeService.Sync(func);
+		timeService.Sync(std::forward<Func>(func));
 	}
 	
 	template <typename Func>
@@ -70,15 +70,15 @@ public:
 		});
 	}
 
-	template <typename Func>
-	void AsyncSafe(Func&& func, const std::function<void(std::chrono::milliseconds)>& callback)
+	template <typename Func, typename Callback>
+	void AsyncSafe(Func&& func, Callback&& callback)
 	{
 		timeService.Async([selfWeak = TimeServiceWrapper<T>::weak_from_this(), func = std::forward<Func>(func)](std::chrono::milliseconds now) mutable {
 			auto self = selfWeak.lock();
 			if (!self) return;
 
 			func(self, now);
-		}, callback);
+		}, std::forward<Callback>(callback));
 	}
 	
 	template <typename Func>
