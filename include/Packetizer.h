@@ -75,7 +75,7 @@ public:
 				// Create a new buffer for the message
 				auto sz = encodable->Size();
 				
-				if (sz > buffer->GetCapacity())
+				if (!buffer || sz > buffer->GetCapacity())
 					buffer = std::make_unique<Buffer>(sz);
 				
 				BufferWritter awriter(buffer->GetData(), sz);
