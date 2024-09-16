@@ -177,6 +177,7 @@ target_compile_options(MediaServerLib PUBLIC
 
 # Unit test executable
 add_executable(MediaServerUnitTest
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestBitReader.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAACSpecificConfig.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAccumulator.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestCircularBuffer.cpp
