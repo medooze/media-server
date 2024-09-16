@@ -11,13 +11,14 @@
 #include <list>
 #include <mutex>
 #include <atomic>
+#include <cassert>
 
 template<typename T>
 class Packetizer
 {
 public:
 	
-	Packetizer(size_t maxMessageQueueSize) : messages(maxMessageQueueSize, false)
+	Packetizer(size_t maxMessageQueueSize) : messages(maxMessageQueueSize, false), buffer(0)
 	{
 		static_assert(std::is_base_of_v<Encodable, T>);
 	}
@@ -43,7 +44,15 @@ public:
 
 	inline bool IsMessageStart() const
 	{
-		return !buffer || pos == 0;
+		return pos == 0;
+	}
+	
+	std::shared_ptr<T> GetCurrentMessage() const
+	{
+		if (!current && !messages.empty())
+			return messages.front().first;
+			
+		return current;
 	}
 	
 	virtual size_t GetNextPacket(BufferWritter& writer)
@@ -52,11 +61,14 @@ public:
 		
 		while (writer.GetLeft())
 		{
-			if (!buffer || pos >= buffer->GetSize())
+			if (buffer.IsEmpty() || pos >= buffer.GetSize())
 			{
 				if (messages.empty())
 				{
 					pos = 0;
+					buffer.Reset();
+					
+					current.reset();
 					
 					hasData = false;
 					return bytes;
@@ -64,20 +76,18 @@ public:
 				
 				// Grap the front message
 				auto [encodable, forceSeparate] = messages.front();
+				current = encodable;
 				
 				// Remove the message
 				(void)messages.pop_front();
 				
 				// Create a new buffer for the message
 				auto sz = encodable->Size();
+				buffer.SetSize(sz);
 				
-				if (!buffer || sz > buffer->GetCapacity())
-					buffer = std::make_unique<Buffer>(sz);
-				
-				BufferWritter awriter(buffer->GetData(), sz);
+				BufferWritter awriter(buffer.GetData(), sz);
 				encodable->Encode(awriter);
-				
-				buffer->SetSize(awriter.GetLength());
+				assert(sz == awriter.GetLength());
 				
 				// check force sperate flag
 				if (forceSeparate && pos > 0)
@@ -90,9 +100,9 @@ public:
 			}
 			
 			// Fill the writer as much as possible
-			auto len = std::min(buffer->GetSize() - pos, writer.GetLeft());
+			auto len = std::min(buffer.GetSize() - pos, writer.GetLeft());
 			auto current = writer.Consume(len);
-			memcpy(current, &buffer->GetData()[pos], len);
+			memcpy(current, &buffer.GetData()[pos], len);
 			
 			pos += len;
 			bytes += len;
@@ -104,10 +114,12 @@ public:
 private:
 	CircularQueue<std::pair<std::shared_ptr<T>, bool>> messages;
 	
-	std::unique_ptr<Buffer> buffer;
+	Buffer buffer;
 	size_t pos = 0;
 	
 	bool hasData = false;
+	
+	std::shared_ptr<T> current;
 };
 
 #endif

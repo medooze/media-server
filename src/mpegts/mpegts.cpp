@@ -96,28 +96,37 @@ void AdaptationField::Encode(BufferWritter& writer)
 	if (writer.GetLeft() < Size())
 		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
 	
-	writer.Set1(1);
+	writer.Set1(Size() - 1);
 	
 	BitWriter bitwriter(writer, 1);
 	
 	bitwriter.Put(1, discontinuityIndicator);
 	bitwriter.Put(1, randomAccessIndicator);
 	bitwriter.Put(1, elementaryStreamPriorityIndicator);
+	bitwriter.Put(1, pcrFlag);
+	// Set all other flags to 0
+	bitwriter.Put(4, 0);
 	
-	// @todo encode properly for flags
-	// bitwriter.Put(1, pcrFlag);
-	// bitwriter.Put(1, opcrFlag);
-	// bitwriter.Put(1, splicingPointFlag);
-	// bitwriter.Put(1, transportPrivateDataFlag);
-	// bitwriter.Put(1, adaptationFieldExtensionFlag);
+	if (opcrFlag || splicingPointFlag || transportPrivateDataFlag || adaptationFieldExtensionFlag)
+	{
+		throw std::runtime_error("not implemented");
+	}
 	
-	// Set all flags to 0
-	bitwriter.Put(5, 0);
+	if (pcr)
+	{
+		assert(pcrFlag);
+		writer.Set1(uint8_t(*pcr >> 25));
+		writer.Set1(uint8_t(*pcr >> 17));
+		writer.Set1(uint8_t(*pcr >> 9));
+		writer.Set1(uint8_t(*pcr >> 1));
+		writer.Set1(uint8_t(*pcr << 7 | 0x7e));
+		writer.Set1(0);
+	}
 }
 
 size_t AdaptationField::Size() const
 {
-	return 1 + 1;
+	return 1 + 1 + (pcr ? 6 : 0);
 }
 
 AdaptationField AdaptationField::Parse(BufferReader& reader)

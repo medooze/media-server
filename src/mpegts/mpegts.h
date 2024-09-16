@@ -50,6 +50,8 @@ struct AdaptationField : public Encodable
 	bool transportPrivateDataFlag = false;
 	bool adaptationFieldExtensionFlag = false;
 	
+	std::optional<uint64_t> pcr;
+	
 	// Encodable overrides
 	void Encode(BufferWritter& writer) override;
 	size_t Size() const override;
