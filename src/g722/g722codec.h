@@ -7,6 +7,7 @@ extern "C" {
 #include "fifo.h"
 #include "codecs.h"
 #include "audio.h"
+#include <queue>
 
 class G722Encoder : public AudioEncoder
 {
@@ -33,7 +34,7 @@ public:
 	virtual DWORD GetRate()			{ return 16000;	}
 private:
 	G722DecoderState decoder = {};
-	std::pair<uint8_t*, int> audioFrameInfo;
+	std::queue<AudioBuffer::shared> audioBufferQueue;
 };
 
 #endif	/* NELLYCODEC_H */

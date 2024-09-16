@@ -13,9 +13,7 @@ public:
 	AudioBuffer(int numSamplesPerFrame, int numChannels) :
 		numSamplesPerFrame(numSamplesPerFrame),
 		numChannels(numChannels),
-		pcmBuffer(numSamplesPerFrame*numChannels, 0),
-		data(pcmBuffer.data()),
-		left(pcmBuffer.size())
+		pcmBuffer(numSamplesPerFrame*numChannels, 0)
 	{
 
 	}
@@ -30,14 +28,6 @@ public:
 	void	SetClockRate(DWORD clockRate) { this->clockRate = clockRate; }
 
 	const SWORD* GetData() const { return pcmBuffer.data(); }
-	SWORD* ConsumeSamples(int numSamples) 
-	{
-		if(numSamples > left) return nullptr;
-		left -= numSamples;
-		auto currData = data;
-		data += numSamples;
-		return currData;
-	}
 	
 	int SetSamples(SWORD* in, int numSamples)
 	{
@@ -97,8 +87,6 @@ private:
 	QWORD ts = 0;
 	DWORD clockRate = 0;
 	std::vector<SWORD> pcmBuffer;
-	SWORD* data;
-	int left;
 }; 
 
 #endif // !AUDIOBUFFER_H_

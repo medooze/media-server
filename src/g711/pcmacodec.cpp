@@ -45,27 +45,30 @@ int PCMADecoder::Decode(const AudioFrame::const_shared& audioFrame)
 {
 	//Comprobamos las longitudes
 	// inLen: compressed data length in bytes/samples one byte per sample for g711a, outLen: pcm data size in samples
-	int inLen = audioFrame->GetLength();
+	auto inLen = audioFrame->GetLength();
 	uint8_t* in = const_cast<uint8_t*>(audioFrame->GetData());
-	if (!in || inLen <= 0)
+	if (!in || !inLen)
 		return 0;
-	audioFrameInfo.first = in;
-	audioFrameInfo.second = inLen;
+
+	auto audioBuffer = std::make_shared<AudioBuffer>(inLen, 1);
+	for (int j = 0; j<inLen;j++)
+	{ 
+		if(audioBuffer->SetSampleAt(j, alaw2linear(*in)))
+			in++;
+		else	
+			return 0;
+	}
+	audioBufferQueue.push(std::move(audioBuffer));
 	return 1;	
 }
 
 AudioBuffer::shared PCMADecoder::GetDecodedAudioFrame()
 {
-	uint8_t* in = audioFrameInfo.first;
-	int inLen = audioFrameInfo.second;
-
-	auto audioBuffer = std::make_shared<AudioBuffer>(inLen, 1);
-	for (int j = 0; j< inLen;j++)
+	if(!audioBufferQueue.empty())
 	{
-		if(audioBuffer->SetSampleAt(j, alaw2linear(*in)))
-			in++;
-		else	
-			return {};
+		auto audioBuffer = audioBufferQueue.front();
+		audioBufferQueue.pop();
+		return audioBuffer;
 	}
-	return audioBuffer;
+	return {};
 }

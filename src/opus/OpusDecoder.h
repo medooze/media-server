@@ -10,6 +10,7 @@
 #include <opus/opus.h>
 #include "config.h"
 #include "audio.h"
+#include <queue>
 
 class OpusDecoder : public AudioDecoder
 {
@@ -24,7 +25,7 @@ private:
 	OpusDecoder *dec;
 	DWORD rate;
 	int numChannels;
-	std::pair<uint8_t*, int> audioFrameInfo;
+	std::queue<AudioBuffer::shared> audioBufferQueue;
 };
 
 #endif	/* OPUSDECODER_H */

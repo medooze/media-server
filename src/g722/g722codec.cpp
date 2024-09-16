@@ -48,20 +48,25 @@ G722Decoder::G722Decoder()
 
 int G722Decoder::Decode(const AudioFrame::const_shared& audioFrame)
 {
-	int inLen = audioFrame->GetLength();
+	auto inLen = audioFrame->GetLength();
 	uint8_t* in =  const_cast<uint8_t*>(audioFrame->GetData());
-	if(!in || inLen<=0) return 0;
-	audioFrameInfo.first = in;
-	audioFrameInfo.second = inLen;
+	if(!in || !inLen) 
+		return 0;
+
+	auto audioBuffer = std::make_shared<AudioBuffer>(inLen, 1);
+
+	g722_decode(&decoder, (SWORD*)audioBuffer->GetData(), in, inLen);
+	audioBufferQueue.push(std::move(audioBuffer));
 	return 1;
 }
 
 AudioBuffer::shared G722Decoder::GetDecodedAudioFrame()
 {
-	int inLen = audioFrameInfo.second;
-	const uint8_t* in = audioFrameInfo.first;
-	auto audioBuffer = std::make_shared<AudioBuffer>(inLen, 1);
-
-	g722_decode(&decoder, (SWORD*)audioBuffer->GetData(), in, inLen);
-	return audioBuffer;
+	if(!audioBufferQueue.empty())
+	{
+		auto audioBuffer = audioBufferQueue.front();
+		audioBufferQueue.pop();
+		return audioBuffer;
+	}
+	return {};
 }

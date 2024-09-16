@@ -52,21 +52,10 @@ OpusDecoder::~OpusDecoder()
 int OpusDecoder::Decode(const AudioFrame::const_shared& audioFrame)
 {
 	//Decode without FEC
-	int inLen = audioFrame->GetLength();
+	auto inLen = audioFrame->GetLength();
 	uint8_t* in = const_cast<uint8_t*>(audioFrame->GetData());
-	if (!in || inLen <= 0)
+	if (!in || !inLen)
 		return 0;
-	audioFrameInfo.first = in;
-	audioFrameInfo.second = inLen;
-	return 1;
-}
-
-AudioBuffer::shared OpusDecoder::GetDecodedAudioFrame()
-{
-
-	uint8_t* in = audioFrameInfo.first;
-	int inLen = audioFrameInfo.second;
-	// use 20ms
 	int outLen = rate*20/1000;
 	auto audioBuffer = std::make_shared<AudioBuffer>(outLen, numChannels);
 	int ret = opus_decode(dec, in, inLen, (opus_int16*)audioBuffer->GetData(), outLen, 0);
@@ -74,7 +63,19 @@ AudioBuffer::shared OpusDecoder::GetDecodedAudioFrame()
 	if (ret<0)
 	{
 		Error("-Opus decode error [%d]\n",ret);
-		return {};
+		return 0;
 	}
-	return audioBuffer;
+	audioBufferQueue.push(std::move(audioBuffer));
+	return 1;
+}
+
+AudioBuffer::shared OpusDecoder::GetDecodedAudioFrame()
+{
+	if(!audioBufferQueue.empty())
+	{
+		auto audioBuffer = audioBufferQueue.front();
+		audioBufferQueue.pop();
+		return audioBuffer;
+	}
+	return {};
 }

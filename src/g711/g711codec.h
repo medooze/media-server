@@ -2,6 +2,7 @@
 #define _G711CODEC_H_
 
 #include "audio.h"
+#include <queue>
 
 class PCMAEncoder : public AudioEncoder
 {
@@ -26,7 +27,7 @@ public:
 	virtual DWORD TrySetRate(DWORD rate)	{ return 8000; }
 	virtual DWORD GetRate()			{ return 8000;	}
 private:
-	std::pair<uint8_t*, int> audioFrameInfo;
+	std::queue<AudioBuffer::shared> audioBufferQueue;
 };
 
 class PCMUEncoder : public AudioEncoder
@@ -52,7 +53,7 @@ public:
 	virtual DWORD TrySetRate(DWORD rate)	{ return 8000;	}
 	virtual DWORD GetRate()			{ return 8000;	}
 private:
-	std::pair<uint8_t*, int> audioFrameInfo;
+	std::queue<AudioBuffer::shared> audioBufferQueue;
 };
 
 #endif

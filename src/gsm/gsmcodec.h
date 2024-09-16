@@ -2,6 +2,7 @@ extern "C" {
 #include "gsm.h"
 } 
 #include "audio.h"
+#include <queue>
 
 class GSMEncoder : public AudioEncoder
 {
@@ -29,5 +30,5 @@ public:
 	virtual DWORD GetRate()			{ return 8000;	}
 private:
 	gsm g;
-	std::pair<uint8_t*, int> audioFrameInfo;
+	std::queue<AudioBuffer::shared> audioBufferQueue;
 };
