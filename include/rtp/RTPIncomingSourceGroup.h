@@ -23,7 +23,7 @@ class RTPIncomingSourceGroup :
 public:
 	using shared = std::shared_ptr<RTPIncomingSourceGroup>;
 
-private:	
+private:
 	// Private constructor to prevent creating without TimeServiceWrapper::Create() factory
 	friend class TimeServiceWrapper<RTPIncomingSourceGroup>;
 	RTPIncomingSourceGroup(MediaFrame::Type type,TimeService& timeService);
