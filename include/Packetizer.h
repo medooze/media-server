@@ -6,7 +6,6 @@
 #include "CircularQueue.h"
 #include "Encodable.h"
 #include "log.h"
-#include "TimeService.h"
 
 #include <stdint.h>
 #include <list>
@@ -14,13 +13,11 @@
 #include <atomic>
 
 template<typename T>
-class Packetizer : public TimeServiceWrapper<Packetizer<T>>
+class Packetizer
 {
 public:
 	
-	Packetizer(TimeService& timeService, size_t maxMessageQueueSize) : 
-		TimeServiceWrapper<Packetizer<T>>(timeService),
-		messages(maxMessageQueueSize, false)
+	Packetizer(size_t maxMessageQueueSize) : messages(maxMessageQueueSize, false)
 	{
 		static_assert(std::is_base_of_v<Encodable, T>);
 	}
@@ -29,31 +26,30 @@ public:
 	
 	void AddMessage(const std::shared_ptr<T>& message, bool forceSeparatePacket = false)
 	{
-		this->AsyncSafe([message, forceSeparatePacket](auto self, auto now) {
+		std::lock_guard lock(mutex);
 		
-			if (self->messages.full())
-			{
-				Warning("-Packetizer::AddMessage Message queue full. Dropping oldest message.");
-			}
-			
-			self->messages.emplace_back(message, forceSeparatePacket);
-			self->hasData = true;
-		});
+		if (messages.full())
+		{
+			Warning("-Packetizer::AddMessage Message queue full. Dropping oldest message.");
+		}
+		
+		messages.emplace_back(message, forceSeparatePacket);
+		
+		hasData.store(true, std::memory_order_release);
 	}
 	
-	// Note it must be called in time service thread
 	inline bool HasData() const
 	{
-		return hasData;
+		return hasData.load(std::memory_order_acquire);
 	}
 
-	// Note it must be called in time service thread
+	// Note IsMessageStart() and GetNextPacket must be called in same thread
 	inline bool IsMessageStart() const
 	{
 		return !buffer || pos == 0;
 	}
 	
-	// Note it must be called in time service thread
+	// Note IsMessageStart() and GetNextPacket must be called in same thread
 	virtual size_t GetNextPacket(BufferWritter& writer)
 	{
 		size_t bytes = 0;
@@ -62,11 +58,13 @@ public:
 		{
 			if (!buffer || pos >= buffer->GetSize())
 			{
+				std::unique_lock lock(mutex);
+				
 				if (messages.empty())
 				{
 					pos = 0;
 					
-					hasData = false;
+					hasData.store(false, std::memory_order_release);
 					return bytes;
 				}
 				
@@ -75,6 +73,8 @@ public:
 				
 				// Remove the message
 				(void)messages.pop_front();
+				
+				lock.unlock();
 				
 				// Create a new buffer for the message
 				auto sz = encodable->Size();
@@ -112,10 +112,12 @@ public:
 private:
 	CircularQueue<std::pair<std::shared_ptr<T>, bool>> messages;
 	
+	mutable std::mutex mutex;
+	
 	std::unique_ptr<Buffer> buffer;
 	size_t pos = 0;
 	
-	bool hasData = false;
+	std::atomic<bool> hasData = { false };
 };
 
 #endif
