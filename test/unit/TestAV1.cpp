@@ -20,10 +20,10 @@ struct EncodingParams
 	int bframes;
 };
 
-class AV1Encoder
+class TestAV1Encoder
 {
 public:
-	AV1Encoder(EncodingParams params, int numPackets) : 
+	TestAV1Encoder(EncodingParams params, int numPackets) : 
 		numPackets(numPackets),
 		width(params.width),
 		height(params.height),
@@ -40,7 +40,7 @@ public:
 		}
 	}
 
-	~AV1Encoder()
+	~TestAV1Encoder()
 	{
 		if (pic)
 			aom_img_free(pic);
@@ -182,7 +182,7 @@ void runAV1Test(const char *codecName, const EncodingParams &params, int numPack
 	uint64_t frameTime = 1E6 / params.fps;
 	VideoCodec::Type type = VideoCodec::GetCodecForName(codecName);
 	
-	AV1Encoder av1Enc(params, numPackets);
+	TestAV1Encoder av1Enc(params, numPackets);
 	av1Enc.generateAV1EncodedPackets();
 	auto packets = av1Enc.getEncodedPackets();
    
