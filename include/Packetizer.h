@@ -26,8 +26,6 @@ public:
 	
 	void AddMessage(const std::shared_ptr<T>& message, bool forceSeparatePacket = false)
 	{
-		std::lock_guard lock(mutex);
-		
 		if (messages.full())
 		{
 			Warning("-Packetizer::AddMessage Message queue full. Dropping oldest message.");
@@ -35,21 +33,19 @@ public:
 		
 		messages.emplace_back(message, forceSeparatePacket);
 		
-		hasData.store(true, std::memory_order_release);
+		hasData = true;
 	}
 	
 	inline bool HasData() const
 	{
-		return hasData.load(std::memory_order_acquire);
+		return hasData;
 	}
 
-	// Note IsMessageStart() and GetNextPacket must be called in same thread
 	inline bool IsMessageStart() const
 	{
 		return !buffer || pos == 0;
 	}
 	
-	// Note IsMessageStart() and GetNextPacket must be called in same thread
 	virtual size_t GetNextPacket(BufferWritter& writer)
 	{
 		size_t bytes = 0;
@@ -58,13 +54,11 @@ public:
 		{
 			if (!buffer || pos >= buffer->GetSize())
 			{
-				std::unique_lock lock(mutex);
-				
 				if (messages.empty())
 				{
 					pos = 0;
 					
-					hasData.store(false, std::memory_order_release);
+					hasData = false;
 					return bytes;
 				}
 				
@@ -73,8 +67,6 @@ public:
 				
 				// Remove the message
 				(void)messages.pop_front();
-				
-				lock.unlock();
 				
 				// Create a new buffer for the message
 				auto sz = encodable->Size();
@@ -112,12 +104,10 @@ public:
 private:
 	CircularQueue<std::pair<std::shared_ptr<T>, bool>> messages;
 	
-	mutable std::mutex mutex;
-	
 	std::unique_ptr<Buffer> buffer;
 	size_t pos = 0;
 	
-	std::atomic<bool> hasData = { false };
+	bool hasData = false;
 };
 
 #endif
