@@ -35,7 +35,7 @@ bool H265IsIntra(BYTE nalUnitType)
 			|| (nalUnitType == HEVC_RTP_NALU_Type::PPS));
 }
 
-bool GenericProfileTierLevel::Decode(BitReader& r)
+bool GenericProfileTierLevel::Decode(RbspBitReader& r)
 {
 	try
 	{
@@ -140,7 +140,7 @@ H265ProfileTierLevel::H265ProfileTierLevel()
 		sub_layer_level_present_flag[i] = false;
 }
 
-bool H265ProfileTierLevel::Decode(BitReader& r, bool profilePresentFlag, BYTE maxNumSubLayersMinus1)
+bool H265ProfileTierLevel::Decode(RbspBitReader& r, bool profilePresentFlag, BYTE maxNumSubLayersMinus1)
 {
 	if (profilePresentFlag)
 	{
@@ -184,10 +184,8 @@ H265VideoParameterSet::H265VideoParameterSet()
 
 bool H265VideoParameterSet::Decode(const BYTE* buffer,DWORD bufferSize)
 {
-	//SHould be done otherway, like modifying the BitReader to escape the input NAL, but anyway.. duplicate memory
-	Buffer escaped = NalUnescapeRbsp(buffer, bufferSize);
-	BufferReader reader(escaped);
-	BitReader r(reader);
+	RbspReader reader(buffer, bufferSize);
+	RbspBitReader r(reader);
 
 	try 
 	{
@@ -221,10 +219,8 @@ bool H265VideoParameterSet::Decode(const BYTE* buffer,DWORD bufferSize)
 
 bool H265SeqParameterSet::Decode(const BYTE* buffer,DWORD bufferSize)
 {
-	//SHould be done otherway, like modifying the BitReader to escape the input NAL, but anyway.. duplicate memory
-	Buffer escaped = NalUnescapeRbsp(buffer, bufferSize);
-	BufferReader reader(escaped);
-	BitReader r(reader);
+	RbspReader reader(buffer, bufferSize);
+	RbspBitReader r(reader);
 
 	try
 	{
@@ -322,10 +318,8 @@ bool H265SeqParameterSet::Decode(const BYTE* buffer,DWORD bufferSize)
 
 bool H265PictureParameterSet::Decode(const BYTE* buffer,DWORD bufferSize)
 {
-	//SHould be done otherway, like modifying the BitReader to escape the input NAL, but anyway.. duplicate memory
-	Buffer escaped = NalUnescapeRbsp(buffer, bufferSize);
-	BufferReader reader(escaped);
-	BitReader r(reader);
+	RbspReader reader(buffer, bufferSize);
+	RbspBitReader r(reader);
 
 	try
 	{
@@ -362,10 +356,8 @@ bool H265PictureParameterSet::Decode(const BYTE* buffer,DWORD bufferSize)
 
 bool H265SliceHeader::Decode(const BYTE* buffer, DWORD bufferSize, uint8_t nalUnitType, const H265PictureParameterSet& pps, const H265SeqParameterSet& sps)
 {
-	//SHould be done otherway, like modifying the BitReader to escape the input NAL, but anyway.. duplicate memory
-	Buffer escaped = NalUnescapeRbsp(buffer, bufferSize);
-	BufferReader reader(escaped);
-	BitReader r(reader);
+	RbspReader reader(buffer, bufferSize);
+	RbspBitReader r(reader);
 
 	try
 	{

@@ -6,15 +6,137 @@
 #include <optional>
 #include <functional>
 
+
 #include "config.h"
 #include "log.h"
 #include "tools.h"
 #include "Buffer.h"
 #include "BufferReader.h"
+#include "bitstream/BitReader.h"
 
 constexpr uint32_t AnnexBStartCode = 0x01;
 
 // H.264 NAL logic that can be shared with H.265 (mostly emulation prevention, annex B stream)
+
+class RbspReader
+{
+public:
+	RbspReader(const uint8_t* data, const size_t size) :
+		data(data),
+		size(size)
+	{
+		this->pos = 0;
+	}
+
+	inline bool   Assert(size_t num) const
+	{
+		DWORD len = 0;
+		DWORD i = pos;
+		DWORD z = zeros;
+
+		while (i < size)
+		{
+			if (z >= 2 && data[i] == 0x03)
+			{
+				//Skip input
+				i++;
+				//No zeros
+				z = 0;
+			}
+			else
+			{
+				//Check consecutive zeros
+				if (data[i] == 0)
+					z++;
+				//move pointers
+				i++;
+				len++;
+			}
+			if (len == num)
+				return true;
+		}
+		return false;
+	}
+
+	inline uint8_t  Peek1() { return Peek(1); }
+	inline uint16_t Peek2() { return Peek(2); }
+	inline uint32_t Peek3() { return Peek(3); }
+	inline uint32_t Peek4() { return Peek(4); }
+
+	inline void Skip(size_t num)
+	{
+		DWORD len = 0;
+		DWORD z = zeros;
+
+		while (pos < size)
+		{
+			if (z >= 2 && data[pos] == 0x03)
+			{
+				//Skip input
+				pos++;
+				//No zeros
+				z = 0;
+			}
+			else
+			{
+				//Check consecutive zeros
+				if (data[pos] == 0)
+					z++;
+				//move pointers
+				pos++;
+				len++;
+			}
+			if (len == num)
+				return;
+		}
+
+		throw std::range_error("");
+	}
+
+protected:
+	uint32_t Peek(size_t num)
+	{
+		uint32_t value = 0;
+
+		DWORD len = 0;
+		DWORD i = pos;
+		DWORD z = zeros;
+
+		while (i < size)
+		{
+			if (z >= 2 && data[i] == 0x03)
+			{
+				//Skip input
+				i++;
+				//No zeros
+				z = 0;
+			}
+			else 
+			{
+				//Acu value
+				value = value << 1 | data[i];
+				//Check consecutive zeros
+				if (data[i] == 0)
+					z++;
+				//move pointers
+				i++;
+				len++;
+			}
+			if (len == num)
+				return value;
+		}
+		
+		throw std::range_error("");
+	}
+private:
+	const uint8_t* data = nullptr;
+	size_t size = 0;
+	size_t pos = 0;
+	size_t zeros = 0;
+};
+
+using RbspBitReader = BitReaderBase<RbspReader>;
+
 
 inline DWORD NalUnescapeRbsp(BYTE *dst, const BYTE *src, DWORD size)
 {

@@ -9,14 +9,16 @@
 #include "tools.h"
 #include "BufferReader.h"
 
-class BitReader
+
+template<class Reader>
+class BitReaderBase
 {
 public:
 
 	/***
 	* BitReader() will read lazily from the BufferReader
 	*/
-	BitReader(BufferReader& reader) : reader(reader)
+	BitReaderBase(Reader& reader) : reader(reader)
 	{
 	}
 
@@ -85,11 +87,6 @@ public:
 			SkipCached(n);
 		}
 		//Debug("<BitReader::Skip() Skiped n:%d: cached:%d\n", n, cached);
-	}
-
-	inline QWORD Left()
-	{
-		return QWORD(reader.GetLeft()) * 8 - cached;
 	}
 
 	inline DWORD Peek(DWORD n)
@@ -308,10 +305,12 @@ private:
 	}
 	
 private:
-	BufferReader& reader;
+	Reader& reader;
 	DWORD cache	= 0;
 	BYTE  cached	= 0;
 };
 
+
+using BitReader = BitReaderBase<BufferReader>;
 
 #endif	/* BITREADER_H_ */
