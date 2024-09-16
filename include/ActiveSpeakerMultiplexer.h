@@ -53,7 +53,7 @@ public:
 		virtual void onActiveSpeakerRemoved(uint32_t multiplexdId) = 0;
 	};
 
-private:
+protected:
 	// Private constructor to prevent creating without TimeServiceWrapper::Create() factory
 	friend class TimeServiceWrapper<ActiveSpeakerMultiplexer>;
 	ActiveSpeakerMultiplexer(TimeService& timeService, Listener* listener);

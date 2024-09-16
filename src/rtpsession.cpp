@@ -31,8 +31,8 @@
 **************************/
 RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) :
 	transport(this),
-	send(new RTPOutgoingSourceGroup(media, transport.GetTimeService())),
-	recv(new RTPIncomingSourceGroup(media, transport.GetTimeService()))
+	send(RTPOutgoingSourceGroup::Create(media, transport.GetTimeService())),
+	recv(RTPIncomingSourceGroup::Create(media, transport.GetTimeService()))
 {
 	//Store listener
 	this->listener = listener;
@@ -1048,7 +1048,7 @@ int RTPSession::RequestFPU()
 	
 	Debug("-RTPSession::RequestFPU()\n");
 	//Execute on the event loop thread and wait
-	transport.GetTimeService().Sync([=](auto now){
+	transport.GetTimeService().SyncUnsafe([=](auto now){
 		//Reset pacekts
 		recv->ResetPackets();
 	});

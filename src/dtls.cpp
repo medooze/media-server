@@ -371,7 +371,7 @@ std::string DTLSConnection::GetCertificateFingerPrint(Hash hash)
 
 
 DTLSConnection::DTLSConnection(Listener& listener,TimeService& timeService,datachannels::Transport& sctp) :
-	timeServiceWrapper<DTLSConnection>(timeService),
+	TimeServiceWrapper<DTLSConnection>(timeService),
 	listener(listener),
 	sctp(sctp),
 	inited(false)
@@ -462,15 +462,15 @@ int DTLSConnection::Init()
 	SSL_do_handshake(ssl);
 	
 	//Start timeout
-	timeout = timeService.CreateTimerSafe(0ms, [this](auto now){
+	timeout = CreateTimerSafe(0ms, [](auto self, auto now){
 		//UltraDebug("-DTLSConnection::Timeout()\n");
 		//Check if still inited
-		if (inited)
+		if (self->inited)
 		{
 			//Run timeut
-			if (DTLSv1_handle_timeout(ssl)!=-1)
+			if (DTLSv1_handle_timeout(self->ssl)!=-1)
 				//Check if there is any pending data
-				CheckPending();
+				self->CheckPending();
 		}
 	});
 
@@ -559,7 +559,7 @@ void DTLSConnection::Reset()
 		return;
 		
 	//Run in event loop thread
-	timeService.Sync([this](auto now){
+	Sync([this](auto now){
 		//Send shutdown
 		Shutdown();
 	});

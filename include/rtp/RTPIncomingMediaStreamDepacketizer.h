@@ -12,7 +12,7 @@
 class RTPIncomingMediaStreamDepacketizer :
 	public RTPIncomingMediaStream::Listener,
 	public MediaFrame::Producer,
-	TimeServiceWrapper<RTPIncomingMediaStreamDepacketizer>
+	public TimeServiceWrapper<RTPIncomingMediaStreamDepacketizer>
 {
 private:
 	// Private constructor to prevent creating without TimeServiceWrapper::Create() factory

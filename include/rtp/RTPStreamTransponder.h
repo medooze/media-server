@@ -28,7 +28,7 @@ public:
 	static constexpr uint32_t NoSeqNum = std::numeric_limits<uint32_t>::max();
 	static constexpr uint64_t NoTimestamp = std::numeric_limits<uint64_t>::max();
 
-private:
+protected:
 	// Private constructor to prevent creating without TimeServiceWrapper::Create() factory
 	friend class TimeServiceWrapper<RTPStreamTransponder>;
 	RTPStreamTransponder(const RTPOutgoingSourceGroup::shared& outgoing,const RTPSender::shared& sender);

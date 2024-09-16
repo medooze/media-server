@@ -95,7 +95,7 @@ RTPTransport::RTPTransport(Listener *listener) :
 	rtpLoop(this),
 	rtcpLoop(this),
 	endpoint(rtpLoop),
-	dtls(*this,rtpLoop,endpoint.GetTransport())
+	dtls(DTLSConnection::Create(*this,rtpLoop,endpoint.GetTransport()))
 {
 	this->listener = listener;
 	//Init values
@@ -317,32 +317,32 @@ int RTPTransport::SetRemoteCryptoDTLS(const char *setup,const char *hash,const c
 
 	//Set Suite
 	if (strcasecmp(setup,"active")==0)
-		dtls.SetRemoteSetup(DTLSConnection::SETUP_ACTIVE);
+		dtls->SetRemoteSetup(DTLSConnection::SETUP_ACTIVE);
 	else if (strcasecmp(setup,"passive")==0)
-		dtls.SetRemoteSetup(DTLSConnection::SETUP_PASSIVE);
+		dtls->SetRemoteSetup(DTLSConnection::SETUP_PASSIVE);
 	else if (strcasecmp(setup,"actpass")==0)
-		dtls.SetRemoteSetup(DTLSConnection::SETUP_ACTPASS);
+		dtls->SetRemoteSetup(DTLSConnection::SETUP_ACTPASS);
 	else if (strcasecmp(setup,"holdconn")==0)
-		dtls.SetRemoteSetup(DTLSConnection::SETUP_HOLDCONN);
+		dtls->SetRemoteSetup(DTLSConnection::SETUP_HOLDCONN);
 	else
 		return Error("-RTPTransport::SetRemoteCryptoDTLS | Unknown setup");
 
 	//Set fingerprint
 	if (strcasecmp(hash,"SHA-1")==0)
-		dtls.SetRemoteFingerprint(DTLSConnection::SHA1,fingerprint);
+		dtls->SetRemoteFingerprint(DTLSConnection::SHA1,fingerprint);
 	else if (strcasecmp(hash,"SHA-224")==0)
-		dtls.SetRemoteFingerprint(DTLSConnection::SHA224,fingerprint);
+		dtls->SetRemoteFingerprint(DTLSConnection::SHA224,fingerprint);
 	else if (strcasecmp(hash,"SHA-256")==0)
-		dtls.SetRemoteFingerprint(DTLSConnection::SHA256,fingerprint);
+		dtls->SetRemoteFingerprint(DTLSConnection::SHA256,fingerprint);
 	else if (strcasecmp(hash,"SHA-384")==0)
-		dtls.SetRemoteFingerprint(DTLSConnection::SHA384,fingerprint);
+		dtls->SetRemoteFingerprint(DTLSConnection::SHA384,fingerprint);
 	else if (strcasecmp(hash,"SHA-512")==0)
-		dtls.SetRemoteFingerprint(DTLSConnection::SHA512,fingerprint);
+		dtls->SetRemoteFingerprint(DTLSConnection::SHA512,fingerprint);
 	else
 		return Error("-RTPTransport::SetRemoteCryptoDTLS | Unknown hash");
 
 	//Init DTLS
-	return dtls.Init();
+	return dtls->Init();
 }
 
 int RTPTransport::SetRemoteCryptoSDES(const char* suite, const BYTE* key, const DWORD len)
@@ -1025,7 +1025,7 @@ int RTPTransport::ReadRTP(const uint8_t* data, const size_t size, const uint32_t
 				{
 					// Needed for DTLS in client mode (otherwise the DTLS "Client Hello" is not sent over the wire)
 					Packet packet;
-					size_t len = dtls.Read(packet.GetData(),packet.GetCapacity());
+					size_t len = dtls->Read(packet.GetData(),packet.GetCapacity());
 					
 					//Check it
 					if (len>0)
@@ -1080,11 +1080,11 @@ int RTPTransport::ReadRTP(const uint8_t* data, const size_t size, const uint32_t
 	if (DTLSConnection::IsDTLS(data,size))
 	{
 		//Feed it
-		dtls.Write(data,size);
+		dtls->Write(data,size);
 
 		//REad dtls data
 		Packet packet = rtpLoop.GetPacketPool().pick();
-		size_t len = dtls.Read(packet.GetData(),packet.GetCapacity());
+		size_t len = dtls->Read(packet.GetData(),packet.GetCapacity());
 					
 		//Check it
 		if (len>0)
@@ -1209,7 +1209,7 @@ void RTPTransport::onDTLSPendingData()
 	{
 		Packet packet = rtpLoop.GetPacketPool().pick();
 		//Read from dtls
-		size_t len = dtls.Read(packet.GetData(),packet.GetCapacity());
+		size_t len = dtls->Read(packet.GetData(),packet.GetCapacity());
 		if (!len)
 			break;
 		//resize

@@ -29,18 +29,19 @@ private:
 class TimeService
 {
 public:
+	// @todo Rename now to force compile errors if used, then rename back
 	virtual ~TimeService() = default;
 	virtual const std::chrono::milliseconds GetNow() const = 0;
-	virtual Timer::shared CreateTimer(const std::function<void(std::chrono::milliseconds)>& callback) = 0;
-	virtual Timer::shared CreateTimer(const std::chrono::milliseconds& ms, const std::function<void(std::chrono::milliseconds)>& timeout) = 0;
-	virtual Timer::shared CreateTimer(const std::chrono::milliseconds& ms, const std::chrono::milliseconds& repeat, const std::function<void(std::chrono::milliseconds)>& timeout) = 0;
-	virtual void Async(const std::function<void(std::chrono::milliseconds)>& func) = 0;
-	virtual void Async(const std::function<void(std::chrono::milliseconds)>& func, const std::function<void(std::chrono::milliseconds)>& callback) = 0;
-	virtual std::future<void> Future(const std::function<void(std::chrono::milliseconds)>& func) = 0;
-	inline void Sync(const std::function<void(std::chrono::milliseconds)>& func) 
+	virtual Timer::shared CreateTimerUnsafe(const std::function<void(std::chrono::milliseconds)>& callback) = 0;
+	virtual Timer::shared CreateTimerUnsafe(const std::chrono::milliseconds& ms, const std::function<void(std::chrono::milliseconds)>& timeout) = 0;
+	virtual Timer::shared CreateTimerUnsafe(const std::chrono::milliseconds& ms, const std::chrono::milliseconds& repeat, const std::function<void(std::chrono::milliseconds)>& timeout) = 0;
+	virtual void AsyncUnsafe(const std::function<void(std::chrono::milliseconds)>& func) = 0;
+	virtual void AsyncUnsafe(const std::function<void(std::chrono::milliseconds)>& func, const std::function<void(std::chrono::milliseconds)>& callback) = 0;
+	virtual std::future<void> FutureUnsafe(const std::function<void(std::chrono::milliseconds)>& func) = 0;
+	inline void SyncUnsafe(const std::function<void(std::chrono::milliseconds)>& func) 
 	{
 		//Run async and wait for future
-		Future(func).wait();
+		FutureUnsafe(func).wait();
 	}
 };
 
@@ -71,7 +72,7 @@ public:
 	template <typename Func>
 	inline void Sync(Func&& func)
 	{
-		timeService.Sync(std::forward<Func>(func));
+		timeService.SyncUnsafe(std::forward<Func>(func));
 	}
 	
 	template <typename Func>
@@ -81,7 +82,7 @@ public:
 		// If following assert failed, the function might be called in constructor. See OnCreated() description.
 		assert(!selfWeak.expired());
 		
-		timeService.Async([selfWeak, func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
+		timeService.AsyncUnsafe([selfWeak, func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
 			auto self = selfWeak.lock();
 			if (!self) return;
 			
@@ -96,7 +97,7 @@ public:
 		// If following assert failed, the function might be called in constructor. See OnCreated() description.
 		assert(!selfWeak.expired());
 		
-		timeService.Async([selfWeak, func = std::forward<Func>(func)](std::chrono::milliseconds now) mutable {
+		timeService.AsyncUnsafe([selfWeak, func = std::forward<Func>(func)](std::chrono::milliseconds now) mutable {
 			auto self = selfWeak.lock();
 			if (!self) return;
 
@@ -111,7 +112,7 @@ public:
 		// If following assert failed, the function might be called in constructor. See OnCreated() description.
 		assert(!selfWeak.expired());
 		
-		return timeService.CreateTimer([selfWeak, func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
+		return timeService.CreateTimerUnsafe([selfWeak, func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
 			auto self = selfWeak.lock();
 			if (!self) return;
 			
@@ -126,7 +127,7 @@ public:
 		// If following assert failed, the function might be called in constructor. See OnCreated() description.
 		assert(!selfWeak.expired());
 		
-		return timeService.CreateTimer(ms, [selfWeak, func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
+		return timeService.CreateTimerUnsafe(ms, [selfWeak, func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
 			auto self = selfWeak.lock();
 			if (!self) return;
 			
@@ -141,7 +142,7 @@ public:
 		// If following assert failed, the function might be called in constructor. See OnCreated() description.
 		assert(!selfWeak.expired());
 		
-		return timeService.CreateTimer(ms, repeat, [selfWeak, func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
+		return timeService.CreateTimerUnsafe(ms, repeat, [selfWeak, func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
 			auto self = selfWeak.lock();
 			if (!self) return;
 			
@@ -156,7 +157,7 @@ public:
 		// If following assert failed, the function might be called in constructor. See OnCreated() description.
 		assert(!selfWeak.expired());
 		
-		return timeService.Future([selfWeak, func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
+		return timeService.FutureUnsafe([selfWeak, func = std::forward<Func>(func)] (std::chrono::milliseconds now) mutable {
 			auto self = selfWeak.lock();
 			if (!self) return;
 			
