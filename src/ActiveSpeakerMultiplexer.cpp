@@ -13,6 +13,10 @@ ActiveSpeakerMultiplexer::ActiveSpeakerMultiplexer(TimeService& timeService, Lis
 	TimeServiceWrapper<ActiveSpeakerMultiplexer>(timeService),
 	listener(listener)
 {
+}
+
+void ActiveSpeakerMultiplexer::OnCreated()
+{
 	//Create processing timer
 	timer = CreateTimerSafe(0ms, MinInterval, [this](auto self, auto now) { Process(now.count()); });
 	//Set name for debug

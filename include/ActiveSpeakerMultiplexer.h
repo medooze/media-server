@@ -57,6 +57,7 @@ protected:
 	// Private constructor to prevent creating without TimeServiceWrapper::Create() factory
 	friend class TimeServiceWrapper<ActiveSpeakerMultiplexer>;
 	ActiveSpeakerMultiplexer(TimeService& timeService, Listener* listener);
+	virtual void OnCreated() override;
 
 public:
 	virtual ~ActiveSpeakerMultiplexer();
