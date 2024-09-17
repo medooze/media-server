@@ -110,7 +110,7 @@ struct Header : public Encodable
 
 struct HeaderExtension : public Encodable
 {
-	uint8_t markerBits = 0x10;
+	uint8_t markerBits = 0x2;
 	uint8_t scramblingControl = 0;
 	bool	priority = false;
 	bool	dataAlignmentIndicator = false;
