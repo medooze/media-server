@@ -147,6 +147,13 @@ struct Packet
 
 namespace adts 
 {
+	
+enum AudioObjectType
+{
+	Null 		= 0,
+	AACMain 	= 1,
+	AACLC		= 2
+};
 
 struct Header : public Encodable
 {
@@ -154,7 +161,7 @@ struct Header : public Encodable
 	bool     version = false;
 	uint8_t  layer = 0;
 	bool     protectionAbsence = false;
-	uint8_t  objectType = 1;
+	uint8_t  objectTypeMinus1 = 0;
 	uint8_t  samplingFrequency = 0;
 	bool     priv = false;
 	uint8_t  channelConfiguration = 0;

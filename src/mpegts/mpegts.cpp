@@ -492,7 +492,7 @@ namespace adts
 		bitwriter.Put(1, version);
 		bitwriter.Put(2, layer);
 		bitwriter.Put(1, protectionAbsence);
-		bitwriter.Put(2, objectType - 1);
+		bitwriter.Put(2, objectTypeMinus1);
 		bitwriter.Put(4, samplingFrequency);
 		bitwriter.Put(1, priv);
 		bitwriter.Put(3, channelConfiguration);
@@ -547,7 +547,7 @@ namespace adts
 		header.version			 = bitreader.Get(1);
 		header.layer			 = bitreader.Get(2);
 		header.protectionAbsence	 = bitreader.Get(1);
-		header.objectType		 = bitreader.Get(2) + 1;
+		header.objectTypeMinus1		 = bitreader.Get(2);
 		header.samplingFrequency	 = bitreader.Get(4);
 		header.priv			 = bitreader.Get(1);
 		header.channelConfiguration	 = bitreader.Get(3);
