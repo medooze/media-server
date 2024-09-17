@@ -1,8 +1,9 @@
-#pragma once
+#include "mpegtscrc32.h"
 
-#include <stdint.h>
+namespace mpegts
+{
 
-static const uint32_t crc_table[256] = {
+static const uint32_t CrcTable[256] = {
     0x00000000, 0x04c11db7, 0x09823b6e, 0x0d4326d9, 0x130476dc, 0x17c56b6b,
     0x1a864db2, 0x1e475005, 0x2608edb8, 0x22c9f00f, 0x2f8ad6d6, 0x2b4bcb61,
     0x350c9b64, 0x31cd86d3, 0x3c8ea00a, 0x384fbdbd, 0x4c11db70, 0x48d0c6c7,
@@ -48,4 +49,14 @@ static const uint32_t crc_table[256] = {
     0xbcb4666d, 0xb8757bda, 0xb5365d03, 0xb1f740b4
 };
 
-extern uint32_t crc32(const uint8_t *data, int len);
+uint32_t Crc32(const uint8_t *data, size_t len)
+{
+    uint32_t crc = 0xffffffff;
+
+    for (size_t i = 0; i < len; i++)
+        crc = (crc << 8) ^ CrcTable[((crc >> 24) ^ *data++) & 0xff];
+
+    return crc;
+}
+
+}

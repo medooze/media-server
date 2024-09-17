@@ -3,7 +3,7 @@
 #include "bitstream/BitReader.h"
 #include "bitstream/BitWriter.h"
 
-#include "crc.h"
+#include "mpegtscrc32.h"
 
 namespace mpegts
 {
@@ -109,7 +109,7 @@ void Table::Encode(BufferWritter& writer)
 	if (encodable)
 		(*encodable)->Encode(writer);
 		
-	uint32_t crc = crc32(writer.GetData() + mark, writer.GetLength() - mark);
+	uint32_t crc = Crc32(writer.GetData() + mark, writer.GetLength() - mark);
 	writer.Set4(crc);
 	
 	Log("Size: %d crc: 0x%x\n",  writer.GetLength() - mark, crc);

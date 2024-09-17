@@ -73,6 +73,7 @@ add_library(MediaServerLib
     ${CMAKE_CURRENT_LIST_DIR}/src/mpegts/psi.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/mpegts/SpliceInfoSection.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/mpegts/mpegts.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/mpegts/mpegtscrc32.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/mpegts/psi.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtmp/rtmpserver.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtmp/amf.cpp
@@ -201,6 +202,7 @@ add_executable(MediaServerUnitTest
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAMFNumber.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestVideoLayersAllocation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestTools.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestCrc32.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestForwardErrorCorrection.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestFecProbeGenerator.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestSpliceInfoSection.cpp
