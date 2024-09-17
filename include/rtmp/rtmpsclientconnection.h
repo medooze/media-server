@@ -12,8 +12,9 @@ public:
 	RTMPSClientConnection(const std::wstring& tag);
 
 protected:
-	virtual RTMPClientConnection::ErrorCode Start() override;
-	virtual void Stop() override;
+	virtual RTMPClientConnection::ErrorCode OnConnect() override;
+	
+	virtual bool Stop() override;
 	virtual bool IsConnectionReady() override;
 	virtual void OnReadyToTransfer() override;
 	virtual void ProcessReceivedData(const uint8_t* data, size_t size) override;

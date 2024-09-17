@@ -80,8 +80,9 @@ public:
 
 protected:
 	
-	virtual RTMPClientConnection::ErrorCode Start();
-	virtual void Stop();
+	virtual RTMPClientConnection::ErrorCode OnConnect();
+	
+	virtual bool Stop() override;
 	virtual bool IsConnectionReady() { return inited; };
 	virtual void OnReadyToTransfer() {};
 	virtual void ProcessReceivedData(const uint8_t* data, size_t size);

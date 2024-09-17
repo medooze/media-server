@@ -3,9 +3,13 @@
 
 #include <optional>
 #include "BufferReader.h"
+#include "BufferWritter.h"
+#include "Encodable.h"
 
 namespace mpegts
 {
+
+constexpr size_t MPEGTSPacketSize = 188;
 
 enum AdaptationFieldControl
 {
@@ -15,43 +19,52 @@ enum AdaptationFieldControl
 	AdaptationFiedlAndPayload = 3
 };
 
-struct Header
+struct Header : public Encodable
  {
-	uint8_t  syncByte;
-	bool	 transportErrorIndication;
-	bool	 payloadUnitStartIndication;
-	bool	 transportPriority;
-	uint16_t packetIdentifier;
-	uint8_t  transportScramblingControl;
-	AdaptationFieldControl adaptationFieldControl;
-	uint8_t  continuityCounter;
+	uint8_t  syncByte = 0;
+	bool	 transportErrorIndication = false;
+	bool	 payloadUnitStartIndication = false;
+	bool	 transportPriority = false;
+	uint16_t packetIdentifier = 0;
+	uint8_t  transportScramblingControl = 0;
+	AdaptationFieldControl adaptationFieldControl = AdaptationFieldControl::Reserved;
+	uint8_t  continuityCounter = 0;
 
+	// Encodable overrides
+	void Encode(BufferWritter& writer) override;
+	size_t Size() const override;
+	
 	static Header Parse(BufferReader& reader);
+	
 	void Dump() const;
-
 };
 
-struct AdaptationField
+struct AdaptationField : public Encodable
 {
+	bool discontinuityIndicator = false;
+	bool randomAccessIndicator = false;
+	bool elementaryStreamPriorityIndicator = false;
+	bool pcrFlag = false;
+	bool opcrFlag = false;
+	bool splicingPointFlag = false;
+	bool transportPrivateDataFlag = false;
+	bool adaptationFieldExtensionFlag = false;
+	
+	std::optional<uint64_t> pcr;
+	
+	// Encodable overrides
+	void Encode(BufferWritter& writer) override;
+	size_t Size() const override;
+	
 	static AdaptationField Parse(BufferReader& reader);
-
-	bool discontinuityIndicator;
-	bool randomAccessIndicator;
-	bool elementaryStreamPriorityIndicator;
-	bool pcrFlag;
-	bool opcrFlag;
-	bool splicingPointFlag;
-	bool transportPrivateDataFlag;
-	bool adaptationFieldExtensionFlag;
-
 };
 
 struct Packet
-{
+{	
 	Header header;
 	std::optional<AdaptationField> adaptationField = {};
 	std::optional<uint8_t> payloadPointer = {};
-
+	
 	static Packet Parse(BufferReader& reader);
 };
 
@@ -71,6 +84,9 @@ enum StreamType
 
 StreamType GetStreamType(const uint8_t& streamId);
 
+constexpr uint8_t CreateAudioStreamID(uint8_t streamNumber) { return 0xc0 | (streamNumber & 0x1f); };
+constexpr uint8_t CreateVideoStreamID(uint8_t streamNumber) { return 0xe0 | (streamNumber & 0xf); };
+
 enum PTSDTSIndicator
 {
 	None = 0,
@@ -79,36 +95,44 @@ enum PTSDTSIndicator
 	Both = 3
 };
 
-struct Header
+struct Header : public Encodable
 {
-	uint32_t packetStartCodePrefix;
-	uint8_t  streamId;
-	uint16_t packetLength;
+	uint32_t packetStartCodePrefix = 0x000001;
+	uint8_t  streamId = 0;
+	uint16_t packetLength = 0;
 
+	// Encodable overrides
+	void Encode(BufferWritter& writer) override;
+	size_t Size() const override;
+	
 	static Header Parse(BufferReader& reader);
 };
 
-struct HeaderExtension
+struct HeaderExtension : public Encodable
 {
-
-	uint8_t markerBits;
-	uint8_t scramblingControl;
-	bool	priority;
-	bool	dataAlignmentIndicator;
-	bool	copyrigth;
-	bool	original;
-	PTSDTSIndicator ptsdtsIndicator;
-	bool	escrFlag;
-	bool	rateFlag;
-	bool	trickModeFlag;
-	bool	aditionalInfoFlag;
-	bool	crcFlag;
-	bool	extensionFlag;
-	uint8_t remainderHeaderLength;
+	uint8_t markerBits = 0x2;
+	uint8_t scramblingControl = 0;
+	bool	priority = false;
+	bool	dataAlignmentIndicator = false;
+	bool	copyright = false;
+	bool	original = false;
+	PTSDTSIndicator ptsdtsIndicator = PTSDTSIndicator::None;
+	bool	escrFlag = false;
+	bool	rateFlag = false;
+	bool	trickModeFlag = false;
+	bool	aditionalInfoFlag = false;
+	bool	crcFlag = false;
+	bool	extensionFlag = false;
 
 	std::optional<uint64_t> pts = {};
 	std::optional<uint64_t> dts = {};
+	
+	size_t	stuffingCount = 0;
 
+	// Encodable overrides
+	void Encode(BufferWritter& writer) override;
+	size_t Size() const override;
+	
 	static HeaderExtension Parse(BufferReader& reader);
 };
 
@@ -123,26 +147,37 @@ struct Packet
 
 namespace adts 
 {
-
-struct Header
+	
+enum AudioObjectType
 {
-	uint16_t syncWord;
-	bool     version;
-	uint8_t  layer;
-	bool     protectionAbsence;
-	uint8_t  objectType;
-	uint8_t  samplingFrequency;
-	bool     priv;
-	uint8_t  channelConfiguration;
-	bool     originality;
-	bool     home;
-	bool     copyrigth;
-	bool     copyrigthStart;
-	uint16_t frameLength;
-	uint16_t bufferFullness;
-	uint8_t  numberOfFrames;
-	uint16_t crc;
+	Null 		= 0,
+	AACMain 	= 1,
+	AACLC		= 2
+};
 
+struct Header : public Encodable
+{
+	uint16_t syncWord = 0xfff;
+	bool     version = false;
+	uint8_t  layer = 0;
+	bool     protectionAbsence = false;
+	uint8_t  objectTypeMinus1 = 0;
+	uint8_t  samplingFrequency = 0;
+	bool     priv = false;
+	uint8_t  channelConfiguration = 0;
+	bool     originality = false;
+	bool     home = false;
+	bool     copyright = false;
+	bool     copyrightStart = false;
+	uint16_t frameLength = 0;
+	uint16_t bufferFullness = 0;
+	uint8_t  numberOfFramesMinus1 = 0;
+	uint16_t crc = 0;
+
+	// Encodable overrides
+	void Encode(BufferWritter& writer) override;
+	size_t Size() const override;
+	
 	static Header Parse(BufferReader& reader);
 };
 }; //namespace mpegts::pes::adts

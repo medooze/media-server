@@ -1,14 +1,58 @@
 #include "mpegts/psi.h"
 #include "log.h"
 #include "bitstream/BitReader.h"
+#include "bitstream/BitWriter.h"
+
+#include "crc.h"
+
 namespace mpegts
 {
 namespace psi
 {
 
-SyntaxData SyntaxData::Parse(BufferReader& reader)
+void SyntaxData::Encode(BufferWritter& writer)
 {
-	SyntaxData syntaxData = {};
+	if (writer.GetLeft() < Size())
+		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
+	
+	writer.Set2(tableIdExtension);
+	
+	BitWriter bitWriter(writer, 3);
+	bitWriter.Put(2, _reserved1);
+	bitWriter.Put(5, versionNumber);
+	bitWriter.Put(1, isCurrent);
+	bitWriter.Put(8, sectionNumber);
+	bitWriter.Put(8, lastSectionNumber);
+	
+	auto encodable = std::get_if<std::unique_ptr<Encodable>>(&data);
+	if (encodable)
+		(*encodable)->Encode(writer);
+}
+
+size_t SyntaxData::Size() const
+{
+	size_t totalSize = 5;
+		
+	std::visit([&totalSize](auto&& arg){
+		using T = std::decay_t<decltype(arg)>;
+		if constexpr (std::is_same_v<T, std::unique_ptr<Encodable>>)
+		{
+			totalSize += arg->Size();
+		}
+		else if constexpr (std::is_same_v<T, BufferReader>)
+		{
+			totalSize += arg.GetLeft();
+		}
+	}, data);
+		
+	return totalSize;
+}
+
+
+std::unique_ptr<SyntaxData> SyntaxData::Parse(BufferReader& reader)
+{
+	std::unique_ptr<SyntaxData> syntaxDataPtr = std::make_unique<SyntaxData>();
+	SyntaxData& syntaxData = *syntaxDataPtr;
 
 	/*
 	 * Table ID extension		16	Informational only identifier. The PAT uses this for the transport stream identifier and the PMT uses this for the Program num
@@ -42,12 +86,58 @@ SyntaxData SyntaxData::Parse(BufferReader& reader)
 
 	//TODO: check crc?
 	
-	return syntaxData;
+	return syntaxDataPtr;
 }
 
-Table Table::Parse(BufferReader& reader)
+void Table::Encode(BufferWritter& writer)
 {
-	Table table;
+	if (writer.GetLeft() < Size())
+		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
+	
+	auto mark = writer.Mark();
+	
+	writer.Set1(tableId);
+	
+	BitWriter bitwriter(writer, 2);
+	
+	bitwriter.Put(1, sectionSyntaxIndicator);
+	bitwriter.Put(1, privateBit);
+	bitwriter.Put(2, _reserved1);
+	bitwriter.Put(12, Size() - 3);
+	
+	auto encodable = std::get_if<std::unique_ptr<Encodable>>(&data);
+	if (encodable)
+		(*encodable)->Encode(writer);
+		
+	uint32_t crc = crc32(writer.GetData() + mark, writer.GetLength() - mark);
+	writer.Set4(crc);
+	
+	Log("Size: %d crc: 0x%x\n",  writer.GetLength() - mark, crc);
+}
+
+size_t Table::Size() const
+{
+	size_t totalSize = 3 + 4;  // header + crc
+	
+	std::visit([&totalSize](auto&& arg){
+		using T = std::decay_t<decltype(arg)>;
+		if constexpr (std::is_same_v<T, std::unique_ptr<Encodable>>)
+		{
+			totalSize += arg->Size();
+		}
+		else if constexpr (std::is_same_v<T, BufferReader>)
+		{
+			totalSize += arg.GetLeft();
+		}
+	}, data);
+	
+	return totalSize;
+}
+
+std::unique_ptr<Table> Table::Parse(BufferReader& reader)
+{
+	std::unique_ptr<Table> tablePtr = std::make_unique<Table>();
+	Table& table = *tablePtr;
 
 	/*
 	 * Table ID			8	Table Identifier, that defines the structure of the syntax section and other contained data.
@@ -68,11 +158,11 @@ Table Table::Parse(BufferReader& reader)
 	BitReader bitreader(reader);
 
 	table.tableId			= bitreader.Get(8);
-	bool sectionSyntaxIndicator	= bitreader.Get(1) != 0;
+	table.sectionSyntaxIndicator	= bitreader.Get(1) != 0;
 	table.privateBit		= bitreader.Get(1) != 0;
 	table._reserved1		= bitreader.Get(2);
 	bitreader.Skip(2);		//length unused bits
-	uint16_t sectionLength		= bitreader.Get(10);
+	auto sectionLength		= bitreader.Get(10);
 
 	bitreader.Flush();
 
@@ -82,7 +172,7 @@ Table Table::Parse(BufferReader& reader)
 
 	BufferReader dataReader (reader.GetData(sectionLength), sectionLength);
 
-	if (sectionSyntaxIndicator) 
+	if (table.sectionSyntaxIndicator) 
 	{
 		// we have a syntax section surrounding data
 		table.data = SyntaxData::Parse(dataReader);
@@ -92,29 +182,28 @@ Table Table::Parse(BufferReader& reader)
 	}
 
 	// return parsed table
-	return table;
-}
-
-std::vector<Table> ParsePayloadUnit(BufferReader& reader)
-{
-	// read pointer
-	if (reader.GetLeft()<1)
-		throw std::runtime_error("Not enough data to read mpegts psi pointer");
-	uint8_t pointerField = reader.Get1();
-	if (reader.GetLeft()<pointerField)
-		throw std::runtime_error("Not enough data to read mpegts psi pointer filler bytes");
-	reader.GetData(pointerField);
-
-	// read tables until EOF or 0xFF byte (which is followed by stuffing)
-	std::vector<Table> tables;
-	while (reader.GetLeft() > 0 && reader.Peek1() != 0xFF)
-		// FIXME: it would probably be nice to catch parsing errors and return partial result
-		tables.push_back(Table::Parse(reader));
-
-	return tables;
+	return tablePtr;
 }
 
 // PAT
+
+void ProgramAssociation::Encode(BufferWritter& writer)
+{
+	if (writer.GetLeft() < Size())
+		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
+		
+	writer.Set2(programNum);
+	
+	BitWriter bitwriter(writer, 2);
+	
+	bitwriter.Put(3, 0x7); //reserved
+	bitwriter.Put(13, pmtPid);
+}
+
+size_t ProgramAssociation::Size() const
+{ 
+	return 4;
+}
 
 ProgramAssociation ProgramAssociation::Parse(BufferReader& reader)
 {
@@ -140,30 +229,30 @@ ProgramAssociation ProgramAssociation::Parse(BufferReader& reader)
 	return programAssociation;
 }
 
-std::vector<ProgramAssociation> ProgramAssociation::ParsePayloadUnit(BufferReader& reader)
+void ProgramMap::ElementaryStream::Encode(BufferWritter& writer)
 {
-	auto tables = mpegts::psi::ParsePayloadUnit(reader);
+	BitWriter bitwriter(writer, 5);
+	
+	bitwriter.Put(8, streamType);
+	bitwriter.Put(3, 0x7);	// reserved
+	bitwriter.Put(13, pid);
+	bitwriter.Put(4, 0xf); // reserved
+	bitwriter.Put(12, descriptor.GetLeft());
+	
+	if (descriptor.GetLeft() > 0)
+	{
+		auto reader = descriptor;
+		auto buffer = reader.GetBuffer(reader.GetLeft());
+	
+		writer.Set(buffer);
+	}
+}
 
-	// FIXME: this is probably too strict
-	// FIXME: maybe check CRCs
-
-	if (tables.size() != 1)
-		throw std::runtime_error("PAT did not contain exactly one table");
-	auto syntax = std::get_if<SyntaxData>(&tables[0].data);
-	if (!(
-		tables[0].tableId == ProgramAssociation::TABLE_ID &&
-		tables[0].privateBit == false &&
-		syntax &&
-		syntax->isCurrent
-	))
-		throw std::runtime_error("malformed PAT table section");
-
-	BufferReader dataReader = syntax->data;
-	std::vector<ProgramAssociation> entries;
-	while (dataReader.GetLeft() > 0)
-		entries.push_back(ProgramAssociation::Parse(dataReader));
-
-	return entries;
+size_t ProgramMap::ElementaryStream::Size() const
+{
+	size_t totalSize = 5;
+		
+	return totalSize + descriptor.GetLeft();
 }
 
 ProgramMap::ElementaryStream ProgramMap::ElementaryStream::Parse(BufferReader& reader)
@@ -203,6 +292,33 @@ ProgramMap::ElementaryStream ProgramMap::ElementaryStream::Parse(BufferReader& r
 
 // PMT
 
+void ProgramMap::Encode(BufferWritter& writer)
+{
+	BitWriter bitwriter(writer, 4);
+	
+	bitwriter.Put(3, 0x7);		// Reserved
+	bitwriter.Put(13, pcrPid);	// PCR_PID, no PCR
+	bitwriter.Put(4, 0xf);		// reserved
+	bitwriter.Put(12, 0);		// program info length
+	
+	for (auto& es : streams) 
+	{
+		es.Encode(writer);
+	}
+}
+
+size_t ProgramMap::Size() const
+{ 
+	size_t totalSize = 4;
+	
+	for (auto& es : streams) 
+	{
+		totalSize  += es.Size();
+	}
+	
+	return totalSize;
+}
+
 ProgramMap ProgramMap::Parse(BufferReader& reader)
 {
 	ProgramMap programMap;
@@ -227,14 +343,12 @@ ProgramMap ProgramMap::Parse(BufferReader& reader)
 	programMap.pcrPid	= bitreader.Get(13);
 	bitreader.Skip(4);	//Reserved
 	bitreader.Skip(2);	//Unused
-	uint16_t piLength	= bitreader.Get(10);
+	auto piLength	= bitreader.Get(10);
 
 	bitreader.Flush();
 
 	if (reader.GetLeft()<piLength)
 		throw std::runtime_error("Not enough data to read mpegts pmt descriptor");
-
-	programMap.programInfo = BufferReader(reader.GetData(piLength), piLength);
 
 	while (reader.GetLeft() > 0)
 		programMap.streams.push_back(ProgramMap::ElementaryStream::Parse(reader));
