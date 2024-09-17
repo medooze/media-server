@@ -95,11 +95,10 @@ int GSMDecoder::Decode(const AudioFrame::const_shared& audioFrame)
 
 AudioBuffer::shared GSMDecoder::GetDecodedAudioFrame()
 {
-	if(!audioBufferQueue.empty())
-	{
-		auto audioBuffer = audioBufferQueue.front();
-		audioBufferQueue.pop();
-		return audioBuffer;
-	}
-	return {};
+	if(audioBufferQueue.empty())
+		return {};
+
+	auto audioBuffer = audioBufferQueue.front();
+	audioBufferQueue.pop();
+	return audioBuffer;	
 }

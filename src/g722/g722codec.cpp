@@ -62,11 +62,10 @@ int G722Decoder::Decode(const AudioFrame::const_shared& audioFrame)
 
 AudioBuffer::shared G722Decoder::GetDecodedAudioFrame()
 {
-	if(!audioBufferQueue.empty())
-	{
-		auto audioBuffer = audioBufferQueue.front();
-		audioBufferQueue.pop();
-		return audioBuffer;
-	}
-	return {};
+	if(audioBufferQueue.empty())
+		return {};
+
+	auto audioBuffer = audioBufferQueue.front();
+	audioBufferQueue.pop();
+	return audioBuffer;
 }
