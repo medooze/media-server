@@ -164,7 +164,7 @@ struct Header : public Encodable
 	bool     copyrightStart = false;
 	uint16_t frameLength = 0;
 	uint16_t bufferFullness = 0;
-	uint8_t  numberOfFrames = 0;
+	uint8_t  numberOfFramesMinus1 = 0;
 	uint16_t crc = 0;
 
 	// Encodable overrides

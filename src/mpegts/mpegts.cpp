@@ -502,7 +502,7 @@ namespace adts
 		bitwriter.Put(1, copyrightStart);
 		bitwriter.Put(13, frameLength);
 		bitwriter.Put(11, bufferFullness);
-		bitwriter.Put(2, numberOfFrames);
+		bitwriter.Put(2, numberOfFramesMinus1);
 		
 		if (!protectionAbsence)
 			bitwriter.Put(16, crc);
@@ -557,7 +557,7 @@ namespace adts
 		header.copyrightStart		 = bitreader.Get(1);
 		header.frameLength		 = bitreader.Get(13);
 		header.bufferFullness		 = bitreader.Get(11);
-		header.numberOfFrames		 = bitreader.Get(2) + 1;
+		header.numberOfFramesMinus1	 = bitreader.Get(2);
 
 		if (!header.protectionAbsence)
 			header.crc		 = reader.Get2();
