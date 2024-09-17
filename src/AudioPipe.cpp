@@ -209,12 +209,11 @@ int AudioPipe::PlayBuffer(const AudioBuffer::shared& audioBuffer)
 
 AudioBuffer::shared AudioPipe::RecBuffer(DWORD frameSize)
 {
-	AudioBuffer::shared audioBuffer = std::make_shared<AudioBuffer>(frameSize, numChannels);
-	SWORD* buffer = const_cast<SWORD*>(audioBuffer->GetData());
    	// Debug("-pop %d cache %d\n",size, rateBlockBuffer.length());
-
 	DWORD len = 0;
 	DWORD totalSize = 0;
+	AudioBuffer::shared audioBuffer = {};
+	SWORD* buffer = nullptr;
 	//Lock
 	pthread_mutex_lock(&mutex);
 	
@@ -234,7 +233,10 @@ AudioBuffer::shared AudioPipe::RecBuffer(DWORD frameSize)
 		//Wait for change
 		pthread_cond_wait(&cond, &mutex);
 	}
-	
+	// audioBuffer has to be created after playing, 
+	// otherwise default numChannels = 1 is used which may cause problem when playing stereo
+	audioBuffer = std::make_shared<AudioBuffer>(frameSize, numChannels);
+	buffer = const_cast<SWORD*>(audioBuffer->GetData());
 	//Calculate total audio length
 	totalSize = frameSize * numChannels;
 	

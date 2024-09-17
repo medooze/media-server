@@ -26,7 +26,7 @@ OpusEncoder::OpusEncoder(const Properties &properties)
 	mode = properties.GetProperty("opus.application.audio",false) ? OPUS_APPLICATION_VOIP : OPUS_APPLICATION_AUDIO;
 
 	//Open encoder
-	enc = opus_encoder_create(rate, 1, mode, &error);
+	enc = opus_encoder_create(rate, numChannels, mode, &error);
 		
 	//Check error
 	if (!enc || error)
@@ -86,7 +86,8 @@ AudioFrame::shared OpusEncoder::Encode(const AudioBuffer::const_shared& audioBuf
 {
 	if (!enc) return {};
 	auto in = audioBuffer->GetData();
-	int inLen = audioBuffer->GetNumChannels() * audioBuffer->GetNumSamples();
+	// inLen = frame size per channel;
+	int inLen = audioBuffer->GetNumSamples();
 	int len = opus_encode(enc, in, inLen , audioFrame->GetData(), audioFrame->GetMaxMediaLength());
 
 	if( len < 0)
@@ -101,6 +102,7 @@ AudioFrame::shared OpusEncoder::Encode(const AudioBuffer::const_shared& audioBuf
 
 void OpusEncoder::SetConfig(DWORD rate, DWORD numChannels)
 {
+	Log("-OpusEncoder::SetConfig() [rate:%d,numChannels:%d]\n",rate,numChannels);
 	config.SetSampleRate(rate);
 	config.SetOutputChannelCount(numChannels);
 	if(audioFrame->HasCodecConfig())

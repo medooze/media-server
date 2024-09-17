@@ -191,8 +191,8 @@ int AudioEncoderWorker::Encode()
 			numChannels = audioInput->GetNumChannels();
 			//Set new channel count on codec
 			codec->TrySetRate(rate, numChannels);
-
-			if (audioCodec==AudioCodec::OPUS)
+			
+			if (audioCodec == AudioCodec::OPUS)
 			{
 				//Convert it to Opus encoder
 				auto opusEnc = static_cast<OpusEncoder*>(codec);

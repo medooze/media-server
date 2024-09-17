@@ -12,9 +12,7 @@ static std::pair<double,double> findPeakFrequency(float* data, int sampleRate, i
     fftw_plan plan = fftw_plan_dft_1d(numSamples, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
     for(int i=0;i<numSamples;i++)
     {
-        //printf("data=%f\n", data[i]);
         in[i][0] = data[i];
-        
         in[i][1] = 0.0;
     }
 
