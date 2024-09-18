@@ -79,7 +79,7 @@ bool ObuHeader::Parse(BufferReader& reader)
 		bool hasSizeField	= bitreader.Get(1);
 		bitreader.Skip(1);
 	
-		if (extensionFlag && bitreader.Left()>5)
+		if (extensionFlag)
 		{
 			extension = Extension {
 				LayerInfo {

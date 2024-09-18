@@ -3,17 +3,14 @@
 #include "config.h"
 #include "math.h"
 #include "H26xNal.h"
-#include "bitstream/BitReader.h"
 
 class H264SeqParameterSet
 {
 public:
 	bool Decode(const BYTE* buffer,DWORD bufferSize)
 	{
-		//SHould be done otherway, like modifying the BitReader to escape the input NAL, but anyway.. duplicate memory
-		Buffer escaped = NalUnescapeRbsp(buffer, bufferSize);
-		BufferReader reader(escaped);
-		BitReader r(reader);
+		RbspReader reader(buffer, bufferSize);
+		RbspBitReader r(reader);
 
 		try {
 			//Read SPS
@@ -190,10 +187,8 @@ class H264PictureParameterSet
 public:
 	bool Decode(const BYTE* buffer,DWORD bufferSize)
 	{
-		//SHould be done otherway, like modifying the BitReader to escape the input NAL, but anyway.. duplicate memory
-		Buffer escaped = NalUnescapeRbsp(buffer, bufferSize);
-		BufferReader reader(escaped);
-		BitReader r(reader);
+		RbspReader reader(buffer, bufferSize);
+		RbspBitReader r(reader);
 
 		try
 		{
@@ -315,10 +310,8 @@ public:
 
 	bool Decode(const BYTE* buffer, DWORD bufferSize, const H264SeqParameterSet& sps)
 	{	
-		//SHould be done otherway, like modifying the BitReader to escape the input NAL, but anyway.. duplicate memory
-		Buffer escaped = NalUnescapeRbsp(buffer, bufferSize);
-		BufferReader reader(escaped);
-		BitReader r(reader);
+		RbspReader reader(buffer, bufferSize);
+		RbspBitReader r(reader);
 		
 		try
 		{
