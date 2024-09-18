@@ -114,7 +114,7 @@ protected:
 			else 
 			{
 				//Acu value
-				value = value << 1 | data[i];
+				value = value << 8 | data[i];
 				//Check consecutive zeros
 				if (data[i] == 0)
 					z++;
