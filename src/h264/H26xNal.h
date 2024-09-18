@@ -18,6 +18,13 @@ constexpr uint32_t AnnexBStartCode = 0x01;
 
 // H.264 NAL logic that can be shared with H.265 (mostly emulation prevention, annex B stream)
 
+/**
+ * This reader consumes an RBSP (usually the payload of an H.26x NALU)
+ * and provides the unescaped bytes of the SODB, by skipping over
+ * `emulation_prevention_three_byte`s as necessary (H.264 section 7.4.1.1 step 1).
+ * Other codes (00 00 [00..02]) like start codes, as well as incomplete codes,
+ * are currently passed through.
+ */
 class RbspReader
 {
 public:
@@ -90,7 +97,7 @@ public:
 				return;
 		}
 
-		throw std::range_error("");
+		throw std::range_error("couldn't skip more bytes");
 	}
 
 protected:
@@ -126,7 +133,7 @@ protected:
 				return value;
 		}
 		
-		throw std::range_error("");
+		throw std::range_error("couldn't peek more bytes");
 	}
 private:
 	const uint8_t* data = nullptr;
