@@ -5,7 +5,7 @@
  * Created on 14 de marzo de 2013, 11:19
  */
 
-#include "opusdecoder.h"
+#include "OpusDecoder.h"
 #include "log.h"
 
 OpusDecoder::OpusDecoder()
@@ -16,7 +16,8 @@ OpusDecoder::OpusDecoder()
 	//Set rate
 	rate = 48000;
 	//Create decoder
-	dec = opus_decoder_create(rate,1,&error);
+	numChannels = 1;
+	dec = opus_decoder_create(rate, numChannels, &error);
 	//Check error
 	if (!dec || error)
 		Error("Could not open OPUS encoder");
@@ -48,15 +49,32 @@ OpusDecoder::~OpusDecoder()
 		opus_decoder_destroy(dec);
 }
 
-int OpusDecoder::Decode(const AudioFrame::const_shared& audioFrame, SWORD* out, int outLen)
+int OpusDecoder::Decode(const AudioFrame::const_shared& audioFrame)
 {
 	//Decode without FEC
-	BYTE* in = audioFrame ? (uint8_t*)audioFrame->GetData() : nullptr;
-	int inLen = audioFrame ? audioFrame->GetLength() : 0;
-	int ret = opus_decode(dec,in,inLen,out,outLen,0);
+	auto inLen = audioFrame->GetLength();
+	uint8_t* in = const_cast<uint8_t*>(audioFrame->GetData());
+	if (!in || !inLen)
+		return 0;
+	int outLen = rate*20/1000;
+	auto audioBuffer = std::make_shared<AudioBuffer>(outLen, numChannels);
+	int ret = opus_decode(dec, in, inLen, (opus_int16*)audioBuffer->GetData(), outLen, 0);
 	//Check error
 	if (ret<0)
-		return Error("-Opus decode error [%d]\n",ret);
-	//return decoded samples
-	return ret;
+	{
+		Error("-Opus decode error [%d]\n",ret);
+		return 0;
+	}
+	audioBufferQueue.push(std::move(audioBuffer));
+	return 1;
+}
+
+AudioBuffer::shared OpusDecoder::GetDecodedAudioFrame()
+{
+	if(audioBufferQueue.empty())
+		return {};
+
+	auto audioBuffer = audioBufferQueue.front();
+	audioBufferQueue.pop();
+	return audioBuffer;	
 }

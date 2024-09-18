@@ -4,10 +4,11 @@
  * 
  * Created on 14 de marzo de 2013, 11:19
  */
-#include "opusencoder.h"
+#include "OpusEncoder.h"
 #include "log.h"
 
-OpusEncoder::OpusEncoder(const Properties &properties)
+OpusEncoder::OpusEncoder(const Properties &properties) 
+	: audioFrame(std::make_shared<AudioFrame>(AudioCodec::OPUS))
 {
 	int error;
 	//Set type
@@ -25,7 +26,7 @@ OpusEncoder::OpusEncoder(const Properties &properties)
 	mode = properties.GetProperty("opus.application.audio",false) ? OPUS_APPLICATION_VOIP : OPUS_APPLICATION_AUDIO;
 
 	//Open encoder
-	enc = opus_encoder_create(rate, 1, mode, &error);
+	enc = opus_encoder_create(rate, numChannels, mode, &error);
 		
 	//Check error
 	if (!enc || error)
@@ -37,6 +38,13 @@ OpusEncoder::OpusEncoder(const Properties &properties)
 
 	//Enable FEC
 	opus_encoder_ctl(enc, OPUS_SET_INBAND_FEC(properties.GetProperty("opus.inbandfec",false)));
+
+	config.SetSampleRate(rate);
+	config.SetOutputChannelCount(numChannels);
+	audioFrame->AllocateCodecConfig(config.GetSize());
+	config.Serialize(audioFrame->GetCodecConfigData(), audioFrame->GetCodecConfigSize());
+	
+	audioFrame->DisableSharedBuffer();
 }
 
 DWORD OpusEncoder::TrySetRate(DWORD rate, DWORD numChannels)
@@ -74,9 +82,31 @@ OpusEncoder::~OpusEncoder()
 		opus_encoder_destroy(enc);
 }
 
-int OpusEncoder::Encode(SWORD *in,int inLen,BYTE* out,int outLen)
+AudioFrame::shared OpusEncoder::Encode(const AudioBuffer::const_shared& audioBuffer)
 {
-	if (!enc) return -1;
-	
-	return opus_encode(enc, in, inLen , out, outLen);
+	if (!enc) return {};
+	auto in = audioBuffer->GetData();
+	// inLen = frame size per channel;
+	int inLen = audioBuffer->GetNumSamples();
+	int len = opus_encode(enc, in, inLen , audioFrame->GetData(), audioFrame->GetMaxMediaLength());
+
+	if( len < 0)
+	{
+		Error("-OpusEncoder::Encode() encode error\n");
+		return {};
+	}
+		
+	audioFrame->SetLength(len);
+	return audioFrame;
+}
+
+void OpusEncoder::SetConfig(DWORD rate, DWORD numChannels)
+{
+	Log("-OpusEncoder::SetConfig() [rate:%d,numChannels:%d]\n",rate,numChannels);
+	config.SetSampleRate(rate);
+	config.SetOutputChannelCount(numChannels);
+	if(audioFrame->HasCodecConfig())
+		audioFrame->ClearCodecConfig();
+	audioFrame->AllocateCodecConfig(config.GetSize());
+	config.Serialize(audioFrame->GetCodecConfigData(), audioFrame->GetCodecConfigSize());
 }

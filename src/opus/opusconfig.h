@@ -110,7 +110,10 @@ public:
 		//Done
 		return 19;
 	}
-	
+	void SetSampleRate(uint32_t sampleRate)
+	{
+		this->inputSampleRate = sampleRate;
+	}
 	void SetOutputChannelCount(uint8_t outputChannelCount)
 	{
 		this->outputChannelCount = outputChannelCount;

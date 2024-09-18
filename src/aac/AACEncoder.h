@@ -22,7 +22,7 @@ class AACEncoder : public AudioEncoder
 public:
 	AACEncoder(const Properties &properties);
 	virtual ~AACEncoder();
-	virtual int Encode(SWORD *in,int inLen,BYTE* out,int outLen);
+	virtual AudioFrame::shared Encode(const AudioBuffer::const_shared& audioBuffer);
 	virtual DWORD TrySetRate(DWORD rate, DWORD numChannels)	{ return GetRate();				}
 	virtual DWORD GetRate()					{ return ctx->sample_rate?ctx->sample_rate:8000;}
 	virtual DWORD GetClockRate()				{ return GetRate();				}
@@ -32,6 +32,7 @@ private:
 	SwrContext*	swr	= nullptr;
 	AVFrame*	frame	= nullptr;
 	BYTE*		samples = nullptr;
+	AudioFrame::shared audioFrame;
 	int samplesSize = 0;
 	int samplesNum = 0;
 };
