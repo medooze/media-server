@@ -126,7 +126,7 @@ private:
 	int numChannels;
 	AVPacket* pkt;
 	AVFrame* decoded;
-	AVCodec *decoder;
+	const AVCodec *decoder;
 	AVCodecContext *decoderCtx;
 	std::vector<float> pcmAudio;
 	
