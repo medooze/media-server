@@ -11,7 +11,7 @@ public:
 	using shared = std::shared_ptr<AudioBuffer>;
 	using const_shared = std::shared_ptr<const AudioBuffer>;
 
-	AudioBuffer(uint8_t numSamplesPerFrame, uint8_t numChannels) :
+	AudioBuffer(uint16_t numSamplesPerFrame, uint8_t numChannels) :
 		numSamplesPerFrame(numSamplesPerFrame),
 		numChannels(numChannels),
 		pcmBuffer(numSamplesPerFrame* numChannels, 0)
