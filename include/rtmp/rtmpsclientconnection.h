@@ -12,7 +12,7 @@ public:
 	RTMPSClientConnection(const std::wstring& tag);
 
 protected:
-	virtual bool StartLoop() override;
+	virtual RTMPClientConnection::ErrorCode StartLoop() override;
 	virtual bool IsConnectionReady() override;
 	virtual void OnReadyToTransfer() override;
 	virtual void ProcessReceivedData(const uint8_t* data, size_t size) override;
