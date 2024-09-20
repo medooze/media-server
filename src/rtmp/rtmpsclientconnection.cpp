@@ -7,7 +7,7 @@ RTMPSClientConnection::RTMPSClientConnection(const std::wstring& tag) :
 	
 }
 
-RTMPClientConnection::ErrorCode RTMPSClientConnection::StartLoop()
+RTMPClientConnection::ErrorCode RTMPSClientConnection::prepareForConnection()
 {
 	if (!tls.Initialize())
 	{
@@ -21,16 +21,12 @@ RTMPClientConnection::ErrorCode RTMPSClientConnection::StartLoop()
 		return RTMPClientConnection::ErrorCode::TlsHandshakeError;
 	}
 	
-	return RTMPClientConnection::StartLoop();
+	return RTMPClientConnection::prepareForConnection();
 }
 
-bool RTMPSClientConnection::Stop()
+void RTMPSClientConnection::OnLoopExit()
 {
-	if (!RTMPClientConnection::Stop()) return false;
-	
 	tls.Shutdown();
-	
-	return true;
 }
 
 bool RTMPSClientConnection::IsConnectionReady()

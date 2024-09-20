@@ -80,13 +80,13 @@ public:
 
 protected:
 	
-	virtual RTMPClientConnection::ErrorCode StartLoop();
+	virtual RTMPClientConnection::ErrorCode prepareForConnection() { return RTMPClientConnection::ErrorCode::NoError; };
 	virtual bool IsConnectionReady() { return inited; };
 	virtual void OnReadyToTransfer() {};
 	virtual void ProcessReceivedData(const uint8_t* data, size_t size);
 	virtual void AddPendingRtmpData(const uint8_t* data, size_t size);
 	
-	virtual bool Stop() override;
+	virtual void OnLoopExit() override;
 	
 	inline Listener* GetListener() { return listener; }
 	int WriteData(const BYTE* data, const DWORD size);

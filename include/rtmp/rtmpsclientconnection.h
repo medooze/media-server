@@ -12,13 +12,13 @@ public:
 	RTMPSClientConnection(const std::wstring& tag);
 
 protected:
-	virtual RTMPClientConnection::ErrorCode StartLoop() override;
+	virtual RTMPClientConnection::ErrorCode prepareForConnection() override;
 	virtual bool IsConnectionReady() override;
 	virtual void OnReadyToTransfer() override;
 	virtual void ProcessReceivedData(const uint8_t* data, size_t size) override;
 	virtual void AddPendingRtmpData(const uint8_t* data, size_t size) override;
 
-	virtual bool Stop() override;
+	virtual void OnLoopExit() override;
 private:
 	TlsClient tls;
 };

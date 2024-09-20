@@ -130,8 +130,8 @@ public:
 		return GetPoll()->AddFd({Poll::Category::IO, fd}) && Start();
 	}
 	
-	virtual bool Start();
-	virtual bool Stop();
+	bool Start();
+	bool Stop();
 	
 	virtual const std::chrono::milliseconds GetNow() const override { return now; }
 	virtual Timer::shared CreateTimer(const std::function<void(std::chrono::milliseconds)>& callback) override;

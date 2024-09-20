@@ -62,6 +62,9 @@ RTMPClientConnection::~RTMPClientConnection()
 
 RTMPClientConnection::ErrorCode RTMPClientConnection::Connect(const char* server, int port, const char* app, Listener* listener)
 {
+	auto result = prepareForConnection();
+	if (result != RTMPClientConnection::ErrorCode::NoError) return result;
+	
 	sockaddr_in addr;
 	hostent* host;
 
@@ -128,18 +131,11 @@ RTMPClientConnection::ErrorCode RTMPClientConnection::Connect(const char* server
 	this->listener = listener;
 
 	//Start
-	return StartLoop();
-}
-
-RTMPClientConnection::ErrorCode RTMPClientConnection::StartLoop()
-{
 	return EventLoop::Start() ? RTMPClientConnection::ErrorCode::NoError : RTMPClientConnection::ErrorCode::Generic;
 }
 
-bool RTMPClientConnection::Stop()
+void RTMPClientConnection::OnLoopExit()
 {
-	if (!EventLoop::Stop()) return false;
-	
 	//If got socket
 	if (fd != FD_INVALID)
 	{
@@ -150,8 +146,6 @@ bool RTMPClientConnection::Stop()
 		//No socket
 		fd = FD_INVALID;
 	}
-	
-	return true;
 }
 
 int RTMPClientConnection::Disconnect()
@@ -264,21 +258,15 @@ bool RTMPClientConnection::OnPollOut(Poll::FileDescriptor pfd)
 			socklen_t len = sizeof(err);
 			if (getsockopt(pfd.fd, SOL_SOCKET, SO_ERROR, &err, &len) == -1)
 			{
-				Warning("-RTMPClientConnection::Run() getsockopt failed [%p]\n", this);
-				
 				if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::GetSockOptError);
-				Stop();
-				return true;
+				throw std::runtime_error(FormatString("-RTMPClientConnection::Run() getsockopt failed [%p]\n", this));
 			}
 
 			//Check status
 			if (err != 0)
 			{
-				Warning("-RTMPClientConnection::Run() getsockopt error [%p, errno:%d]\n", this, err);
-				
 				if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::GetSockOptError);
-				Stop();
-				return true;
+				throw std::runtime_error(FormatString(("-RTMPClientConnection::Run() getsockopt error [%p, errno:%d]\n", this, err)));
 			}
 
 			//Connected
