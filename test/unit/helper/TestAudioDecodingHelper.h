@@ -121,7 +121,7 @@ private:
 
 	uint8_t* samples;
 
-	AVCodec *codec = nullptr;
+	const AVCodec *codec = nullptr;
 	AVCodecContext *codecCtx = nullptr;
 	AVFrame *frame = nullptr;
 	AVPacket *pkt = nullptr;
