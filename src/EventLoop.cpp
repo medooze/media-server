@@ -596,7 +596,7 @@ void EventLoop::Signal()
 void EventLoop::Run(const std::chrono::milliseconds &duration)
 {
 	//Log(">EventLoop::Run() | [%p,running:%d,duration:%llu]\n",this,running,duration.count());
-
+	
 	//Get now
 	auto now = Now();
 	
@@ -676,7 +676,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 	//Run queued tasks before exiting
 	ProcessTasks(now);
 
-	OnThreadExit();
+	OnLoopExit();
 	//Log("<EventLoop::Run()\n");
 }
 

@@ -165,7 +165,7 @@ protected:
 	virtual bool OnPollIn(Poll::FileDescriptor pfd);
 	virtual bool OnPollOut(Poll::FileDescriptor pfd);
 	virtual bool OnPollError(Poll::FileDescriptor pfd, const std::string& errorMsg);
-	virtual void OnThreadExit() {}
+	virtual void OnLoopExit() {};
 
 private:
 

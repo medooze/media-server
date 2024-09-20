@@ -79,12 +79,6 @@ void NetEventLoop::Send(const uint32_t ipAddr, const uint16_t port, Packet&& pac
 	Signal();
 }
 
-	// virtual std::optional<uint16_t> GetPollEventMask(PollInterface::FileDescriptor fd) const override;
-	// virtual bool OnPollIn(PollInterface::FileDescriptor fd) override;
-	// virtual bool OnPollOut(PollInterface::FileDescriptor fd) override;
-	// virtual bool OnPollError(PollInterface::FileDescriptor fd, const std::string& errorMsg) override;
-	// virtual void OnThreadExit() override;
-
 std::optional<uint16_t> NetEventLoop::GetPollEventMask(Poll::FileDescriptor pfd) const
 {
 	//If we have anything to send set to wait also for write events
