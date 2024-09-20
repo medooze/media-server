@@ -22,6 +22,8 @@ public:
 	NetEventLoop(Listener* listener = nullptr, uint32_t packetPoolSize = 0);
 	virtual ~NetEventLoop() = default;
 	
+	virtual bool SetAffinity(int cpu) override;
+	
 	void Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet, const std::optional<PacketHeader::FlowRoutingInfo>& rawTxData = std::nullopt, const std::optional<std::function<void(std::chrono::milliseconds)>>& callback = std::nullopt);
 	
 	void SetRawTx(const FileDescriptor &fd, const PacketHeader& header, const PacketHeader::FlowRoutingInfo& defaultRoute);
@@ -31,10 +33,11 @@ public:
 	
 protected:
 	
-	virtual short GetPollEvents() const override;
-	virtual void OnPollIn(int fd) override;
-	virtual void OnPollOut(int fd) override;
-	
+	virtual std::optional<uint16_t> GetPollEventMask(Poll::FileDescriptor pfd) const override;
+	virtual bool OnPollIn(Poll::FileDescriptor pfd) override;
+	virtual bool OnPollOut(Poll::FileDescriptor pfd) override;
+	virtual bool OnPollError(Poll::FileDescriptor pfd, const std::string& errorMsg) override;
+
 private:
 	enum State
 	{

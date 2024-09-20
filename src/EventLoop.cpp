@@ -69,7 +69,131 @@ void free_cpu_set(cpu_set_t* s) {
 }
 #endif
 
-EventLoop::EventLoop()
+bool SystemPoll::AddFd(FileDescriptor fd)
+{
+	pollfd pfd;
+	pfd.fd = fd.fd;
+	
+	ufds.emplace(fd, pfd);
+
+	//Set non blocking so we can get an error when we are closed by end
+	int fsflags = fcntl(pfd.fd,F_GETFL,0);
+	fsflags |= O_NONBLOCK;
+	
+	if (fcntl(pfd.fd,F_SETFL,fsflags) < 0)
+		return false;
+	
+	return true;
+}
+
+bool SystemPoll::RemoveFd(FileDescriptor fd)
+{
+	ufds.erase(fd);
+	
+	return true;
+}
+
+
+void SystemPoll::ForEach(std::function<void(FileDescriptor)> func)
+{
+	std::vector<FileDescriptor> fds;
+	for (auto& [fd, pfd] : ufds)
+	{
+		fds.push_back(fd);
+	}
+	
+	for (auto& fd : fds)
+	{
+		func(fd);
+	}
+}
+
+bool SystemPoll::SetEventMask(FileDescriptor fd, uint16_t eventMask)
+{
+	auto& pfd = ufds[fd];
+	
+	pfd.events = 0;
+	
+	if (eventMask & Event::In)
+	{
+		pfd.events |= POLLIN;
+	}
+
+	if (eventMask & Event::Out)
+	{
+		pfd.events |= POLLOUT;
+	}
+	
+	pfd.events |= POLLERR | POLLHUP;
+	
+	pfd.revents = 0;
+	
+	return true;
+}
+
+uint16_t SystemPoll::GetEvents(FileDescriptor fd) const
+{
+	if (ufds.find(fd) == ufds.end()) return 0;
+	
+	uint events = 0;
+	uint16_t revents = ufds.at(fd).revents;
+	
+	if (revents & POLLIN)
+	{
+		events |= Event::In;
+	}
+	
+	if (revents & POLLOUT)
+	{
+		events |= Event::Out;
+	}
+	
+	return events;
+}
+
+bool SystemPoll::Wait(uint32_t timeOutMs)
+{
+	std::vector<pollfd> sfds;
+	std::unordered_map<size_t, FileDescriptor> map;
+	
+	// Create array for system poll
+	for (auto& it : ufds)
+	{
+		it.second.revents = 0;
+		sfds.push_back(it.second);
+		map[sfds.size() - 1] = it.first;
+	}
+	
+	// Wait for events
+	if (poll(sfds.data(), sfds.size(),timeOutMs) < 0)
+		return false;
+	
+	// Copy back
+	for (size_t i = 0; i < sfds.size(); i++)
+	{
+		assert(map[i].fd == sfds[i].fd);
+		ufds[map[i]] = sfds[i];
+	}
+		
+	return true;
+}
+
+std::optional<std::string> SystemPoll::GetError(FileDescriptor fd) const
+{
+	std::optional<std::string> error;
+	
+	if (ufds.find(fd) == ufds.end()) return nullptr;
+	auto pfd = ufds.at(fd);
+	if ((pfd.revents & POLLHUP) || (pfd.revents & POLL_ERR))
+	{
+		error = FormatString("revents:%d,errno:%d", pfd.revents, errno);
+	}
+	
+	return error;
+}
+
+
+EventLoop::EventLoop(std::unique_ptr<Poll> poll) : poll(std::move(poll))
 {
 	Debug("-EventLoop::EventLoop() [this:%p]\n", this);
 }
@@ -139,13 +263,6 @@ bool EventLoop::SetAffinity(std::thread::native_handle_type thread, int cpu)
 
 bool EventLoop::SetAffinity(int cpu)
 {
-#ifdef 	SO_INCOMING_CPU
-	//If got socket
-	if (fd)
-		//Set incoming socket cpu affinity
-		(void)setsockopt(fd, SOL_SOCKET, SO_INCOMING_CPU, &cpu, sizeof(cpu));
-#endif
-
 	//Set event loop thread affinity
 	return EventLoop::SetAffinity(thread.native_handle(), cpu);
 
@@ -168,52 +285,7 @@ bool EventLoop::SetPriority(int priority)
 	return !pthread_setschedparam(thread.native_handle(), priority ? SCHED_FIFO : SCHED_OTHER ,&param);
 }
 
-bool EventLoop::Start(std::function<void(void)> loop)
-{
-	//If already started
-	if (running)
-		//Stop first
-		Stop();
-	
-	//Log
-	TRACE_EVENT("eventloop", "EventLoop::Start(loop)");
-	Debug("-EventLoop::Start()\n");
-	
-#if __APPLE__
-	//Create pipe
-	if (::pipe(pipe)==-1)
-		//Error
-		return false;
-	
-	//Set non blocking
-	fcntl(pipe[0], F_SETFL , O_NONBLOCK);
-	fcntl(pipe[1], F_SETFL , O_NONBLOCK);
-	
-#else
-	pipe[0] = pipe[1] = eventfd(0, EFD_NONBLOCK);
-#endif	
-	//Check values
-	if (pipe[0]==FD_INVALID || pipe[1]==FD_INVALID)
-		//Error
-		return Error("-EventLoop::Start() | could not start pipe [errno:%d]\n",errno);
-			
-	//Store socket
-	this->fd = FD_INVALID;
-	
-	//Running
-	running = true;
-
-	//Not signaled
-	signaled.clear();
-	
-	//Start thread and run
-	thread = std::thread(loop);
-	
-	//Done
-	return true;
-}
-
-bool EventLoop::Start(int fd)
+bool EventLoop::Start()
 {
 	//If already started
 	if (running)
@@ -221,8 +293,8 @@ bool EventLoop::Start(int fd)
 		return Error("-EventLoop::Start() | Already running\n");
 	
 	//Log
-	TRACE_EVENT("eventloop", "EventLoop::Start(fd)");
-	Debug("-EventLoop::Start() [fd:%d,this:%p]\n",fd,this);
+	TRACE_EVENT("eventloop", "EventLoop::Start()");
+	Debug("-EventLoop::Start() [this:%p]\n", this);
 	
 #if __APPLE__
 	//Create pipe
@@ -242,8 +314,16 @@ bool EventLoop::Start(int fd)
 		//Error
 		return Error("-EventLoop::Start() | could not start pipe [errno:%d]\n",errno);
 	
-	//Store socket
-	this->fd = fd;
+	
+	if (!poll->AddFd({Poll::Category::Signaling, pipe[0]}))
+	{
+		return Error("Failed to add signaling fd to event poll\n");
+	}
+	
+	if (!poll->SetEventMask({Poll::Category::Signaling, pipe[0]}, Poll::Event::In))
+	{
+		return Error("Failed to set event mask\n");
+	}
 	
 	//Running
 	running = true;
@@ -267,7 +347,7 @@ bool EventLoop::Stop()
 	
 	//Log
 	TRACE_EVENT("eventloop", "EventLoop::Stop");
-	Debug(">EventLoop::Stop() [fd:%d,this:%p]\n",fd,this);
+	Debug(">EventLoop::Stop() [this:%p]\n",this);
 	
 	//Not running
 	running = false;
@@ -282,15 +362,10 @@ bool EventLoop::Stop()
 		thread.join();
 	}
 	
-	//Close pipe
-	if (pipe[0]!=FD_INVALID) close(pipe[0]);
-	if (pipe[1]!=FD_INVALID) close(pipe[1]);
-	
-	//Empyt pipe
-	pipe[0] = pipe[1] = FD_INVALID;
+	poll.reset();
 	
 	//Log
-	Debug("<EventLoop::Stop() [fd:%d]\n",fd);
+	Debug("<EventLoop::Stop()\n");
 	
 	//Done
 	return true;
@@ -461,7 +536,6 @@ void EventLoop::TimerImpl::Reschedule(const std::chrono::milliseconds& ms, const
 
 void EventLoop::CancelTimer(TimerImpl::shared timer)
 {
-
 	//UltraDebug(">EventLoop::CancelTimer() \n");
 
 	//We don't have to repeat this
@@ -522,22 +596,7 @@ void EventLoop::Signal()
 void EventLoop::Run(const std::chrono::milliseconds &duration)
 {
 	//Log(">EventLoop::Run() | [%p,running:%d,duration:%llu]\n",this,running,duration.count());
-	
-	//Set values for polling
-	ufds[0].fd = fd;
-	ufds[1].fd = pipe[0];
-	//Set to wait also for write events on pipe for signaling
-	ufds[1].events = POLLIN | POLLERR | POLLHUP;
 
-	//Set non blocking so we can get an error when we are closed by end
-	int fsflags = fcntl(fd,F_GETFL,0);
-	fsflags |= O_NONBLOCK;
-	(void)fcntl(fd,F_SETFL,fsflags);
-
-
-	//Catch all IO errors and do nothing
-	signal(SIGIO,[](int){});
-	
 	//Get now
 	auto now = Now();
 	
@@ -548,46 +607,60 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 	while(running && now<=until)
 	{
 		//TRACE_EVENT("eventloop", "EventLoop::Run::Iteration");
-		ufds[0].events = GetPollEvents();
-		//Clear readed events
-		ufds[0].revents = 0;
-		ufds[1].revents = 0;
+		poll->ForEach([this](Poll::FileDescriptor pfd) {
+			auto events = GetPollEventMask(pfd);
+			if (events)
+				poll->SetEventMask(pfd, *events);
+		});
 		
 		//Until signaled or one each 10 seconds to prevent deadlocks
 		int timeout = GetNextTimeout(10E3, until);
 
 		//UltraDebug(">EventLoop::Run() | poll timeout:%d timers:%d tasks:%d size:%d\n",timeout,timers.size(),tasks.size_approx(), sizeof(ufds) / sizeof(pollfd));
 		
-		//Wait for events
+		try
 		{
-			//TRACE_EVENT("eventloop", "poll", "timeout", timeout);
-			(void)poll(ufds,sizeof(ufds)/sizeof(pollfd),timeout);
-		}
-		
-		//Update now
-		now = Now();
-		
-		//UltraDebug("<EventLoop::Run() | poll timeout:%d timers:%d tasks:%d\n",timeout,timers.size(),tasks.size_approx());
+			//Wait for events
+			if (!poll->Wait(timeout))
+			{
+				Error("Event poll wait failed.\n");
+				break;
+			}
+			
+			//Update now
+			now = Now();
+			
+			//UltraDebug("<EventLoop::Run() | poll timeout:%d timers:%d tasks:%d\n",timeout,timers.size(),tasks.size_approx());
+			
+			poll->ForEach([this](Poll::FileDescriptor pfd) {
 
-		//Check for cancel
-		if ((ufds[0].revents & POLLHUP) || (ufds[0].revents & POLLERR) || (ufds[1].revents & POLLHUP) || (ufds[1].revents & POLLERR))
+				auto events = poll->GetEvents(pfd);
+
+				//Check error
+				auto error = poll->GetError(pfd);
+				if (error)
+				{
+					(void)OnPollError(pfd, *error);
+					return;
+				}
+								
+				if (events & Poll::Event::In)
+				{
+					(void)OnPollIn(pfd);
+				}
+				
+				//Check read is possible
+				if (events & Poll::Event::Out)
+				{
+					(void)OnPollOut(pfd);
+				}
+				
+			});
+		}
+		catch (std::exception& ex)
 		{
-			//Error
-			Log("-EventLoop::Run() | Pool error event [revents:%d,errno:%d]\n",ufds[0].revents,errno);
-			//Exit
+			Error("-EventLoop::Run: exception occurred: %s\n", ex.what());
 			break;
-		}
-		
-		//Read first
-		if (ufds[0].revents & POLLIN)
-		{
-			OnPollIn(ufds[0].fd);
-		}
-		
-		//Check read is possible
-		if (ufds[0].revents & POLLOUT)
-		{
-			OnPollOut(ufds[0].fd);
 		}
 		
 		//Process pendint tasks
@@ -596,11 +669,6 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		//Timers triggered
 		ProcessTriggers(now);
 		
-		//Read first from signal pipe
-		if (ufds[1].revents & POLLIN)
-			//Clear signal flag
-			ClearSignal();
-		
 		//Update now
 		now = Now();
 	}
@@ -608,7 +676,38 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 	//Run queued tasks before exiting
 	ProcessTasks(now);
 
+	OnThreadExit();
 	//Log("<EventLoop::Run()\n");
+}
+
+bool EventLoop::OnPollIn(Poll::FileDescriptor pfd)
+{
+	if (pfd.category == Poll::Category::Signaling)
+	{
+		ClearSignal();
+		return true;
+	}
+	
+	return false;
+}
+
+bool EventLoop::OnPollOut(Poll::FileDescriptor pfd)
+{
+	assert(pfd.category != Poll::Category::Signaling);
+	return false;
+}
+
+bool EventLoop::OnPollError(Poll::FileDescriptor pfd, const std::string& errorMsg)
+{
+	if (pfd.category == Poll::Category::Signaling)
+	{
+		ClearSignal();
+		
+		throw std::runtime_error("Error occurred on signaling fd: " + errorMsg);
+		return true;
+	}
+	
+	return false;
 }
 
 int EventLoop::GetNextTimeout(int defaultTimeout, const std::chrono::milliseconds& until) const

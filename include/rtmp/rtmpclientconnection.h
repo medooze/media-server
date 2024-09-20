@@ -61,8 +61,8 @@ public:
 		{ return SendCommandInternal(streamId, name, params, extra, std::optional(callback)); }
 	int Disconnect();
 
-	void  SetUserData(DWORD data) { this->data = data; }
-	DWORD GetUserData() { return data; }
+	void  SetUserData(DWORD userData) { this->userData = userData; }
+	DWORD GetUserData() { return userData; }
 
 	//Listener for the media data
 	virtual void onAttached(RTMPMediaStream* stream);
@@ -80,19 +80,23 @@ public:
 
 protected:
 	
-	virtual RTMPClientConnection::ErrorCode Start();
-	virtual void Stop();
+	virtual RTMPClientConnection::ErrorCode StartLoop();
 	virtual bool IsConnectionReady() { return inited; };
 	virtual void OnReadyToTransfer() {};
 	virtual void ProcessReceivedData(const uint8_t* data, size_t size);
 	virtual void AddPendingRtmpData(const uint8_t* data, size_t size);
+	
+	virtual bool Stop() override;
 	
 	inline Listener* GetListener() { return listener; }
 	int WriteData(const BYTE* data, const DWORD size);
 	void ParseData(const BYTE* data, const DWORD size);
 private:
 	
-	int Run();
+	std::optional<uint16_t> GetPollEventMask(Poll::FileDescriptor pfd) const override;
+	bool OnPollIn(Poll::FileDescriptor pfd) override;
+	bool OnPollOut(Poll::FileDescriptor pfd) override;
+	bool OnPollError(Poll::FileDescriptor pfd, const std::string& errorMsg) override;
 
 	static  void* run(void* par);
 	DWORD SerializeChunkData(BYTE* data, const DWORD size);
@@ -120,7 +124,7 @@ private:
 	typedef std::map<DWORD, std::function<void(bool, AMFData*, const std::vector<AMFData*>&)>> Transactions;
 private:
 	int fd = FD_INVALID;
-	pollfd ufds[2] = {};
+	short eventMask = 0;
 	bool inited = false;
 	State state = State::NONE;
 
@@ -168,13 +172,18 @@ private:
 	QWORD outBytes = 0;
 
 	bool	needsAuth = false;
-	DWORD	data = 0;
+	DWORD	userData = 0;
 	std::wstring tag;
 	std::wstring user;
 	std::wstring pwd;
 	std::wstring method;
 	std::wstring challenge;
 	std::wstring opaque;
+	
+	uint8_t data[4096*2];
+	unsigned int size = 4096*2;
+	bool connected = false;
+
 };
 
 #endif

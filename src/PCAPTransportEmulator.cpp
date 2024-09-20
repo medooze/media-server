@@ -4,7 +4,7 @@
 
 PCAPTransportEmulator::PCAPTransportEmulator()
 {
-	loop.Start(FD_INVALID);
+	loop.Start();
 }
 
 PCAPTransportEmulator::~PCAPTransportEmulator() 
@@ -210,7 +210,7 @@ bool PCAPTransportEmulator::SetReader(UDPReader* reader)
 	first = reader->Seek(0)/1000;
 
 	//Dispatch timers & tasks
-	loop.Start(FD_INVALID);
+	loop.Start();
 	
 	//Done
 	return true;
@@ -246,7 +246,7 @@ bool PCAPTransportEmulator::Play()
 	running = true;
 
 	//Create thread
-	loop.Start([this](){ Run(); });
+	loop.StartWithFunction([this](){ Run(); });
 	
 	Debug("<PCAPTransportEmulator::Play()\n");
 	
@@ -285,7 +285,7 @@ bool PCAPTransportEmulator::Stop()
 	Debug("<PCAPTransportEmulator::Stop()\n");
 	
 	//Dispatch timers & tasks
-	loop.Start(FD_INVALID);
+	loop.Start();
 
 	return true;
 }

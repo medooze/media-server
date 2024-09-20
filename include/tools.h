@@ -11,6 +11,7 @@
 #include <signal.h>
 #include <climits>
 #include <pthread.h>
+#include <stdarg.h>
 
 int Log(const char *msg, ...);
 
@@ -531,6 +532,25 @@ inline void SyncWriteUint128(__uint128_t *dst, __uint128_t value)
         dstval = __sync_val_compare_and_swap(dst, dstval, value);
     }
     while(dstval != olddst);
+}
+
+/**
+ * @brief Format string
+ * 
+ * @param fmt Format with specificers
+ * @param ... Aguments
+ * @return The result string
+ */
+inline std::string FormatString(const char* fmt, ...)
+{
+	va_list ap;
+	va_start(ap, fmt);
+	auto sz = std::snprintf(nullptr, 0, fmt, ap);
+	std::vector<char> tmp(sz + 1);
+	sz = std::snprintf(tmp.data(), tmp.size(), fmt, ap);
+	va_end(ap);
+	
+	return std::string(tmp.data(), sz);
 }
 
 #endif

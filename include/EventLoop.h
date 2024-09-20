@@ -11,6 +11,74 @@
 
 using namespace std::chrono_literals;
 
+class Poll
+{
+public:
+	enum class Category
+	{
+		IO,
+		Signaling
+	};
+	
+	enum Event
+	{
+		In 	= 0x1,
+		Out 	= 0x2,
+	};
+	
+	struct FileDescriptor
+	{
+		Category category;
+		int fd;
+		
+		bool operator==(const FileDescriptor& other) const
+		{
+			return fd == other.fd && category == other.category;
+		}
+	};
+	
+	virtual ~Poll() = default;
+
+	virtual bool AddFd(FileDescriptor fd) = 0;
+	virtual bool RemoveFd(FileDescriptor fd) = 0;
+	
+	virtual void ForEach(std::function<void(FileDescriptor)> func) = 0;
+	
+	virtual bool SetEventMask(FileDescriptor fd, uint16_t eventMask) = 0;
+	virtual uint16_t GetEvents(FileDescriptor fd) const = 0;
+	
+	virtual bool Wait(uint32_t timeOutMs) = 0;
+	
+	virtual std::optional<std::string> GetError(FileDescriptor fd) const = 0;
+};
+
+struct FileDescriptorHash {
+    size_t operator()(const Poll::FileDescriptor& fd) const
+    {
+        return std::hash<size_t>()((uint64_t(static_cast<std::underlying_type<Poll::Category>::type>(fd.category)) << 32) + uint32_t(fd.fd));
+    }
+};
+
+class SystemPoll : public Poll
+{
+public:
+	
+	bool AddFd(FileDescriptor fd) override;
+	bool RemoveFd(FileDescriptor fd) override;
+
+	void ForEach(std::function<void(FileDescriptor)> func) override;
+
+	bool SetEventMask(FileDescriptor fd, uint16_t eventMask) override;
+	uint16_t GetEvents(FileDescriptor fd) const override;
+	
+	bool Wait(uint32_t timeOutMs) override;
+	
+	std::optional<std::string> GetError(FileDescriptor fd) const;
+	
+private:
+	std::unordered_map<FileDescriptor, pollfd, FileDescriptorHash> ufds;
+};
+
 class EventLoop : public TimeService
 {
 public:
@@ -52,12 +120,18 @@ private:
 	};
 	
 public:
-	EventLoop();
+	EventLoop(std::unique_ptr<Poll> poll = std::make_unique<SystemPoll>());
 	virtual ~EventLoop();
 	
-	bool Start(std::function<void(void)> loop);
-	bool Start(int fd = FD_INVALID);
-	bool Stop();
+	inline Poll* GetPoll() { return poll.get(); }
+	
+	bool Start(int fd)
+	{ 
+		return GetPoll()->AddFd({Poll::Category::IO, fd}) && Start();
+	}
+	
+	virtual bool Start();
+	virtual bool Stop();
 	
 	virtual const std::chrono::milliseconds GetNow() const override { return now; }
 	virtual Timer::shared CreateTimer(const std::function<void(std::chrono::milliseconds)>& callback) override;
@@ -67,9 +141,10 @@ public:
 	virtual void Async(const std::function<void(std::chrono::milliseconds)>& func, const std::function<void(std::chrono::milliseconds)>& callback) override;
 	virtual std::future<void> Future(const std::function<void(std::chrono::milliseconds)>& func) override;
 	
-	void Run(const std::chrono::milliseconds &duration = std::chrono::milliseconds::max());
+	virtual void Run(const std::chrono::milliseconds &duration = std::chrono::milliseconds::max());
 	
-	bool SetAffinity(int cpu);
+	virtual bool SetAffinity(int cpu);
+	
 	bool SetThreadName(const std::string& name);
 	bool SetPriority(int priority);
 	bool IsRunning() const { return running; }
@@ -83,23 +158,20 @@ protected:
 	void ProcessTasks(const std::chrono::milliseconds& now);
 	void ProcessTriggers(const std::chrono::milliseconds& now);
 	int  GetNextTimeout(int defaultTimeout, const std::chrono::milliseconds& until = std::chrono::milliseconds::max()) const;
-	const auto GetPipe() const
-	{
-		return pipe;
-	}
 
 	const std::chrono::milliseconds Now();
 	
-	virtual short GetPollEvents() const { return POLLIN | POLLERR | POLLHUP; };
-	virtual void OnPollIn(int fd) {};
-	virtual void OnPollOut(int fd) {};
-	
+	virtual std::optional<uint16_t> GetPollEventMask(Poll::FileDescriptor pfd) const { return std::nullopt; };
+	virtual bool OnPollIn(Poll::FileDescriptor pfd);
+	virtual bool OnPollOut(Poll::FileDescriptor pfd);
+	virtual bool OnPollError(Poll::FileDescriptor pfd, const std::string& errorMsg);
+	virtual void OnThreadExit() {}
+
 private:
 
 	std::thread	thread;
-	int		fd		= 0;
 	int		pipe[2]		= {FD_INVALID, FD_INVALID};
-	pollfd		ufds[2]		= {};
+	std::unique_ptr<Poll>	poll;
 	std::atomic_flag signaled	= ATOMIC_FLAG_INIT;
 	volatile bool	running		= false;
 	std::chrono::milliseconds now	= 0ms;
@@ -111,6 +183,40 @@ private:
 	>  tasks;
 	std::multimap<std::chrono::milliseconds,TimerImpl::shared> timers;
 };
+
+	
+class CustomizedEventLoop : public EventLoop
+{
+public:
+	CustomizedEventLoop()
+	{
+	}
+	
+	bool StartWithFunction(std::function<void(void)> loop)
+	{
+		this->loop = loop;
+		
+		return EventLoop::Start();
+	}
+	
+	void Run(const std::chrono::milliseconds &duration = std::chrono::milliseconds::max()) override
+	{
+		if (loop)
+		{
+			(*loop)();
+			
+			loop.reset();
+		}
+		else
+		{
+			EventLoop::Run(duration);
+		}
+	}
+	
+private:
+	std::optional<std::function<void(void)>> loop;
+};
+
 
 #endif /* EVENTLOOP_H */
 
