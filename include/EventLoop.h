@@ -11,72 +11,149 @@
 
 using namespace std::chrono_literals;
 
+/**
+ * A Poll object is used to allow EvenLoop to implement non-blocking logic. It can wait on multiple file descriptors
+ * and listen on the events, which can be filtered by providing the event mask.
+ * 
+ * File descriptors are categorized to two types: IO and signaling. The IO category is for transferring data, such as
+ * network connection. The signaling category is for breaking the waiting for processing tasks and triggers. The concrete
+ * Poll class can implement different logic for different categories.
+ * 
+ * This class doesn't manage the file descriptor creation. It allows to add/remove file descriptors and set event mask
+ * on them. The Wait() function would wait on all added file descriptors and block the current thread. In case of any 
+ * event occurred on the file descriptors, the Wait() function would exit and all the events/errors can be queried by 
+ * GetEvents()/GetError().
+ */
 class Poll
 {
 public:
-	enum class Category
-	{
-		IO,
-		Signaling
-	};
 	
+	/**
+	 * Event types.
+	 */
 	enum Event
 	{
 		In 	= 0x1,
 		Out 	= 0x2,
 	};
 	
+	/**
+	 * A wrapper for file descriptor to include categories.
+	 */
 	struct FileDescriptor
 	{
-		Category category;
-		int fd;
+		enum class Category
+		{
+			IO,
+			Signaling
+		};
 		
 		bool operator==(const FileDescriptor& other) const
 		{
 			return fd == other.fd && category == other.category;
 		}
+		
+		Category category;
+		int fd;
 	};
 	
 	virtual ~Poll() = default;
 
+	/**
+	 * Add a file descriptor
+	 * 
+	 * @return Whether the file descriptor was added successfully
+	 */
 	virtual bool AddFd(FileDescriptor fd) = 0;
+	
+	/**
+	 * Remove a file descriptor
+	 * 
+	 * @return Whether the file descriptor was removed successfully
+	 */
 	virtual bool RemoveFd(FileDescriptor fd) = 0;
 	
-	virtual void ForEach(std::function<void(FileDescriptor)> func) = 0;
+	/**
+	 * Clear all the file descriptors
+	 */
+	virtual void Clear() = 0;
 	
-	virtual bool SetEventMask(FileDescriptor fd, uint16_t eventMask) = 0;
-	virtual uint16_t GetEvents(FileDescriptor fd) const = 0;
-	
+	/**
+	 * Wait until events occur or time is out
+	 * 
+	 * @param timeOutMs The time out, in milliseconds
+	 * 
+	 * @return Whether the polling is failed.
+	 */
 	virtual bool Wait(uint32_t timeOutMs) = 0;
 	
+	/**
+	 * Iterate through all the file descriptors
+	 * 
+	 * @param func The function would be called for each file descriptor.
+	 */
+	virtual void ForEachFd(std::function<void(FileDescriptor)> func) = 0;
+	
+	/**
+	 * Set the event mask. The mask is a value OR-ed by multiple Event types.
+	 * 
+	 * @return Whether the event mask was set successfully 
+	 */
+	virtual bool SetEventMask(FileDescriptor fd, uint16_t eventMask) = 0;
+	
+	/**
+	 * Get the waited events of a file descriptor
+	 * 
+	 * @return The waited events. It is value OR-ed by multiple Event types.
+	 */
+	virtual uint16_t GetEvents(FileDescriptor fd) const = 0;
+	
+	/**
+	 * Get error message of a file descriptor
+	 * 
+	 * @return A optional containing the error message in case of error, std::nullopt otherwise.
+	 */
 	virtual std::optional<std::string> GetError(FileDescriptor fd) const = 0;
 };
 
-struct FileDescriptorHash {
-    size_t operator()(const Poll::FileDescriptor& fd) const
-    {
-        return std::hash<size_t>()((uint64_t(static_cast<std::underlying_type<Poll::Category>::type>(fd.category)) << 32) + uint32_t(fd.fd));
-    }
+/**
+ * Hash function for constant access to association array.
+ */
+struct FileDescriptorHash
+{
+	size_t operator()(const Poll::FileDescriptor& fd) const
+	{
+		return std::hash<size_t>()((uint64_t(static_cast<std::underlying_type<Poll::FileDescriptor::Category>::type>(fd.category)) << 32) + uint32_t(fd.fd));
+	}
 };
 
+/**
+ * Concrete Poll implementation for Linux system poll mechanism.
+ */
 class SystemPoll : public Poll
 {
 public:
-	
 	bool AddFd(FileDescriptor fd) override;
 	bool RemoveFd(FileDescriptor fd) override;
+	void Clear() override;
+	bool Wait(uint32_t timeOutMs) override;
 
-	void ForEach(std::function<void(FileDescriptor)> func) override;
-
+	void ForEachFd(std::function<void(FileDescriptor)> func) override;
 	bool SetEventMask(FileDescriptor fd, uint16_t eventMask) override;
 	uint16_t GetEvents(FileDescriptor fd) const override;
-	
-	bool Wait(uint32_t timeOutMs) override;
-	
 	std::optional<std::string> GetError(FileDescriptor fd) const;
 	
 private:
 	std::unordered_map<FileDescriptor, pollfd, FileDescriptorHash> ufds;
+	
+	// Cache for constant access time
+	bool tempfdsDirty = false;
+	std::vector<FileDescriptor> tempfds;
+	
+	// Cache for constant access time
+	bool sysfdsDirty = false;
+	std::vector<pollfd> sysfds;
+	std::unordered_map<size_t, FileDescriptor> indices;
 };
 
 class EventLoop : public TimeService
@@ -123,12 +200,9 @@ public:
 	EventLoop(std::unique_ptr<Poll> poll = std::make_unique<SystemPoll>());
 	virtual ~EventLoop();
 	
-	inline Poll* GetPoll() { return poll.get(); }
+	bool Start(std::function<void(void)> loop);
 	
-	bool Start(int fd)
-	{ 
-		return GetPoll()->AddFd({Poll::Category::IO, fd}) && Start();
-	}
+	bool StartWithFd(int fd);
 	
 	bool Start();
 	bool Stop();
@@ -161,17 +235,69 @@ protected:
 
 	const std::chrono::milliseconds Now();
 	
-	virtual std::optional<uint16_t> GetPollEventMask(Poll::FileDescriptor pfd) const { return std::nullopt; };
-	virtual bool OnPollIn(Poll::FileDescriptor pfd);
-	virtual bool OnPollOut(Poll::FileDescriptor pfd);
-	virtual bool OnPollError(Poll::FileDescriptor pfd, const std::string& errorMsg);
-	virtual void OnLoopExit() {};
+	// Functions to add/remove/iterate file descriptors
+	
+	inline bool AddFd(int fd, std::optional<uint16_t> eventMask = std::nullopt)
+	{
+		Poll::FileDescriptor pfd = {Poll::FileDescriptor::Category::IO, fd};
+		if (!poll->AddFd(pfd)) return false;
+		
+		if (eventMask.has_value())
+		{
+			return poll->SetEventMask(pfd, *eventMask);
+		}
+		
+		return true;
+	}
+	
+	inline bool RemoveFd(int fd)
+	{
+		return poll->RemoveFd({Poll::FileDescriptor::Category::IO, fd});
+	}
+	
+	inline void ForEachFd(const std::function<void(int)>& func)
+	{
+		poll->ForEachFd([&func](Poll::FileDescriptor fd) {
+			if (fd.category == Poll::FileDescriptor::Category::IO) func(fd.fd);
+		});
+	}
+	
+	/**
+	 * Get updated event mask for a file descriptor. Note if the return optional doesn't have value, the
+	 * current event mask wouldn't be changed.
+	 */
+	virtual std::optional<uint16_t> GetPollEventMask(int pfd) const { return std::nullopt; };
+	
+	/**
+	 * Callback to be called when it is ready to read from the file descriptor. If exception throws, the loop
+	 * will exit.
+	 */
+	virtual void OnPollIn(int pfd) { };
+	
+	/**
+	 * Callback to be called when it is ready to read from the file descriptor. If exception throws, the loop
+	 * will exit.
+	 */
+	virtual void OnPollOut(int pfd) { };
+	
+	/**
+	 * Callback to be called when it is ready to read from the file descriptor.If exception throws, the loop
+	 * will exit.
+	 */
+	virtual void OnPollError(int pfd, const std::string& errorMsg) { };
+	
+	/**
+	 * Called when the Run() function was exited.
+	 */
+	virtual void OnLoopExit() { };
 
 private:
 
-	std::thread	thread;
+	std::thread			thread;
+	
+	//@todo It looks we only need one pipe for signaling
 	int		pipe[2]		= {FD_INVALID, FD_INVALID};
-	std::unique_ptr<Poll>	poll;
+	std::unique_ptr<Poll>		poll;
 	std::atomic_flag signaled	= ATOMIC_FLAG_INIT;
 	volatile bool	running		= false;
 	std::chrono::milliseconds now	= 0ms;
@@ -183,40 +309,6 @@ private:
 	>  tasks;
 	std::multimap<std::chrono::milliseconds,TimerImpl::shared> timers;
 };
-
-	
-class CustomizedEventLoop : public EventLoop
-{
-public:
-	CustomizedEventLoop()
-	{
-	}
-	
-	bool StartWithFunction(std::function<void(void)> loop)
-	{
-		this->loop = loop;
-		
-		return EventLoop::Start();
-	}
-	
-	void Run(const std::chrono::milliseconds &duration = std::chrono::milliseconds::max()) override
-	{
-		if (loop)
-		{
-			(*loop)();
-			
-			loop.reset();
-		}
-		else
-		{
-			EventLoop::Run(duration);
-		}
-	}
-	
-private:
-	std::optional<std::function<void(void)>> loop;
-};
-
 
 #endif /* EVENTLOOP_H */
 

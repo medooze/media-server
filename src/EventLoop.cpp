@@ -71,11 +71,12 @@ void free_cpu_set(cpu_set_t* s) {
 
 bool SystemPoll::AddFd(FileDescriptor fd)
 {
+	assert(fd.fd != FD_INVALID);
+	if (fd.fd == FD_INVALID) return false;
+	
 	pollfd pfd;
 	pfd.fd = fd.fd;
 	
-	ufds.emplace(fd, pfd);
-
 	//Set non blocking so we can get an error when we are closed by end
 	int fsflags = fcntl(pfd.fd,F_GETFL,0);
 	fsflags |= O_NONBLOCK;
@@ -83,26 +84,52 @@ bool SystemPoll::AddFd(FileDescriptor fd)
 	if (fcntl(pfd.fd,F_SETFL,fsflags) < 0)
 		return false;
 	
+	ufds.emplace(fd, pfd);
+	
+	tempfdsDirty = true;
+	sysfdsDirty = true;
+	
 	return true;
 }
 
 bool SystemPoll::RemoveFd(FileDescriptor fd)
 {
-	ufds.erase(fd);
+	bool removed = ufds.erase(fd) > 0;
+	if (removed)
+	{
+		tempfdsDirty = true;
+		sysfdsDirty = true;
 	
-	return true;
+		return true;
+	}
+	
+	return false;
+}
+
+void SystemPoll::Clear()
+{
+	if (ufds.empty()) return;
+	
+	ufds.clear();
+	tempfdsDirty = true;
+	sysfdsDirty = true;
 }
 
 
-void SystemPoll::ForEach(std::function<void(FileDescriptor)> func)
+void SystemPoll::ForEachFd(std::function<void(FileDescriptor)> func)
 {
-	std::vector<FileDescriptor> fds;
-	for (auto& [fd, pfd] : ufds)
+	if (tempfdsDirty)
 	{
-		fds.push_back(fd);
+		tempfds.clear();
+		for (auto& [fd, pfd] : ufds)
+		{
+			tempfds.push_back(fd);
+		}
+		
+		tempfdsDirty = false;
 	}
 	
-	for (auto& fd : fds)
+	for (auto& fd : tempfds)
 	{
 		func(fd);
 	}
@@ -110,8 +137,9 @@ void SystemPoll::ForEach(std::function<void(FileDescriptor)> func)
 
 bool SystemPoll::SetEventMask(FileDescriptor fd, uint16_t eventMask)
 {
-	auto& pfd = ufds[fd];
+	if (ufds.find(fd) == ufds.end()) return false;
 	
+	auto& pfd = ufds[fd];
 	pfd.events = 0;
 	
 	if (eventMask & Event::In)
@@ -125,9 +153,7 @@ bool SystemPoll::SetEventMask(FileDescriptor fd, uint16_t eventMask)
 	}
 	
 	pfd.events |= POLLERR | POLLHUP;
-	
-	pfd.revents = 0;
-	
+
 	return true;
 }
 
@@ -153,40 +179,49 @@ uint16_t SystemPoll::GetEvents(FileDescriptor fd) const
 
 bool SystemPoll::Wait(uint32_t timeOutMs)
 {
-	std::vector<pollfd> sfds;
-	std::unordered_map<size_t, FileDescriptor> map;
-	
-	// Create array for system poll
-	for (auto& it : ufds)
+	if (sysfdsDirty)
 	{
-		it.second.revents = 0;
-		sfds.push_back(it.second);
-		map[sfds.size() - 1] = it.first;
+		sysfds.clear();
+		indices.clear();
+		
+		for (auto& it : ufds)
+		{
+			sysfds.push_back(it.second);
+			indices[sysfds.size() - 1] = it.first;
+		}
+		
+		sysfdsDirty = false;
+	}
+	
+	for (size_t i = 0; i < sysfds.size(); i++)
+	{
+		sysfds[i].events = ufds[indices[i]].events;
+		sysfds[i].revents = 0;
 	}
 	
 	// Wait for events
-	if (poll(sfds.data(), sfds.size(),timeOutMs) < 0)
+	if (poll(sysfds.data(), sysfds.size(),timeOutMs) < 0)
 		return false;
 	
 	// Copy back
-	for (size_t i = 0; i < sfds.size(); i++)
+	for (size_t i = 0; i < sysfds.size(); i++)
 	{
-		assert(map[i].fd == sfds[i].fd);
-		ufds[map[i]] = sfds[i];
+		assert(indices[i].fd == sysfds[i].fd);
+		ufds[indices[i]] = sysfds[i];
 	}
-		
+
 	return true;
 }
 
 std::optional<std::string> SystemPoll::GetError(FileDescriptor fd) const
 {
-	std::optional<std::string> error;
+	if (ufds.find(fd) == ufds.end()) return std::nullopt;
 	
-	if (ufds.find(fd) == ufds.end()) return nullptr;
+	std::optional<std::string> error;
 	auto pfd = ufds.at(fd);
-	if ((pfd.revents & POLLHUP) || (pfd.revents & POLL_ERR))
+	if ((pfd.revents & POLLHUP) || (pfd.revents & POLLERR))
 	{
-		error = FormatString("revents:%d,errno:%d", pfd.revents, errno);
+		error = FormatString("revents:0x%x,errno:%d", pfd.revents, errno);
 	}
 	
 	return error;
@@ -285,6 +320,66 @@ bool EventLoop::SetPriority(int priority)
 	return !pthread_setschedparam(thread.native_handle(), priority ? SCHED_FIFO : SCHED_OTHER ,&param);
 }
 
+bool EventLoop::Start(std::function<void(void)> loop)
+{
+	//If already started
+	if (running)
+		//Stop first
+		Stop();
+	
+	//Log
+	TRACE_EVENT("eventloop", "EventLoop::Start(loop)");
+	Debug("-EventLoop::Start()\n");
+	
+#if __APPLE__
+	//Create pipe
+	if (::pipe(pipe)==-1)
+		//Error
+		return false;
+	
+	//Set non blocking
+	fcntl(pipe[0], F_SETFL , O_NONBLOCK);
+	fcntl(pipe[1], F_SETFL , O_NONBLOCK);
+	
+#else
+	pipe[0] = pipe[1] = eventfd(0, EFD_NONBLOCK);
+#endif	
+	//Check values
+	if (pipe[0]==FD_INVALID || pipe[1]==FD_INVALID)
+		//Error
+		return Error("-EventLoop::Start() | could not start pipe [errno:%d]\n",errno);
+	
+	
+	if (!poll->AddFd({Poll::FileDescriptor::Category::Signaling, pipe[0]}))
+	{
+		return Error("Failed to add signaling fd to event poll\n");
+	}
+	
+	if (!poll->SetEventMask({Poll::FileDescriptor::Category::Signaling, pipe[0]}, Poll::Event::In))
+	{
+		return Error("Failed to set event mask\n");
+	}
+	
+	//Running
+	running = true;
+
+	//Not signaled
+	signaled.clear();
+	
+	//Start thread and run
+	thread = std::thread(loop);
+	
+	//Done
+	return true;
+}
+
+bool EventLoop::StartWithFd(int fd)
+{
+	poll->Clear();
+	
+	return AddFd(fd) && Start();
+}
+
 bool EventLoop::Start()
 {
 	//If already started
@@ -315,12 +410,12 @@ bool EventLoop::Start()
 		return Error("-EventLoop::Start() | could not start pipe [errno:%d]\n",errno);
 	
 	
-	if (!poll->AddFd({Poll::Category::Signaling, pipe[0]}))
+	if (!poll->AddFd({Poll::FileDescriptor::Category::Signaling, pipe[0]}))
 	{
 		return Error("Failed to add signaling fd to event poll\n");
 	}
 	
-	if (!poll->SetEventMask({Poll::Category::Signaling, pipe[0]}, Poll::Event::In))
+	if (!poll->SetEventMask({Poll::FileDescriptor::Category::Signaling, pipe[0]}, Poll::Event::In))
 	{
 		return Error("Failed to set event mask\n");
 	}
@@ -362,7 +457,14 @@ bool EventLoop::Stop()
 		thread.join();
 	}
 	
-	poll.reset();
+	//Close pipe
+	if (pipe[0]!=FD_INVALID) close(pipe[0]);
+	if (pipe[1]!=FD_INVALID) close(pipe[1]);
+	
+	//Empyt pipe
+	pipe[0] = pipe[1] = FD_INVALID;
+	
+	poll->Clear();
 	
 	//Log
 	Debug("<EventLoop::Stop()\n");
@@ -597,6 +699,8 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 {
 	//Log(">EventLoop::Run() | [%p,running:%d,duration:%llu]\n",this,running,duration.count());
 	
+	signal(SIGIO,[](int){});
+	
 	//Get now
 	auto now = Now();
 	
@@ -607,8 +711,11 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 	while(running && now<=until)
 	{
 		//TRACE_EVENT("eventloop", "EventLoop::Run::Iteration");
-		poll->ForEach([this](Poll::FileDescriptor pfd) {
-			auto events = GetPollEventMask(pfd);
+		poll->ForEachFd([this](Poll::FileDescriptor pfd) {
+			
+			if (pfd.category == Poll::FileDescriptor::Category::Signaling) return;
+			
+			auto events = GetPollEventMask(pfd.fd);
 			if (events)
 				poll->SetEventMask(pfd, *events);
 		});
@@ -632,7 +739,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 			
 			//UltraDebug("<EventLoop::Run() | poll timeout:%d timers:%d tasks:%d\n",timeout,timers.size(),tasks.size_approx());
 			
-			poll->ForEach([this](Poll::FileDescriptor pfd) {
+			poll->ForEachFd([this](Poll::FileDescriptor pfd) {
 
 				auto events = poll->GetEvents(pfd);
 
@@ -640,26 +747,40 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 				auto error = poll->GetError(pfd);
 				if (error)
 				{
-					(void)OnPollError(pfd, *error);
-					return;
+					if (pfd.category == Poll::FileDescriptor::Category::Signaling)
+					{
+						ClearSignal();
+						throw std::runtime_error("Error occurred on signaling fd: " + *error);
+					}
+					else
+					{
+						OnPollError(pfd.fd, *error);
+					}
 				}
 								
 				if (events & Poll::Event::In)
 				{
-					(void)OnPollIn(pfd);
+					if (pfd.category == Poll::FileDescriptor::Category::Signaling)
+					{
+						ClearSignal();
+					}
+					else
+					{
+						OnPollIn(pfd.fd);
+					}
 				}
 				
 				//Check read is possible
 				if (events & Poll::Event::Out)
 				{
-					(void)OnPollOut(pfd);
+					assert(pfd.category != Poll::FileDescriptor::Category::Signaling);
+					OnPollOut(pfd.fd);
 				}
-				
 			});
 		}
 		catch (std::exception& ex)
 		{
-			Error("-EventLoop::Run: exception occurred: %s\n", ex.what());
+			Error("-EventLoop::Run() Exception occurred: %s\n", ex.what());
 			break;
 		}
 		
@@ -678,36 +799,6 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 
 	OnLoopExit();
 	//Log("<EventLoop::Run()\n");
-}
-
-bool EventLoop::OnPollIn(Poll::FileDescriptor pfd)
-{
-	if (pfd.category == Poll::Category::Signaling)
-	{
-		ClearSignal();
-		return true;
-	}
-	
-	return false;
-}
-
-bool EventLoop::OnPollOut(Poll::FileDescriptor pfd)
-{
-	assert(pfd.category != Poll::Category::Signaling);
-	return false;
-}
-
-bool EventLoop::OnPollError(Poll::FileDescriptor pfd, const std::string& errorMsg)
-{
-	if (pfd.category == Poll::Category::Signaling)
-	{
-		ClearSignal();
-		
-		throw std::runtime_error("Error occurred on signaling fd: " + errorMsg);
-		return true;
-	}
-	
-	return false;
 }
 
 int EventLoop::GetNextTimeout(int defaultTimeout, const std::chrono::milliseconds& until) const

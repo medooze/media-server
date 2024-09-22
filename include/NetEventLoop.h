@@ -33,10 +33,10 @@ public:
 	
 protected:
 	
-	virtual std::optional<uint16_t> GetPollEventMask(Poll::FileDescriptor pfd) const override;
-	virtual bool OnPollIn(Poll::FileDescriptor pfd) override;
-	virtual bool OnPollOut(Poll::FileDescriptor pfd) override;
-	virtual bool OnPollError(Poll::FileDescriptor pfd, const std::string& errorMsg) override;
+	virtual std::optional<uint16_t> GetPollEventMask(int pfd) const override;
+	virtual void OnPollIn(int pfd) override;
+	virtual void OnPollOut(int pfd) override;
+	virtual void OnPollError(int pfd, const std::string& errorMsg) override;
 
 private:
 	enum State

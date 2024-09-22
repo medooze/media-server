@@ -112,6 +112,8 @@ RTMPClientConnection::ErrorCode RTMPClientConnection::Connect(const char* server
 		return RTMPClientConnection::ErrorCode::FailedToConnectSocket;
 	}
 	
+	eventMask = Poll::Event::In | Poll::Event::Out;
+	
 	//I am inited
 	inited = true;
 
@@ -129,9 +131,12 @@ RTMPClientConnection::ErrorCode RTMPClientConnection::Connect(const char* server
 
 	//Store listener
 	this->listener = listener;
-
+	
+	// Reset flag
+	connected = false;
+	
 	//Start
-	return EventLoop::Start() ? RTMPClientConnection::ErrorCode::NoError : RTMPClientConnection::ErrorCode::Generic;
+	return EventLoop::StartWithFd(fd) ? RTMPClientConnection::ErrorCode::NoError : RTMPClientConnection::ErrorCode::Generic;
 }
 
 void RTMPClientConnection::OnLoopExit()
@@ -197,57 +202,43 @@ void* RTMPClientConnection::run(void* par)
 	return NULL;
 }
 
-std::optional<uint16_t> RTMPClientConnection::GetPollEventMask(Poll::FileDescriptor pfd) const
+std::optional<uint16_t> RTMPClientConnection::GetPollEventMask(int pfd) const
 {
 	return eventMask;
 }
 
-bool RTMPClientConnection::OnPollIn(Poll::FileDescriptor pfd)
+void RTMPClientConnection::OnPollIn(int pfd)
 {
-	if (EventLoop::OnPollOut(pfd)) return true;
-	
 	//Read data from connection
-	int len = read(pfd.fd, data, size);
+	int len = read(pfd, buffer, BufferSize);
 	if (len == 0)
 	{
 		if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::PeerClosed);
-		Stop();
-		return true;
+		throw std::runtime_error("-RTMPClientConnection::OnPollIn() Peer closed");
 	}
 	
 	if (len < 0)
 	{
-		//Error
-		Log("-RTMPClientConnection::Run() Readed [%d,%d]\n", len, errno);
-		
 		if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::ReadError);
-		Stop();
-		return true;
+		throw std::runtime_error(FormatString("-RTMPClientConnection::OnPollIn() Readed [%d,%d]\n", len, errno));
 	}
 	//Increase in bytes
 	inBytes += len;
 
 	try {
-		ProcessReceivedData(data, len);
+		ProcessReceivedData(buffer, len);
 	}
 	catch (std::exception& e) {
-		//Show error
-		Error("-RTMPClientConnection::Run() Exception parsing data: %s\n", e.what());
 		//Dump it
-		Dump(data, len);
+		Dump(buffer, len);
 		
 		if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::FailedToParseData);
-		Stop();
-		return true;
+		throw std::runtime_error(FormatString("-RTMPClientConnection::Run() Exception parsing data: %s\n", e.what()));
 	}
-	
-	return true;
 }
 
-bool RTMPClientConnection::OnPollOut(Poll::FileDescriptor pfd)
+void RTMPClientConnection::OnPollOut(int pfd)
 {
-	if (EventLoop::OnPollOut(pfd)) return true;
-	
 	if (IsConnectionReady())
 	{
 		//Check if socket was not connected yet
@@ -256,17 +247,17 @@ bool RTMPClientConnection::OnPollOut(Poll::FileDescriptor pfd)
 			//Double check it is connected
 			int err;
 			socklen_t len = sizeof(err);
-			if (getsockopt(pfd.fd, SOL_SOCKET, SO_ERROR, &err, &len) == -1)
+			if (getsockopt(pfd, SOL_SOCKET, SO_ERROR, &err, &len) == -1)
 			{
 				if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::GetSockOptError);
-				throw std::runtime_error(FormatString("-RTMPClientConnection::Run() getsockopt failed [%p]\n", this));
+				throw std::runtime_error(FormatString("-RTMPClientConnection::OnPollOut() getsockopt failed [%p]\n", this));
 			}
 
 			//Check status
 			if (err != 0)
 			{
 				if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::GetSockOptError);
-				throw std::runtime_error(FormatString(("-RTMPClientConnection::Run() getsockopt error [%p, errno:%d]\n", this, err)));
+				throw std::runtime_error(FormatString("-RTMPClientConnection::OnPollOut() getsockopt error [%p, errno:%d]\n", this, err));
 			}
 
 			//Connected
@@ -284,28 +275,22 @@ bool RTMPClientConnection::OnPollOut(Poll::FileDescriptor pfd)
 			AddPendingRtmpData(c01.GetData(), c01.GetSize());
 
 			//Debug
-			Debug("-RTMPClientConnection::Run() Socket connected, Sending c0 and c1 with digest %s size %d\n", digest ? "on" : "off", c01.GetSize());
+			Debug("-RTMPClientConnection::OnPollOut() Socket connected, Sending c0 and c1 with digest %s size %d\n", digest ? "on" : "off", c01.GetSize());
 		}
 
 		//Write data buffer
-		DWORD len = SerializeChunkData(data, size);
+		DWORD len = SerializeChunkData(buffer, BufferSize);
 		//Send it
-		AddPendingRtmpData(data, len);
+		AddPendingRtmpData(buffer, len);
 	}
 	
 	OnReadyToTransfer();
-	
-	return true;
 }
 
-bool RTMPClientConnection::OnPollError(Poll::FileDescriptor pfd, const std::string& errorMsg)
-{
-	if (EventLoop::OnPollError(pfd, errorMsg)) return true;
-	
+void RTMPClientConnection::OnPollError(int pfd, const std::string& errorMsg)
+{	
 	if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::PollError);
-	
-	throw std::runtime_error("Error occurred on rtmp fd: " + errorMsg);
-	return true;
+	throw std::runtime_error("-RTMPClientConnection::OnPollError() Error occurred: " + errorMsg);
 }
 	
 void RTMPClientConnection::SignalWriteNeeded()
@@ -331,7 +316,7 @@ DWORD RTMPClientConnection::SerializeChunkData(BYTE* data, DWORD size)
 	pthread_mutex_lock(&mutex);
 
 	//Remove the write signal
-	eventMask = Poll::Event::Out;
+	eventMask = Poll::Event::In;
 
 	//Iterate the chunks in ascendig order (more important firsts)
 	for (RTMPChunkOutputStreams::iterator it = chunkOutputStreams.begin(); it != chunkOutputStreams.end(); ++it)

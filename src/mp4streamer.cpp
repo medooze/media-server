@@ -185,7 +185,7 @@ int MP4Streamer::Play()
 	seeked = 0;
 	
 	//Start event loop
-	loop.StartWithFunction([this](){PlayLoop();});
+	loop.Start([this](){PlayLoop();});
 
 	Log("<MP4Streamer:Play()\n");
 
@@ -348,7 +348,7 @@ int MP4Streamer::Seek(QWORD time)
 	seeked = time;
 
 	//Start event loop
-	loop.StartWithFunction([this](){PlayLoop();});
+	loop.Start([this](){PlayLoop();});
 
 	Log("<MP4Streamer:Seek() | seeked [%lld,%lld]\n",time,seeked);
 

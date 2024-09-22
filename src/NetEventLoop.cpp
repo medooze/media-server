@@ -25,10 +25,10 @@ bool NetEventLoop::SetAffinity(int cpu)
 {
 #ifdef 	SO_INCOMING_CPU
 	//If got socket
-	GetPoll()->ForEach([cpu](auto pfd) {
-		if (pfd.fd != FD_INVALID)
+	EventLoop::ForEachFd([cpu](auto pfd) {
+		if (pfd != FD_INVALID)
 			//Set incoming socket cpu affinity
-			(void)setsockopt(pfd.fd, SOL_SOCKET, SO_INCOMING_CPU, &cpu, sizeof(cpu));
+			(void)setsockopt(pfd, SOL_SOCKET, SO_INCOMING_CPU, &cpu, sizeof(cpu));
 	});
 #endif
 
@@ -79,16 +79,14 @@ void NetEventLoop::Send(const uint32_t ipAddr, const uint16_t port, Packet&& pac
 	Signal();
 }
 
-std::optional<uint16_t> NetEventLoop::GetPollEventMask(Poll::FileDescriptor pfd) const
+std::optional<uint16_t> NetEventLoop::GetPollEventMask(int pfd) const
 {
 	//If we have anything to send set to wait also for write events
 	return sending.size_approx() ? (Poll::Event::In | Poll::Event::Out) : Poll::Event::In;
 }
 
-bool NetEventLoop::OnPollIn(Poll::FileDescriptor pfd)
+void NetEventLoop::OnPollIn(int pfd)
 {
-	if (EventLoop::OnPollIn(pfd)) return true;
-	
 	struct sockaddr_in froms[MaxMultipleReceivingMessages] = {};
 	struct mmsghdr messages[MaxMultipleReceivingMessages] = {};
 	struct iovec iovs[MaxMultipleReceivingMessages][1] = {{}};
@@ -121,7 +119,7 @@ bool NetEventLoop::OnPollIn(Poll::FileDescriptor pfd)
 	}
 
 	//Read from socket
-	int len = recvmmsg(pfd.fd, messages, MaxMultipleReceivingMessages, flags, nullptr);
+	int len = recvmmsg(pfd, messages, MaxMultipleReceivingMessages, flags, nullptr);
 
 	//If we got listener
 	if (listener)
@@ -130,14 +128,11 @@ bool NetEventLoop::OnPollIn(Poll::FileDescriptor pfd)
 			//double check
 			if (messages[i].msg_len)
 				//Run callback
-				listener->OnRead(pfd.fd, datas[i], messages[i].msg_len, ntohl(froms[i].sin_addr.s_addr), ntohs(froms[i].sin_port));
-
+				listener->OnRead(pfd, datas[i], messages[i].msg_len, ntohl(froms[i].sin_addr.s_addr), ntohs(froms[i].sin_port));
 }
 
-bool NetEventLoop::OnPollOut(Poll::FileDescriptor pfd)
+void NetEventLoop::OnPollOut(int pfd)
 {
-	if (EventLoop::OnPollOut(pfd)) return true;
-	
 	//Multiple messages struct
 	struct mmsghdr messages[MaxMultipleSendingMessages] = {};
 	struct sockaddr_in tos[MaxMultipleSendingMessages] = {};
@@ -206,7 +201,7 @@ bool NetEventLoop::OnPollOut(Poll::FileDescriptor pfd)
 	}
 	
 	//Send them
-	int sendFd = this->rawTx ? this->rawTx->fd : pfd.fd;
+	int sendFd = this->rawTx ? this->rawTx->fd : pfd;
 	{
 		TRACE_EVENT("neteventloop", "sendmmsg", "fd", fd, "vlen", len);
 		sendmmsg(sendFd, messages, len, flags);
@@ -240,14 +235,9 @@ bool NetEventLoop::OnPollOut(Poll::FileDescriptor pfd)
 	items.clear();
 	//Copy elements to retry
 	std::move(retry.begin(), retry.end(), std::back_inserter(items));
-	
-	return true;
 }
 
-bool NetEventLoop::OnPollError(Poll::FileDescriptor pfd, const std::string& errorMsg)
+void NetEventLoop::OnPollError(int pfd, const std::string& errorMsg)
 {
-	if (EventLoop::OnPollError(pfd, errorMsg)) return true;
-	
 	throw std::runtime_error("Error occurred on network fd: " + errorMsg);
-	return true;
 }

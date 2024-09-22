@@ -93,10 +93,10 @@ protected:
 	void ParseData(const BYTE* data, const DWORD size);
 private:
 	
-	std::optional<uint16_t> GetPollEventMask(Poll::FileDescriptor pfd) const override;
-	bool OnPollIn(Poll::FileDescriptor pfd) override;
-	bool OnPollOut(Poll::FileDescriptor pfd) override;
-	bool OnPollError(Poll::FileDescriptor pfd, const std::string& errorMsg) override;
+	std::optional<uint16_t> GetPollEventMask(int pfd) const override;
+	void OnPollIn(int pfd) override;
+	void OnPollOut(int pfd) override;
+	void OnPollError(int pfd, const std::string& errorMsg) override;
 
 	static  void* run(void* par);
 	DWORD SerializeChunkData(BYTE* data, const DWORD size);
@@ -180,10 +180,9 @@ private:
 	std::wstring challenge;
 	std::wstring opaque;
 	
-	uint8_t data[4096*2];
-	unsigned int size = 4096*2;
+	static constexpr unsigned int BufferSize = 4096*2;
+	uint8_t buffer[BufferSize];
 	bool connected = false;
-
 };
 
 #endif

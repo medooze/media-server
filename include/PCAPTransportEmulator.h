@@ -48,7 +48,7 @@ private:
 	RTPIncomingSourceGroup* GetIncomingSourceGroup(DWORD ssrc);
 	RTPIncomingSource* GetIncomingSource(DWORD ssrc);
 private:
-	CustomizedEventLoop loop;
+	EventLoop loop;
 	std::unique_ptr<UDPReader> reader;
 	
 	RTPMap		rtpMap;

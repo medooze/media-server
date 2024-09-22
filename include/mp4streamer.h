@@ -180,7 +180,7 @@ private:
 	int PlayLoop();
 
 protected:
-	CustomizedEventLoop	loop;
+	EventLoop	loop;
 private:
 	Listener*	listener;
 	bool		opened	= false;
