@@ -1196,14 +1196,9 @@ bool AMFEcmaArray::IsParsed() const
 	return num.IsParsed() && marker;
 }
 
-AMFObjectMap& AMFEcmaArray::GetElements()
+AMFObjectMap& AMFEcmaArray::GetProperties()
 {
 	return elements;
-}
-
-DWORD AMFEcmaArray::GetLength() const
-{
-	return elements.size();
 }
 
 AMFData& AMFEcmaArray::GetProperty(const wchar_t* key)
