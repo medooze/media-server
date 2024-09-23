@@ -25,20 +25,21 @@ public:
 	void	 SetClockRate(DWORD clockRate) { this->clockRate = clockRate; }
 
 	const int16_t* GetData() const { return pcmBuffer.data(); }
-
-	uint16_t SetSamples(int16_t* in, uint16_t numSamples)
+	uint16_t SetSamples(int16_t* in, uint16_t numSamples, size_t offset=0, bool allowResize=false)
 	{
 		if (!in)
 			return Error("AudioBuffer::SetSamples() empty input buffer\n");
 
-		uint16_t totalResampled = numSamples * numChannels;
-		if (totalResampled != pcmBuffer.size())
+		uint16_t totalSamples = numSamples * numChannels;
+		if (allowResize && totalSamples != pcmBuffer.size())
 		{
-			Debug("AudioBuffer::SetSamples buffer resized, resized to =%d\n", totalResampled);
-			pcmBuffer.resize(totalResampled);
+			Debug("AudioBuffer::SetSamples buffer resized, resized to =%d\n", totalSamples);
+			pcmBuffer.resize(totalSamples);
 		}
-
-		memcpy((int16_t*)pcmBuffer.data(), in, sizeof(int16_t) * totalResampled);
+		else if (!allowResize && pcmBuffer.size() < offset+totalSamples)
+			return Error("AudioBuffer::SetSamples() not enough spaces\n");
+		
+		memcpy((int16_t*)pcmBuffer.data()+offset, in, sizeof(int16_t) * totalSamples);
 		return numSamples;
 	}
 

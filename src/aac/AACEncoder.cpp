@@ -128,20 +128,25 @@ AudioFrame::shared AACEncoder::Encode(const AudioBuffer::const_shared& audioBuff
 		return 0;
 	
 	if (ctx == NULL)
+	{
 		Error("-AACEncoder::Encode() no context.\n");
-		return nullptr;
-
-	//If not enought samples
-	if (inLen!=numFrameSamples)
+		return {};
+	}
+	//If not enough samples
+	if (inLen != numFrameSamples)
+	{
 		//Exit
 		Error("-AACEncoder::Encode() sample size %d is not correct. Should be %d\n", inLen, numFrameSamples);
-		return nullptr;
+		return {};
+	}
 	//Convert
 	int len = swr_convert(swr, &samples, samplesNum, (const BYTE**)&in, inLen);
 	//Check 
 	if (avcodec_fill_audio_frame(frame, ctx->channels, ctx->sample_fmt, (BYTE*)samples, samplesSize, 0)<0)
+	{
 		Error("-AACEncoder::Encode() could not fill audio frame \n");
-		return nullptr;
+		return {};
+	}
 
 	//Reset packet
 	av_init_packet(&pkt);
@@ -153,7 +158,7 @@ AudioFrame::shared AACEncoder::Encode(const AudioBuffer::const_shared& audioBuff
 	if (ret < 0)
 	{
 		Error("-AACEncoder::Encode() could not encode audio frame\n");
-		return nullptr;
+		return {};
 	}
 
 	ret = avcodec_receive_packet(ctx, &pkt);
@@ -162,12 +167,12 @@ AudioFrame::shared AACEncoder::Encode(const AudioBuffer::const_shared& audioBuff
 	if (ret == AVERROR(EAGAIN))
 	{
 		Warning("-AACEncoder::Encode() encoder needs more data or EOF received\n");
-		return nullptr;
+		return {};
 	}
 	else if(ret < 0)
 	{
 		Error("-AACEncoder::Encode() could not get output packet\n");
-		return nullptr;
+		return {};
 	}
 	else	
 		audioFrame->AppendMedia(pkt.data, pkt.size);
