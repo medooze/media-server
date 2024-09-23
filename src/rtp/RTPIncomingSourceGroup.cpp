@@ -255,7 +255,7 @@ void RTPIncomingSourceGroup::Start(bool remb)
 	Debug("-RTPIncomingSourceGroup::Start() | [remb:%d]\n",remb);
 
 	//Create dispatch timer
-	dispatchTimer = CreateTimerSafe([=](auto self, auto now) { self->DispatchPackets(now.count()); });
+	dispatchTimer = CreateTimerSafe([](auto self, auto now) { self->DispatchPackets(now.count()); });
 	//Set name for debug
 	dispatchTimer->SetName("RTPIncomingSourceGroup - dispatch");
 	
