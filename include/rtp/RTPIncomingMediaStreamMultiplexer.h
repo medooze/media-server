@@ -10,11 +10,16 @@
 
 
 class RTPIncomingMediaStreamMultiplexer :
+	public TimeServiceWrapper<RTPIncomingMediaStreamMultiplexer>,
 	public RTPIncomingMediaStream,
 	public RTPIncomingMediaStream::Listener
 {
-public:
+private:
+	// Private constructor to prevent creating without TimeServiceWrapper::Create() factory
+	friend class TimeServiceWrapper<RTPIncomingMediaStreamMultiplexer>;
 	RTPIncomingMediaStreamMultiplexer(const RTPIncomingMediaStream::shared& incomingMediaStream, TimeService& timeService);
+
+public:
 	virtual ~RTPIncomingMediaStreamMultiplexer() = default;
 	
 	// RTPIncomingMediaStream interface;
@@ -29,11 +34,10 @@ public:
 	virtual void onBye(const RTPIncomingMediaStream* stream) override;
 	virtual void onEnded(const RTPIncomingMediaStream* stream) override;
 
-	virtual TimeService& GetTimeService() override { return timeService; }
+	virtual TimeService& GetTimeService()	override { return TimeServiceWrapper<RTPIncomingMediaStreamMultiplexer>::GetTimeService(); }
 	void Stop();
 private:
 	RTPIncomingMediaStream::shared incomingMediaStream;
-	TimeService& timeService;
 	std::set<RTPIncomingMediaStream::Listener*>  listeners;
 	volatile bool muted = false;
 };

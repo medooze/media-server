@@ -41,20 +41,20 @@ public:
 	TestRTPStreamTransponder() :
 		VP8TestBase(GetParam().first, GetParam().second),
 		sender(new MockRTPSender()),
-		transponder(std::make_shared<RTPOutgoingSourceGroup>(MediaFrame::Type::Video, timerService), sender),
+		transponder(RTPStreamTransponder::Create(RTPOutgoingSourceGroup::Create(MediaFrame::Type::Video, timerService), sender)),
 		stream(new MockRTPIncomingMediaStream(timerService)),
 		startPicId(GetParam().first),
 		startTl0PicId(GetParam().second)
 	{
 		//Empty receiver
 		RTPReceiver::shared receiver;
-		transponder.SetIncoming(stream, receiver);
-		transponder.SelectLayer(0, 1);
+		transponder->SetIncoming(stream, receiver);
+		transponder->SelectLayer(0, 1);
 	};
 
 	void Add(std::shared_ptr<RTPPacket> packet, uint16_t expectedPicId, uint16_t expectedTl0PicIdx)
 	{
-		transponder.onRTP(stream.get(), packet);
+		transponder->onRTP(stream.get(), packet);
 		ASSERT_EQ(expectedPicId, sender->GetLastPacket()->vp8PayloadDescriptor->pictureId);
 		ASSERT_EQ(expectedTl0PicIdx, sender->GetLastPacket()->vp8PayloadDescriptor->temporalLevelZeroIndex);
 	}
@@ -74,7 +74,7 @@ protected:
 
 	TestTimeService timerService;
 	std::shared_ptr<MockRTPSender> sender;
-	RTPStreamTransponder transponder;
+	std::shared_ptr<RTPStreamTransponder> transponder;
 
 	std::shared_ptr<MockRTPIncomingMediaStream> stream;
 

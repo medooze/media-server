@@ -2,13 +2,13 @@
 
 
 RTPOutgoingSourceGroup::RTPOutgoingSourceGroup(MediaFrame::Type type, TimeService& timeService) :
-	timeService(timeService)
+	TimeServiceWrapper<RTPOutgoingSourceGroup>(timeService)
 {
 	this->type = type;
 }
 
 RTPOutgoingSourceGroup::RTPOutgoingSourceGroup(const std::string &mid, MediaFrame::Type type, TimeService& timeService) :
-	timeService(timeService)
+	TimeServiceWrapper<RTPOutgoingSourceGroup>(timeService)
 {
 	this->mid = mid;
 	this->type = type;
@@ -38,7 +38,7 @@ void RTPOutgoingSourceGroup::AddListener(Listener* listener)
 	Debug("-RTPOutgoingSourceGroup::AddListener() [listener:%p]\n",listener);
 	
 	//Add it sync
-	timeService.Async([=](auto) {
+	AsyncSafe([listener]( std::chrono::milliseconds now) {
 		listeners.insert(listener);
 	});
 	
@@ -49,7 +49,7 @@ void RTPOutgoingSourceGroup::RemoveListener(Listener* listener)
 	Debug("-RTPOutgoingSourceGroup::RemoveListener() [listener:%p]\n",listener);
 	
 	//Remove it sync
-	timeService.Sync([=](auto) {
+	Sync([=](auto) {
 		listeners.erase(listener);
 	});
 }
@@ -90,10 +90,10 @@ RTPPacket::shared RTPOutgoingSourceGroup::GetPacket(WORD seq) const
 void RTPOutgoingSourceGroup::onPLIRequest(DWORD ssrc)
 {
 	//Send asycn
-	timeService.Async([=](auto) {
+	AsyncSafe([ssrc]( std::chrono::milliseconds now) {
 		//Deliver to all listeners
 		for (auto listener : listeners)
-			listener->onPLIRequest(this,ssrc);
+			listener->onPLIRequest(self.get(),ssrc);
 	});
 }
 
@@ -103,17 +103,17 @@ void RTPOutgoingSourceGroup::onREMB(DWORD ssrc, DWORD bitrate)
 	media.remb = bitrate;
 	
 	//Send asycn
-	timeService.Async([=](auto) {
+	AsyncSafe([ssrc, bitrate]( std::chrono::milliseconds now) {
 		//Deliver to all listeners
 		for (auto listener : listeners)
-			listener->onREMB(this,ssrc,bitrate);
+			listener->onREMB(self.get(),ssrc,bitrate);
 	});
 }
 
 void RTPOutgoingSourceGroup::UpdateAsync(std::function<void(std::chrono::milliseconds)> callback)
 {
 	//Update it sync
-	timeService.Async([=](auto now) {
+	AsyncSafe([]( std::chrono::milliseconds now) {
 		//Set last updated time
 		lastUpdated = now.count();
 		//Update
@@ -128,7 +128,7 @@ void RTPOutgoingSourceGroup::UpdateAsync(std::function<void(std::chrono::millise
 void RTPOutgoingSourceGroup::Update()
 {
 	//Update it sync
-	timeService.Sync([=](auto now) {
+	AsyncSafe([]( std::chrono::milliseconds now) {
 		//Set last updated time
 		lastUpdated = now.count();
 		//Update
@@ -143,7 +143,7 @@ void RTPOutgoingSourceGroup::Update()
 void RTPOutgoingSourceGroup::Update(QWORD now)
 {
 	//Update it sync
-	timeService.Sync([=](auto) {
+	AsyncSafe([now]( std::chrono::milliseconds) {
 		//Set last updated time
 		lastUpdated = now;
 		//Update
@@ -161,10 +161,10 @@ void RTPOutgoingSourceGroup::Stop()
 	Debug("-RTPOutgoingSourceGroup::Stop()\r\n");
 
 	//Add it sync
-	timeService.Sync([=](auto) {
+	AsyncSafe([]( std::chrono::milliseconds now) {
 		//Signal them we have been ended
 		for (auto listener : listeners)
-			listener->onEnded(this);
+			listener->onEnded(self.get());
 		//No mor listeners
 		listeners.clear();
 	});

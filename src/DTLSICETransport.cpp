@@ -51,11 +51,11 @@ constexpr auto MaxProbingHistorySize		= 50;
 constexpr auto RtxRttThresholdMs 		= 300;
 
 DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService, ObjectPool<Packet>& packetPool) :
+	TimeServiceWrapper<DTLSICETransport>(timeService),
 	sender(sender),
-	timeService(timeService),
 	packetPool(packetPool),
 	endpoint(timeService),
-	dtls(*this,timeService,endpoint.GetTransport()),
+	dtls(DTLSConnection::Create(*this,timeService,endpoint.GetTransport())),
 	history(MaxProbingHistorySize, false),
 	fecProbeGenerator(history, sendMaps.ext),
 	outgoingBitrate(250, 1E3, 250),
@@ -84,7 +84,7 @@ void DTLSICETransport::onDTLSPendingData()
 		Packet buffer = packetPool.pick();
 
 		//Read from dtls
-		int len = dtls.Read(buffer.GetData(),buffer.GetCapacity());
+		int len = dtls->Read(buffer.GetData(),buffer.GetCapacity());
 		//Check result
 		if (len<=0)
 		{
@@ -115,7 +115,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	if (DTLSConnection::IsDTLS(data,size))
 	{
 		//Feed it
-		dtls.Write(data,size);
+		dtls->Write(data,size);
 		//Exit
 		return 1;
 	}
@@ -335,7 +335,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 				Log("-DTLSICETransport::onData() | Got unsignaled rtp stream [ssrc:%u,mid:'%s',rid:'%s']\n", ssrc, mid.c_str(), rid.c_str());
 
 				//We need to create a new group
-				RTPIncomingSourceGroup::shared shared = std::make_shared<RTPIncomingSourceGroup>(packet->GetMediaType(), timeService);
+				RTPIncomingSourceGroup::shared shared = RTPIncomingSourceGroup::Create(packet->GetMediaType(), GetTimeService());
 
 				//Set mid & rid
 				shared->mid = mid;
@@ -1343,7 +1343,7 @@ void  DTLSICETransport::ActivateRemoteCandidate(ICERemoteCandidate* candidate,bo
 	if (!active || (useCandidate && candidate!=active))
 	{
 		//Debug
-		Debug("-DTLSICETransport::ActivateRemoteCandidate() | Activating candidate [%s:%hu,use:%d,prio:%d,dtls:%d]\n",candidate->GetIP(),candidate->GetPort(),useCandidate,priority,dtls.GetSetup());	
+		Debug("-DTLSICETransport::ActivateRemoteCandidate() | Activating candidate [%s:%hu,use:%d,prio:%d,dtls:%d]\n",candidate->GetIP(),candidate->GetPort(),useCandidate,priority,dtls->GetSetup());	
 		
 		//Send data to this one from now on
 		active = candidate;
@@ -1353,7 +1353,7 @@ void  DTLSICETransport::ActivateRemoteCandidate(ICERemoteCandidate* candidate,bo
 	}
 	
 	// Needed for DTLS in client mode (otherwise the DTLS "Client Hello" is not sent over the wire)
-	if (dtls.GetSetup()!=DTLSConnection::SETUP_PASSIVE) 
+	if (dtls->GetSetup()!=DTLSConnection::SETUP_PASSIVE) 
 		//Trigger manually
 		onDTLSPendingData();
 }
@@ -1472,7 +1472,7 @@ void DTLSICETransport::SetLocalProperties(const Properties& properties)
 
 void DTLSICETransport::SetSRTPProtectionProfiles(const std::string& profiles)
 {
-	dtls.SetSRTPProtectionProfiles(profiles);
+	dtls->SetSRTPProtectionProfiles(profiles);
 }
 
 void DTLSICETransport::SetRemoteProperties(const Properties& properties)
@@ -1593,7 +1593,7 @@ int DTLSICETransport::Dump(UDPDumper* dumper, bool inbound, bool outbound, bool 
 	//Done
 	int done = 1;
 	//Execute on timer thread
-	timeService.Sync([&](auto now){
+	Sync([&](auto now){
 		//Check we are not dumping
 		if (this->dumper)
 		{
@@ -1622,7 +1622,7 @@ int DTLSICETransport::StopDump()
 	//Done
 	int done = 1;
 	//Execute on timer thread
-	timeService.Sync([&](auto now){
+	Sync([&](auto now){
 		//Check we are not dumping
 		if (!this->dumper)
 		{
@@ -1646,7 +1646,7 @@ int DTLSICETransport::Dump(const char* filename, bool inbound, bool outbound, bo
 	//Done
 	int done = 1;
 	//Execute on timer thread
-	timeService.Sync([&](auto now){
+	Sync([&](auto now){
 		//Check we are not dumping
 		if (this->dumper)
 		{
@@ -1697,7 +1697,7 @@ void DTLSICETransport::Reset()
 	Log("-DTLSICETransport::Reset()\n");
 
 	//Execute on timer thread
-	timeService.Sync([=](auto now){
+	Sync([=](auto now){
 		
 		//Reset srtp
 		send.Reset();
@@ -1764,27 +1764,27 @@ int DTLSICETransport::SetRemoteCryptoDTLS(const char *setup,const char *hash,con
 
 	//Set Suite
 	if (strcasecmp(setup,"active")==0)
-		dtls.SetRemoteSetup(DTLSConnection::SETUP_ACTIVE);
+		dtls->SetRemoteSetup(DTLSConnection::SETUP_ACTIVE);
 	else if (strcasecmp(setup,"passive")==0)
-		dtls.SetRemoteSetup(DTLSConnection::SETUP_PASSIVE);
+		dtls->SetRemoteSetup(DTLSConnection::SETUP_PASSIVE);
 	else if (strcasecmp(setup,"actpass")==0)
-		dtls.SetRemoteSetup(DTLSConnection::SETUP_ACTPASS);
+		dtls->SetRemoteSetup(DTLSConnection::SETUP_ACTPASS);
 	else if (strcasecmp(setup,"holdconn")==0)
-		dtls.SetRemoteSetup(DTLSConnection::SETUP_HOLDCONN);
+		dtls->SetRemoteSetup(DTLSConnection::SETUP_HOLDCONN);
 	else
 		return Error("-DTLSICETransport::SetRemoteCryptoDTLS | Unknown setup");
 
 	//Set fingerprint
 	if (strcasecmp(hash,"SHA-1")==0)
-		dtls.SetRemoteFingerprint(DTLSConnection::SHA1,fingerprint);
+		dtls->SetRemoteFingerprint(DTLSConnection::SHA1,fingerprint);
 	else if (strcasecmp(hash,"SHA-224")==0)
-		dtls.SetRemoteFingerprint(DTLSConnection::SHA224,fingerprint);
+		dtls->SetRemoteFingerprint(DTLSConnection::SHA224,fingerprint);
 	else if (strcasecmp(hash,"SHA-256")==0)
-		dtls.SetRemoteFingerprint(DTLSConnection::SHA256,fingerprint);
+		dtls->SetRemoteFingerprint(DTLSConnection::SHA256,fingerprint);
 	else if (strcasecmp(hash,"SHA-384")==0)
-		dtls.SetRemoteFingerprint(DTLSConnection::SHA384,fingerprint);
+		dtls->SetRemoteFingerprint(DTLSConnection::SHA384,fingerprint);
 	else if (strcasecmp(hash,"SHA-512")==0)
-		dtls.SetRemoteFingerprint(DTLSConnection::SHA512,fingerprint);
+		dtls->SetRemoteFingerprint(DTLSConnection::SHA512,fingerprint);
 	else
 		return Error("-DTLSICETransport::SetRemoteCryptoDTLS | Unknown hash");
 
@@ -1870,7 +1870,7 @@ bool DTLSICETransport::AddOutgoingSourceGroup(const RTPOutgoingSourceGroup::shar
 	Log("-DTLSICETransport::AddOutgoingSourceGroup() [group:%p,ssrc:%u,fec:%u,rtx:%u]\n",group.get(), group->media.ssrc, group->fec.ssrc, group->rtx.ssrc);
 	
 	//Dispatch to the event loop thread
-	timeService.Async([=](auto now){
+	AsyncSafe([group]( std::chrono::milliseconds now){
 
 		//Get ssrcs
 		const auto media = group->media.ssrc;
@@ -1886,7 +1886,7 @@ bool DTLSICETransport::AddOutgoingSourceGroup(const RTPOutgoingSourceGroup::shar
 			return;
 		}
 
-		if (fec && outgoing.find(fec)!=outgoing.end())
+		if (fec && outgoing.find(fec) != outgoing.end())
 		{
 			//Error
 			Error("-DTLSICETransport::AddOutgoingSourceGroup() | fec ssrc already assigned");
@@ -1938,7 +1938,7 @@ bool DTLSICETransport::RemoveOutgoingSourceGroup(const RTPOutgoingSourceGroup::s
 	Log("-DTLSICETransport::RemoveOutgoingSourceGroup() [ssrc:%u,fec:%u,rtx:%u]\n", group->media.ssrc, group->fec.ssrc, group->rtx.ssrc);
 
 	//Dispatch to the event loop thread
-	timeService.Async([=](auto now){
+	AsyncSafe([group]( std::chrono::milliseconds now){
 		Log("-DTLSICETransport::RemoveOutgoingSourceGroup() | Async [ssrc:%u,fec:%u,rtx:%u]\n", group->media.ssrc, group->fec.ssrc, group->rtx.ssrc);
 		//Get ssrcs
 		std::vector<DWORD> ssrcs;
@@ -1978,15 +1978,15 @@ bool DTLSICETransport::RemoveOutgoingSourceGroup(const RTPOutgoingSourceGroup::s
 		}
 		
 		//If it was our main ssrc
-		if (mainSSRC==group->media.ssrc)
+		if (mainSSRC == group->media.ssrc)
 			//Set first
-			mainSSRC = outgoing.begin()!=outgoing.end() ? outgoing.begin()->second->media.ssrc : 1;
+			mainSSRC = outgoing.begin() != outgoing.end() ? outgoing.begin()->second->media.ssrc : 1;
 		
 		//Send BYE
 		Send(RTCPCompoundPacket::Create(RTCPBye::Create(ssrcs,"terminated")));
 
 		//If last one
-		if (outgoing.size()==0 && probingTimer)
+		if (outgoing.size() == 0 && probingTimer)
 			//Stop probing timer
 			probingTimer->Cancel();
 	});
@@ -2012,13 +2012,13 @@ bool DTLSICETransport::AddIncomingSourceGroup(const RTPIncomingSourceGroup::shar
 		return Error("No media ssrc or rid defined, stream will not be added\n");
 	
 	//Dispatch to the event loop thread
-	timeService.Async([=](auto now){
+	AsyncSafe([group, isRTXEnabled]( std::chrono::milliseconds now){
 		//Get ssrcs
 		const auto media = group->media.ssrc;
 		const auto rtx   = group->rtx.ssrc;
 		
 		//Check they are not already assigned
-		if (media && incoming.find(media)!=incoming.end())
+		if (media && incoming.find(media) != incoming.end())
 		{
 			//Error
 			Warning("-DTLSICETransport::AddIncomingSourceGroup() media ssrc already assigned\n");
@@ -2026,7 +2026,7 @@ bool DTLSICETransport::AddIncomingSourceGroup(const RTPIncomingSourceGroup::shar
 		}
 		
 			
-		if (rtx && incoming.find(rtx)!=incoming.end())
+		if (rtx && incoming.find(rtx) != incoming.end())
 		{
 			//Error
 			Warning("-DTLSICETransport::AddIncomingSourceGroup() rtx ssrc already assigned\n");
@@ -2043,7 +2043,7 @@ bool DTLSICETransport::AddIncomingSourceGroup(const RTPIncomingSourceGroup::shar
 			//Find mid 
 			auto it = mids.find(group->mid);
 			//If not there
-			if (it!=mids.end())
+			if (it != mids.end())
 				//Append
 				it->second.insert(group);
 			else
@@ -2083,7 +2083,7 @@ bool DTLSICETransport::RemoveIncomingSourceGroup(const RTPIncomingSourceGroup::s
 	Log("-DTLSICETransport::RemoveIncomingSourceGroup() [mid:'%s',rid:'%s',ssrc:%u,rtx:%u]\n",group->mid.c_str(),group->rid.c_str(),group->media.ssrc,group->rtx.ssrc);
 	
 	//Dispatch to the event loop thread
-	timeService.Async([=](auto now){
+	AsyncSafe([group]( std::chrono::milliseconds now){
 
 		//Remove rid if any
 		if (!group->rid.empty())
@@ -2092,7 +2092,7 @@ bool DTLSICETransport::RemoveIncomingSourceGroup(const RTPIncomingSourceGroup::s
 		//Find mid 
 		auto it = mids.find(group->mid);
 		//If found
-		if (it!=mids.end())
+		if (it != mids.end())
 		{
 			//Erase group
 			it->second.erase(group);
@@ -2215,7 +2215,7 @@ int DTLSICETransport::SendPLI(DWORD ssrc)
 	Debug("-DTLSICETransport::SendPLI() | [ssrc:%u]\n",ssrc);
 	
 	//Execute on the event loop thread and do not wait
-	timeService.Async([=](auto now){
+	AsyncSafe([ssrc]( std::chrono::milliseconds now){
 		//Get group
 		RTPIncomingSourceGroup* group = GetIncomingSourceGroup(ssrc);
 
@@ -2252,7 +2252,8 @@ int DTLSICETransport::Reset(DWORD ssrc)
 	Debug("-DTLSICETransport::Reset() | [ssrc:%u]\n", ssrc);
 
 	//Execute on the event loop thread and do not wait
-	timeService.Async([=](auto now) {
+	AsyncSafe([ssrc](auto now) {
+
 		//Get group
 		RTPIncomingSourceGroup* group = GetIncomingSourceGroup(ssrc);
 
@@ -2949,14 +2950,14 @@ void DTLSICETransport::Start()
 	Debug("-DTLSICETransport::Start()\n");
 	
 	//Init DTLS
-	dtls.Init();
+	dtls->Init();
 
 	//Get init time
 	initTime = getTime();
 	dcOptions.localPort = 5000;
 	dcOptions.remotePort = 5000;
 	//Run ice timeout timer
-	iceTimeoutTimer = timeService.CreateTimer(IceTimeout,[this](auto now){
+	iceTimeoutTimer = CreateTimerSafe(IceTimeout,[=](auto now){
 		//Log
 		Debug("-DTLSICETransport::onIceTimeoutTimer() ICE timeout\n");
 		//If got listener
@@ -2967,14 +2968,14 @@ void DTLSICETransport::Start()
 	//Set name for debug
 	iceTimeoutTimer->SetName("DTLSICETransport - ice timeout");
 	//Create new probe timer
-	probingTimer = timeService.CreateTimer([this](std::chrono::milliseconds ms) {
+	probingTimer = CreateTimerSafe([]( std::chrono::milliseconds ms) {
 		//Do probe
 		Probe(ms.count());
 		});
 	//Set name for debug
 	probingTimer->SetName("DTLSICETransport - bwe probe");
 	//Create sse timer
-	sseTimer = timeService.CreateTimer([this](std::chrono::milliseconds ms) {
+	sseTimer = CreateTimerSafe([]( std::chrono::milliseconds ms) {
 		//Send feedback now
 		SendTransportWideFeedbackMessage(lastMediaSSRC);
 	});
@@ -3022,10 +3023,10 @@ void DTLSICETransport::Stop()
 	endpoint.Close();
 
 	//Send dtls shutdown
-	dtls.Reset();
+	dtls->Reset();
 
 	//End DTLS as well
-	dtls.End();
+	dtls->End();
 
 	//No active candiadte
 	active = nullptr;
@@ -3044,9 +3045,10 @@ int DTLSICETransport::Enqueue(const RTPPacket::shared& packet)
 		"ssrc", packet->GetSSRC(),
 		"seqNum", packet->GetSeqNum());
 
+	// @todo We should check this now.
 	//TODO: check if we are actuall sending from a different thread ocasionally
 	//Send async
-	//timeService.Async([=](auto now){
+	//AsyncSafe([]( std::chrono::milliseconds now){
 		//Send
 		Send(packet);
 	//});
@@ -3215,9 +3217,9 @@ void DTLSICETransport::SetListener(const Listener::shared& listener)
 {
 	Debug(">DTLSICETransport::SetListener() [this:%p,listener:%p]\n", this, listener.get());
 	//Add in main thread async
-	timeService.Async([=](auto now){
+	AsyncSafe([listener]( std::chrono::milliseconds now){
 		//Store listener
-		this->listener = listener;
+		listener = listener;
 	});
 }
 
@@ -3296,7 +3298,7 @@ void DTLSICETransport::CheckProbeTimer()
 	Debug("-DTLSICETransport::CheckProbeTimer() | [probingTimer:%d]\n",!!probingTimer);
 
 	//Dispatch to the event loop thread
-	timeService.Async([=](auto now) {
+	AsyncSafe([=](auto now) {
 		//If we don't have timer anumore
 		if (!probingTimer)
 			//Do nothing
@@ -3316,7 +3318,7 @@ void DTLSICETransport::CheckProbeTimer()
 		}
 	
 		//Check if we have to start if
-		if (this->senderSideEstimationEnabled && this->probe && video && state == DTLSState::Connected)
+		if (senderSideEstimationEnabled && probe && video && state == DTLSState::Connected)
 		{
 			//If not already started
 			if (!probingTimer->IsScheduled())
