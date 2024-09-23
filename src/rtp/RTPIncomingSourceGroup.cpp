@@ -41,7 +41,7 @@ void RTPIncomingSourceGroup::AddListener(RTPIncomingMediaStream::Listener* liste
 	Debug("-RTPIncomingSourceGroup::AddListener() [listener:%p]\n",listener);
 	
 	//Add it sync
-	AsyncSafe([=](auto self, std::chrono::milliseconds now) {
+	AsyncSafe([listener](auto self, std::chrono::milliseconds now) {
 		self->listeners.insert(listener);
 	});
 }
@@ -186,7 +186,7 @@ void RTPIncomingSourceGroup::UpdateAsync(std::function<void(std::chrono::millise
 	TRACE_EVENT("rtp", "RTPIncomingSourceGroup::Update");
 
 	//Update it sync
-	AsyncSafe([=](auto self, std::chrono::milliseconds now) {
+	AsyncSafe([](auto self, std::chrono::milliseconds now) {
 		//Set last updated time
 		self->lastUpdated = now.count();
 		//Update
@@ -199,7 +199,7 @@ void RTPIncomingSourceGroup::UpdateAsync(std::function<void(std::chrono::millise
 void RTPIncomingSourceGroup::SetMaxWaitTime(DWORD maxWaitingTime)
 {
 	//Update it sync
-	AsyncSafe([=](auto self, std::chrono::milliseconds now) {
+	AsyncSafe([maxWaitingTime](auto self, std::chrono::milliseconds now) {
 		//Set it
 		self->packets.SetMaxWaitTime(maxWaitingTime);
 		//Store overriden value
@@ -210,7 +210,7 @@ void RTPIncomingSourceGroup::SetMaxWaitTime(DWORD maxWaitingTime)
 void RTPIncomingSourceGroup::ResetMaxWaitTime()
 {
 	//Update it sync
-	AsyncSafe([=](auto self, std::chrono::milliseconds now) {
+	AsyncSafe([](auto self, std::chrono::milliseconds now) {
 		//Remove override
 		self->maxWaitingTime.reset();
 	});

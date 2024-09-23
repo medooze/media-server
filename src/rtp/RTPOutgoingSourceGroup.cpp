@@ -38,8 +38,8 @@ void RTPOutgoingSourceGroup::AddListener(Listener* listener)
 	Debug("-RTPOutgoingSourceGroup::AddListener() [listener:%p]\n",listener);
 	
 	//Add it sync
-	AsyncSafe([=, &listeners = listeners](auto self, std::chrono::milliseconds now) {
-		listeners.insert(listener);
+	AsyncSafe([listener](auto self, std::chrono::milliseconds now) {
+		self->listeners.insert(listener);
 	});
 	
 }
@@ -90,10 +90,10 @@ RTPPacket::shared RTPOutgoingSourceGroup::GetPacket(WORD seq) const
 void RTPOutgoingSourceGroup::onPLIRequest(DWORD ssrc)
 {
 	//Send asycn
-	AsyncSafe([=, &listeners = listeners](auto self, std::chrono::milliseconds now) {
+	AsyncSafe([ssrc](auto self, std::chrono::milliseconds now) {
 		//Deliver to all listeners
-		for (auto listener : listeners)
-			listener->onPLIRequest(this,ssrc);
+		for (auto listener : self->listeners)
+			listener->onPLIRequest(self.get(),ssrc);
 	});
 }
 
@@ -103,55 +103,55 @@ void RTPOutgoingSourceGroup::onREMB(DWORD ssrc, DWORD bitrate)
 	media.remb = bitrate;
 	
 	//Send asycn
-	AsyncSafe([=, &listeners = listeners](auto self, std::chrono::milliseconds now) {
+	AsyncSafe([ssrc, bitrate](auto self, std::chrono::milliseconds now) {
 		//Deliver to all listeners
-		for (auto listener : listeners)
-			listener->onREMB(this,ssrc,bitrate);
+		for (auto listener : self->listeners)
+			listener->onREMB(self.get(),ssrc,bitrate);
 	});
 }
 
 void RTPOutgoingSourceGroup::UpdateAsync(std::function<void(std::chrono::milliseconds)> callback)
 {
 	//Update it sync
-	AsyncSafe([=, &listeners = listeners](auto self, std::chrono::milliseconds now) {
+	AsyncSafe([](auto self, std::chrono::milliseconds now) {
 		//Set last updated time
-		lastUpdated = now.count();
+		self->lastUpdated = now.count();
 		//Update
-		media.Update(now.count());
+		self->media.Update(now.count());
 		//Update
-		fec.Update(now.count());
+		self->fec.Update(now.count());
 		//Update
-		rtx.Update(now.count());
+		self->rtx.Update(now.count());
 	}, callback);
 }
 
 void RTPOutgoingSourceGroup::Update()
 {
 	//Update it sync
-	AsyncSafe([=, &lastUpdated = lastUpdated, &media = media, &fec = fec, &rtx = rtx](auto self, std::chrono::milliseconds now) {
+	AsyncSafe([](auto self, std::chrono::milliseconds now) {
 		//Set last updated time
-		lastUpdated = now.count();
+		self->lastUpdated = now.count();
 		//Update
-		media.Update(now.count());
+		self->media.Update(now.count());
 		//Update
-		fec.Update(now.count());
+		self->fec.Update(now.count());
 		//Update
-		rtx.Update(now.count());
+		self->rtx.Update(now.count());
 	});
 }
 
 void RTPOutgoingSourceGroup::Update(QWORD now)
 {
 	//Update it sync
-	AsyncSafe([=, &lastUpdated = lastUpdated, &media = media, &fec = fec, &rtx = rtx](auto self, std::chrono::milliseconds) {
+	AsyncSafe([now](auto self, std::chrono::milliseconds) {
 		//Set last updated time
-		lastUpdated = now;
+		self->lastUpdated = now;
 		//Update
-		media.Update(now);
+		self->media.Update(now);
 		//Update
-		fec.Update(now);
+		self->fec.Update(now);
 		//Update
-		rtx.Update(now);
+		self->rtx.Update(now);
 	});
 }
 
@@ -161,12 +161,12 @@ void RTPOutgoingSourceGroup::Stop()
 	Debug("-RTPOutgoingSourceGroup::Stop()\r\n");
 
 	//Add it sync
-	AsyncSafe([=, &listeners = listeners](auto self, std::chrono::milliseconds now) {
+	AsyncSafe([](auto self, std::chrono::milliseconds now) {
 		//Signal them we have been ended
-		for (auto listener : listeners)
+		for (auto listener : self->listeners)
 			listener->onEnded(self.get());
 		//No mor listeners
-		listeners.clear();
+		self->listeners.clear();
 	});
 
 }

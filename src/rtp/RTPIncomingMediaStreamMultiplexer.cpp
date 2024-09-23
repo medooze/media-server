@@ -43,7 +43,7 @@ void RTPIncomingMediaStreamMultiplexer::AddListener(RTPIncomingMediaStream::List
 	Debug("-RTPIncomingMediaStreamMultiplexer::AddListener() [listener:%p,this:%p]\n",listener,this);
 	
 	//Dispatch in thread sync
-	AsyncSafe([=](auto self, auto now){
+	AsyncSafe([listener](auto self, auto now){
 		self->listeners.insert(listener);
 	});
 }
@@ -67,7 +67,7 @@ void RTPIncomingMediaStreamMultiplexer::onRTP(const RTPIncomingMediaStream* stre
 	if (!muted)
 	{
 		//Dispatch in thread async
-		AsyncSafe([=](auto self, auto now){
+		AsyncSafe([packet](auto self, auto now){
 			//Deliver to all listeners
 			for (auto listener : self->listeners)
 				//Dispatch rtp packet
@@ -85,7 +85,7 @@ void RTPIncomingMediaStreamMultiplexer::onRTP(const RTPIncomingMediaStream* stre
 	if (!muted)
 	{
 		//Dispatch in thread async
-		AsyncSafe([=,ssrc = stream->GetMediaSSRC()](auto self, auto now){
+		AsyncSafe([packets, ssrc = stream->GetMediaSSRC()](auto self, auto now){
 			//Trace method
 			TRACE_EVENT("rtp", "RTPIncomingMediaStreamMultiplexer::onRTP async", "ssrc", ssrc, "packets", packets.size());
 			//Process each packet in order, if we reverse the order of the loops, the last listeners would have a lot of delay
@@ -105,7 +105,7 @@ void RTPIncomingMediaStreamMultiplexer::onBye(const RTPIncomingMediaStream* stre
 	TRACE_EVENT("rtp", "RTPIncomingMediaStreamMultiplexer::onBye", "ssrc", stream->GetMediaSSRC());
 
 	//Dispatch in thread async
-	AsyncSafe([=, ssrc = stream->GetMediaSSRC()](auto self, auto now){
+	AsyncSafe([ssrc = stream->GetMediaSSRC()](auto self, auto now){
 		//Trace method
 		TRACE_EVENT("rtp", "RTPIncomingMediaStreamMultiplexer::onBye async", "ssrc", ssrc);
 		//Deliver to all listeners

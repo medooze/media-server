@@ -27,9 +27,9 @@ void RTPStreamTransponder::ResetIncoming()
 
 void RTPStreamTransponder::SetIncoming(const RTPIncomingMediaStream::shared& incoming, const RTPReceiver::shared& receiver, bool smooth)
 {
-	AsyncSafe([=, &outgoing = outgoing](auto self, std::chrono::milliseconds now){
+	AsyncSafe([incoming, receiver, smooth](auto self, std::chrono::milliseconds now){
 		//Check we are not closed
-		if (!outgoing)
+		if (!self->outgoing)
 		{
 			//Error
 			Error("-RTPStreamTransponder::SetIncoming() | Transponder already closed\n");
@@ -37,80 +37,80 @@ void RTPStreamTransponder::SetIncoming(const RTPIncomingMediaStream::shared& inc
 			return;
 		}
 
-		Debug(">RTPStreamTransponder::SetIncoming() | [incoming:%p,receiver:%p,ssrc:%u,smooth:%d]\n", incoming, receiver, ssrc, smooth);
+		Debug(">RTPStreamTransponder::SetIncoming() | [incoming:%p,receiver:%p,ssrc:%u,smooth:%d]\n", incoming, receiver, self->ssrc, smooth);
 
 		if (smooth)
 		{
 			//If they are the same as next ones already
-			if (this->incomingNext == incoming && this->receiverNext == receiver)
+			if (self->incomingNext == incoming && self->receiverNext == receiver)
 				//DO nothing
 				return;
 
 			//Remove listener from previues transitioning stream
-			if (this->incomingNext)
-				this->incomingNext->RemoveListener(this);
+			if (self->incomingNext)
+				self->incomingNext->RemoveListener(self.get());
 
 			//If they are the same as current ones
-			if (this->incoming == incoming && this->receiver == receiver)
+			if (self->incoming == incoming && self->receiver == receiver)
 			{
 				//And don't wait anymore
-				incomingNext = nullptr;
-				receiverNext = nullptr;
+				self->incomingNext = nullptr;
+				self->receiverNext = nullptr;
 				//DO nothing
 				return;
 			}
 
 			//Store stream and receiver
-			this->incomingNext = incoming;
-			this->receiverNext = receiver;
+			self->incomingNext = incoming;
+			self->receiverNext = receiver;
 
 			//Double check
-			if (this->incomingNext)
+			if (self->incomingNext)
 			{
 				//Add us as listeners
-				this->incomingNext->AddListener(this);
+				self->incomingNext->AddListener(self.get());
 
 				//Request update on the transitoning one
-				if (this->receiverNext) this->receiverNext->SendPLI(this->incomingNext->GetMediaSSRC());
+				if (self->receiverNext) self->receiverNext->SendPLI(self->incomingNext->GetMediaSSRC());
 			}
 
 		} else {
 			//If we were waiting to transition to a new incoming media stream
-			if (this->incomingNext)
+			if (self->incomingNext)
 			{
 				//Stop listening from it
-				this->incomingNext->RemoveListener(this);
+				self->incomingNext->RemoveListener(self.get());
 				//And don't wait anymore
-				incomingNext = nullptr;
-				receiverNext = nullptr;
+				self->incomingNext = nullptr;
+				self->receiverNext = nullptr;
 			}
 
 			//If they are the same as current ones
-			if (this->incoming==incoming && this->receiver==receiver)
+			if (self->incoming==incoming && self->receiver==receiver)
 				//DO nothing
 				return;
 
 			//Remove listener from old stream
-			if (this->incoming)
-				this->incoming->RemoveListener(this);
+			if (self->incoming)
+				self->incoming->RemoveListener(self.get());
 
 			//Reset packets before start listening again
-			reset = true;
+			self->reset = true;
 
 			//Store stream and receiver
-			this->incoming = incoming;
-			this->receiver = receiver;
+			self->incoming = incoming;
+			self->receiver = receiver;
 
 			//Double check
-			if (this->incoming)
+			if (self->incoming)
 			{
 				//Add us as listeners
-				this->incoming->AddListener(this);
+				self->incoming->AddListener(self.get());
 
 				//Request update on the incoming
-				if (this->receiver) this->receiver->SendPLI(this->incoming->GetMediaSSRC());
+				if (self->receiver) self->receiver->SendPLI(self->incoming->GetMediaSSRC());
 				//Update last requested PLI
-				lastSentPLI = now.count();
+				self->lastSentPLI = now.count();
 			}
 		}
 
@@ -164,7 +164,15 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 		return;
 
 	//Run async
-	AsyncSafe([=, packet = packet->Clone()](auto self, std::chrono::milliseconds now) {
+	AsyncSafe([stream, packet = packet->Clone()](auto self, std::chrono::milliseconds now) {
+
+		// In theory this check is not necessary as it is already checked in onRTPAsync but 
+		// more encapsulated and safer against future maintainence duplicating it here.
+		if (stream != self->incomingNext.get() && stream != self->incoming.get())
+		{
+			return;
+		}
+
 		self->onRTPAsync(now, stream, packet);
 	});
 }
@@ -552,7 +560,7 @@ void RTPStreamTransponder::onRTPAsync(std::chrono::milliseconds now, const RTPIn
 
 void RTPStreamTransponder::onBye(const RTPIncomingMediaStream* stream)
 {
-	AsyncSafe([=](auto self, std::chrono::milliseconds now) {
+	AsyncSafe([stream](auto self, std::chrono::milliseconds now) {
 
 		//If they are the not same
 		if (self->incoming.get() != stream)
@@ -566,12 +574,14 @@ void RTPStreamTransponder::onBye(const RTPIncomingMediaStream* stream)
 
 void RTPStreamTransponder::onEnded(const RTPIncomingMediaStream* stream)
 {
-	AsyncSafe([=](auto self, std::chrono::milliseconds now) {
+	AsyncSafe([stream](auto self, std::chrono::milliseconds now) {
+		// Note: Checks for equality of stream pointer are important to ensure it is still valid on exec!
+
 		//IF it is the current one
 		if (self->incoming.get() == stream)
 		{
 			//Reset packets before start listening again
-			reset = true;
+			self->reset = true;
 
 			//No stream and receiver
 			self->incoming = nullptr;
@@ -586,7 +596,9 @@ void RTPStreamTransponder::onEnded(const RTPIncomingMediaStream* stream)
 }
 void RTPStreamTransponder::onEnded(const RTPOutgoingSourceGroup* group)
 {
-	AsyncSafe([=](auto self, std::chrono::milliseconds now){
+	AsyncSafe([group](auto self, std::chrono::milliseconds now){
+		// Note: Checks for equality of group pointer are important to ensure it is still valid on exec!
+
 		//IF it is the current one
 		if (self->outgoing.get() == group)
 			//No more outgoing
@@ -598,7 +610,7 @@ void RTPStreamTransponder::onEnded(const RTPOutgoingSourceGroup* group)
 void RTPStreamTransponder::RequestPLI()
 {
 	//Log("-RTPStreamTransponder::RequestPLI() [receiver:%p,incoming:%p]\n",receiver,incoming);
-	AsyncSafe([=](auto self, std::chrono::milliseconds now) {
+	AsyncSafe([](auto self, std::chrono::milliseconds now) {
 		//Request update on the incoming
 		if (self->receiver && self->incoming) self->receiver->SendPLI(self->incoming->GetMediaSSRC());
 		//Update last sent pli

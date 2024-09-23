@@ -160,7 +160,9 @@ void ActiveSpeakerMultiplexer::onRTP(const RTPIncomingMediaStream* incoming, con
 		//Exit
 		return;
 
-	AsyncSafe([&, packet = packet](auto self, auto now) {
+	AsyncSafe([incoming, packet = packet](auto self, auto now) {
+		// Note: Checks for existence of "incoming" pointer are important to ensure it is still valid on exec!
+
 		//Double check we have audio level
 		if (!packet->HasAudioLevel())
 			return;
@@ -218,7 +220,8 @@ void ActiveSpeakerMultiplexer::onEnded(const RTPIncomingMediaStream* incoming)
 	if (!incoming)
 		return;
 
-	AsyncSafe([&](auto self, auto now) {
+	AsyncSafe([incoming](auto self, auto now) {
+		// Note: Checks for existence of "incoming" pointer are important to ensure it is still valid on exec!
 
 		Debug("-ActiveSpeakerDetectorFacade::onEnded() async [incoming:%p]\n", incoming);
 
@@ -242,7 +245,7 @@ void ActiveSpeakerMultiplexer::onEnded(const RTPIncomingMediaStream* incoming)
 			if (destination.sourceId == sourceId)
 			{
 				//Event
-				listener->onActiveSpeakerRemoved(destination.id);
+				self->listener->onActiveSpeakerRemoved(destination.id);
 				//Reset source id and timestamp
 				destination.sourceId = 0;
 				destination.ts = 0;
