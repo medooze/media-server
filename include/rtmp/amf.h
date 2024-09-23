@@ -214,7 +214,7 @@ private:
 
 typedef std::map<std::wstring,AMFData*> AMFObjectMap;
 
-class AMFNamedPropertiesObject
+class AMFNamedPropertiesObject : public AMFData
 {
 public:
 	virtual AMFObjectMap& GetProperties() = 0;
@@ -228,9 +228,13 @@ public:
 	virtual AMFData& GetProperty(const wchar_t* key) = 0;
 	virtual bool HasProperty(const wchar_t* key) const = 0;
 
+	static bool IsNamedPropertiesObject(AMFData* data)
+	{
+		return data->CheckType(AMFData::EcmaArray) || data->CheckType(AMFData::Object);
+	}
 };
 
-class AMFObject : public AMFData, AMFNamedPropertiesObject
+class AMFObject : public AMFNamedPropertiesObject
 {
 public:
 	AMFObject();
@@ -270,7 +274,7 @@ private:
 	UTF8Parser utf8parser;
 };
 
-class AMFEcmaArray : public AMFData, AMFNamedPropertiesObject
+class AMFEcmaArray : public AMFNamedPropertiesObject
 {
 public:
 	AMFEcmaArray();
