@@ -1870,7 +1870,7 @@ bool DTLSICETransport::AddOutgoingSourceGroup(const RTPOutgoingSourceGroup::shar
 	Log("-DTLSICETransport::AddOutgoingSourceGroup() [group:%p,ssrc:%u,fec:%u,rtx:%u]\n",group.get(), group->media.ssrc, group->fec.ssrc, group->rtx.ssrc);
 	
 	//Dispatch to the event loop thread
-	AsyncSafe([group](auto self, std::chrono::milliseconds now){
+	AsyncSafe([=](std::chrono::milliseconds now){
 
 		//Get ssrcs
 		const auto media = group->media.ssrc;
@@ -1938,7 +1938,7 @@ bool DTLSICETransport::RemoveOutgoingSourceGroup(const RTPOutgoingSourceGroup::s
 	Log("-DTLSICETransport::RemoveOutgoingSourceGroup() [ssrc:%u,fec:%u,rtx:%u]\n", group->media.ssrc, group->fec.ssrc, group->rtx.ssrc);
 
 	//Dispatch to the event loop thread
-	AsyncSafe([group](auto self, std::chrono::milliseconds now){
+	AsyncSafe([=](std::chrono::milliseconds now){
 		Log("-DTLSICETransport::RemoveOutgoingSourceGroup() | Async [ssrc:%u,fec:%u,rtx:%u]\n", group->media.ssrc, group->fec.ssrc, group->rtx.ssrc);
 		//Get ssrcs
 		std::vector<DWORD> ssrcs;
@@ -2012,7 +2012,7 @@ bool DTLSICETransport::AddIncomingSourceGroup(const RTPIncomingSourceGroup::shar
 		return Error("No media ssrc or rid defined, stream will not be added\n");
 	
 	//Dispatch to the event loop thread
-	AsyncSafe([group, isRTXEnabled](auto self, std::chrono::milliseconds now){
+	AsyncSafe([=](std::chrono::milliseconds now){
 		//Get ssrcs
 		const auto media = group->media.ssrc;
 		const auto rtx   = group->rtx.ssrc;
@@ -2083,7 +2083,7 @@ bool DTLSICETransport::RemoveIncomingSourceGroup(const RTPIncomingSourceGroup::s
 	Log("-DTLSICETransport::RemoveIncomingSourceGroup() [mid:'%s',rid:'%s',ssrc:%u,rtx:%u]\n",group->mid.c_str(),group->rid.c_str(),group->media.ssrc,group->rtx.ssrc);
 	
 	//Dispatch to the event loop thread
-	AsyncSafe([group](auto self, std::chrono::milliseconds now){
+	AsyncSafe([=](std::chrono::milliseconds now){
 
 		//Remove rid if any
 		if (!group->rid.empty())
@@ -2215,7 +2215,7 @@ int DTLSICETransport::SendPLI(DWORD ssrc)
 	Debug("-DTLSICETransport::SendPLI() | [ssrc:%u]\n",ssrc);
 	
 	//Execute on the event loop thread and do not wait
-	AsyncSafe([ssrc](auto self, std::chrono::milliseconds now){
+	AsyncSafe([=](std::chrono::milliseconds now){
 		//Get group
 		RTPIncomingSourceGroup* group = GetIncomingSourceGroup(ssrc);
 
@@ -2252,7 +2252,7 @@ int DTLSICETransport::Reset(DWORD ssrc)
 	Debug("-DTLSICETransport::Reset() | [ssrc:%u]\n", ssrc);
 
 	//Execute on the event loop thread and do not wait
-	AsyncSafe([ssrc](auto self, auto now) {
+	AsyncSafe([=](auto now) {
 
 		//Get group
 		RTPIncomingSourceGroup* group = GetIncomingSourceGroup(ssrc);
@@ -2957,7 +2957,7 @@ void DTLSICETransport::Start()
 	dcOptions.localPort = 5000;
 	dcOptions.remotePort = 5000;
 	//Run ice timeout timer
-	iceTimeoutTimer = CreateTimerSafe(IceTimeout,[](auto self, auto now){
+	iceTimeoutTimer = CreateTimerSafe(IceTimeout,[=](auto now){
 		//Log
 		Debug("-DTLSICETransport::onIceTimeoutTimer() ICE timeout\n");
 		//If got listener
@@ -2968,14 +2968,14 @@ void DTLSICETransport::Start()
 	//Set name for debug
 	iceTimeoutTimer->SetName("DTLSICETransport - ice timeout");
 	//Create new probe timer
-	probingTimer = CreateTimerSafe([](auto self, std::chrono::milliseconds ms) {
+	probingTimer = CreateTimerSafe([=](std::chrono::milliseconds ms) {
 		//Do probe
 		Probe(ms.count());
-		});
+	});
 	//Set name for debug
 	probingTimer->SetName("DTLSICETransport - bwe probe");
 	//Create sse timer
-	sseTimer = CreateTimerSafe([](auto self, std::chrono::milliseconds ms) {
+	sseTimer = CreateTimerSafe([=](std::chrono::milliseconds ms) {
 		//Send feedback now
 		SendTransportWideFeedbackMessage(lastMediaSSRC);
 	});
@@ -3048,7 +3048,7 @@ int DTLSICETransport::Enqueue(const RTPPacket::shared& packet)
 	// @todo We should check this now.
 	//TODO: check if we are actuall sending from a different thread ocasionally
 	//Send async
-	//AsyncSafe([](auto self, std::chrono::milliseconds now){
+	//AsyncSafe([](std::chrono::milliseconds now){
 		//Send
 		Send(packet);
 	//});
@@ -3217,9 +3217,9 @@ void DTLSICETransport::SetListener(const Listener::shared& listener)
 {
 	Debug(">DTLSICETransport::SetListener() [this:%p,listener:%p]\n", this, listener.get());
 	//Add in main thread async
-	AsyncSafe([listener](auto self, std::chrono::milliseconds now){
+	AsyncSafe([=](std::chrono::milliseconds now){
 		//Store listener
-		listener = listener;
+		this->listener = listener;
 	});
 }
 
@@ -3298,7 +3298,7 @@ void DTLSICETransport::CheckProbeTimer()
 	Debug("-DTLSICETransport::CheckProbeTimer() | [probingTimer:%d]\n",!!probingTimer);
 
 	//Dispatch to the event loop thread
-	AsyncSafe([](auto self, auto now) {
+	AsyncSafe([=](auto now) {
 		//If we don't have timer anumore
 		if (!probingTimer)
 			//Do nothing
