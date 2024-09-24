@@ -79,13 +79,13 @@ void NetEventLoop::Send(const uint32_t ipAddr, const uint16_t port, Packet&& pac
 	Signal();
 }
 
-std::optional<uint16_t> NetEventLoop::GetPollEventMask(int pfd) const
+std::optional<uint16_t> NetEventLoop::GetPollEventMask(int fd) const
 {
 	//If we have anything to send set to wait also for write events
 	return sending.size_approx() ? (Poll::Event::In | Poll::Event::Out) : Poll::Event::In;
 }
 
-void NetEventLoop::OnPollIn(int pfd)
+void NetEventLoop::OnPollIn(int fd)
 {
 	struct sockaddr_in froms[MaxMultipleReceivingMessages] = {};
 	struct mmsghdr messages[MaxMultipleReceivingMessages] = {};
@@ -119,7 +119,7 @@ void NetEventLoop::OnPollIn(int pfd)
 	}
 
 	//Read from socket
-	int len = recvmmsg(pfd, messages, MaxMultipleReceivingMessages, flags, nullptr);
+	int len = recvmmsg(fd, messages, MaxMultipleReceivingMessages, flags, nullptr);
 
 	//If we got listener
 	if (listener)
@@ -128,10 +128,10 @@ void NetEventLoop::OnPollIn(int pfd)
 			//double check
 			if (messages[i].msg_len)
 				//Run callback
-				listener->OnRead(pfd, datas[i], messages[i].msg_len, ntohl(froms[i].sin_addr.s_addr), ntohs(froms[i].sin_port));
+				listener->OnRead(fd, datas[i], messages[i].msg_len, ntohl(froms[i].sin_addr.s_addr), ntohs(froms[i].sin_port));
 }
 
-void NetEventLoop::OnPollOut(int pfd)
+void NetEventLoop::OnPollOut(int fd)
 {
 	//Multiple messages struct
 	struct mmsghdr messages[MaxMultipleSendingMessages] = {};
@@ -201,7 +201,7 @@ void NetEventLoop::OnPollOut(int pfd)
 	}
 	
 	//Send them
-	int sendFd = this->rawTx ? this->rawTx->fd : pfd;
+	int sendFd = this->rawTx ? this->rawTx->fd : fd;
 	{
 		TRACE_EVENT("neteventloop", "sendmmsg", "fd", fd, "vlen", len);
 		sendmmsg(sendFd, messages, len, flags);
@@ -237,7 +237,7 @@ void NetEventLoop::OnPollOut(int pfd)
 	std::move(retry.begin(), retry.end(), std::back_inserter(items));
 }
 
-void NetEventLoop::OnPollError(int pfd, const std::string& errorMsg)
+void NetEventLoop::OnPollError(int fd, const std::string& errorMsg)
 {
 	throw std::runtime_error("Error occurred on network fd: " + errorMsg);
 }

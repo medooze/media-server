@@ -68,13 +68,13 @@ RTMPClientConnection::ErrorCode RTMPClientConnection::Connect(const char* server
 	Log(">RTMPClientConnection::Connect() [host:%s:%d,url:%s]\n", server, port, app);
 
 	//Create socket
-	fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
+	fileDescriptor = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
 
 	//Set no delay option
 	int flag = 1;
 // Ignore coverity error: "this->fd" is passed to a parameter that cannot be negative.
 // coverity[negative_returns]
-	(void)setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int));
+	(void)setsockopt(fileDescriptor, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int));
 	//Catch all IO errors
 	signal(SIGIO, EmptyCatch);
 
@@ -101,7 +101,7 @@ RTMPClientConnection::ErrorCode RTMPClientConnection::Connect(const char* server
 	//Connect
 // Ignore coverity error: "this->fd" is passed to a parameter that cannot be negative.
 // coverity[negative_returns]
-	if (connect(fd, (sockaddr*)&addr, sizeof(addr)) < 0 && errno != EINPROGRESS)
+	if (connect(fileDescriptor, (sockaddr*)&addr, sizeof(addr)) < 0 && errno != EINPROGRESS)
 	{
 		//Exit
 		Error("-RTMPClientConnection::Connect() Connection error [%d]\n", errno);
@@ -133,7 +133,7 @@ RTMPClientConnection::ErrorCode RTMPClientConnection::Connect(const char* server
 	connected = false;
 	
 	//Start
-	return EventLoop::StartWithFd(fd) ? RTMPClientConnection::ErrorCode::NoError : RTMPClientConnection::ErrorCode::Generic;
+	return EventLoop::StartWithFd(fileDescriptor) ? RTMPClientConnection::ErrorCode::NoError : RTMPClientConnection::ErrorCode::Generic;
 }
 
 void RTMPClientConnection::OnLoopEnter()
@@ -145,14 +145,14 @@ void RTMPClientConnection::OnLoopEnter()
 void RTMPClientConnection::OnLoopExit()
 {
 	//If got socket
-	if (fd != FD_INVALID)
+	if (fileDescriptor != FD_INVALID)
 	{
 		//Close socket
-		shutdown(fd, SHUT_RDWR);
+		shutdown(fileDescriptor, SHUT_RDWR);
 		//Will cause poll to return
-		MCU_CLOSE(fd);
+		MCU_CLOSE(fileDescriptor);
 		//No socket
-		fd = FD_INVALID;
+		fileDescriptor = FD_INVALID;
 	}
 }
 
@@ -187,15 +187,15 @@ int RTMPClientConnection::Disconnect()
 	return 1;
 }
 
-std::optional<uint16_t> RTMPClientConnection::GetPollEventMask(int pfd) const
+std::optional<uint16_t> RTMPClientConnection::GetPollEventMask(int fd) const
 {
 	return eventMask;
 }
 
-void RTMPClientConnection::OnPollIn(int pfd)
+void RTMPClientConnection::OnPollIn(int fd)
 {
 	//Read data from connection
-	int len = read(pfd, buffer, BufferSize);
+	int len = read(fd, buffer, BufferSize);
 	if (len == 0)
 	{
 		if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::PeerClosed);
@@ -222,7 +222,7 @@ void RTMPClientConnection::OnPollIn(int pfd)
 	}
 }
 
-void RTMPClientConnection::OnPollOut(int pfd)
+void RTMPClientConnection::OnPollOut(int fd)
 {
 	if (IsConnectionReady())
 	{
@@ -232,7 +232,7 @@ void RTMPClientConnection::OnPollOut(int pfd)
 			//Double check it is connected
 			int err;
 			socklen_t len = sizeof(err);
-			if (getsockopt(pfd, SOL_SOCKET, SO_ERROR, &err, &len) == -1)
+			if (getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &len) == -1)
 			{
 				if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::GetSockOptError);
 				throw std::runtime_error(FormatString("-RTMPClientConnection::OnPollOut() getsockopt failed [%p]\n", this));
@@ -272,7 +272,7 @@ void RTMPClientConnection::OnPollOut(int pfd)
 	OnReadyToTransfer();
 }
 
-void RTMPClientConnection::OnPollError(int pfd, const std::string& errorMsg)
+void RTMPClientConnection::OnPollError(int fd, const std::string& errorMsg)
 {	
 	if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::PollError);
 	throw std::runtime_error("-RTMPClientConnection::OnPollError() Error occurred: " + errorMsg);
@@ -742,7 +742,7 @@ void RTMPClientConnection::ParseData(const BYTE* data, const DWORD size)
  ***********************/
 int RTMPClientConnection::WriteData(const BYTE* data, const DWORD size)
 {
-	auto bytes = write(fd, data, size);
+	auto bytes = write(fileDescriptor, data, size);
 	
 	if (bytes > 0) outBytes += bytes;
 	

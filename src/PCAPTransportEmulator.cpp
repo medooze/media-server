@@ -246,7 +246,7 @@ bool PCAPTransportEmulator::Play()
 	running = true;
 
 	//Create thread
-	loop.Start([this](){ Run(); });
+	loop.StartWithLoop([this](){ Run(); });
 	
 	Debug("<PCAPTransportEmulator::Play()\n");
 	

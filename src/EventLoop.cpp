@@ -1,11 +1,11 @@
 #include "tracing.h"
 #include "EventLoop.h"
+#include "ScopedCleanUp.h"
 
 #include <sys/socket.h>
 #include <netinet/tcp.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <sys/poll.h>
 
 #include <errno.h>
 #include <unistd.h>
@@ -68,165 +68,6 @@ void free_cpu_set(cpu_set_t* s) {
 	delete [] reinterpret_cast<unsigned long*>(s);
 }
 #endif
-
-bool SystemPoll::AddFd(FileDescriptor fd)
-{
-	assert(fd.fd != FD_INVALID);
-	if (fd.fd == FD_INVALID) return false;
-	
-	pollfd pfd;
-	pfd.fd = fd.fd;
-	
-	//Set non blocking so we can get an error when we are closed by end
-	int fsflags = fcntl(pfd.fd,F_GETFL,0);
-	fsflags |= O_NONBLOCK;
-	
-	if (fcntl(pfd.fd,F_SETFL,fsflags) < 0)
-		return false;
-	
-	ufds.emplace(fd, pfd);
-	
-	tempfdsDirty = true;
-	sysfdsDirty = true;
-	
-	return true;
-}
-
-bool SystemPoll::RemoveFd(FileDescriptor fd)
-{
-	bool removed = ufds.erase(fd) > 0;
-	if (removed)
-	{
-		tempfdsDirty = true;
-		sysfdsDirty = true;
-	
-		return true;
-	}
-	
-	return false;
-}
-
-void SystemPoll::Clear()
-{
-	if (ufds.empty()) return;
-	
-	ufds.clear();
-	tempfdsDirty = true;
-	sysfdsDirty = true;
-}
-
-
-void SystemPoll::ForEachFd(std::function<void(FileDescriptor)> func)
-{
-	if (tempfdsDirty)
-	{
-		tempfds.clear();
-		for (auto& [fd, pfd] : ufds)
-		{
-			tempfds.push_back(fd);
-		}
-		
-		tempfdsDirty = false;
-	}
-	
-	for (auto& fd : tempfds)
-	{
-		func(fd);
-	}
-}
-
-bool SystemPoll::SetEventMask(FileDescriptor fd, uint16_t eventMask)
-{
-	if (ufds.find(fd) == ufds.end()) return false;
-	
-	auto& pfd = ufds[fd];
-	pfd.events = 0;
-	
-	if (eventMask & Event::In)
-	{
-		pfd.events |= POLLIN;
-	}
-
-	if (eventMask & Event::Out)
-	{
-		pfd.events |= POLLOUT;
-	}
-	
-	pfd.events |= POLLERR | POLLHUP;
-
-	return true;
-}
-
-uint16_t SystemPoll::GetEvents(FileDescriptor fd) const
-{
-	if (ufds.find(fd) == ufds.end()) return 0;
-	
-	uint events = 0;
-	uint16_t revents = ufds.at(fd).revents;
-	
-	if (revents & POLLIN)
-	{
-		events |= Event::In;
-	}
-	
-	if (revents & POLLOUT)
-	{
-		events |= Event::Out;
-	}
-	
-	return events;
-}
-
-bool SystemPoll::Wait(uint32_t timeOutMs)
-{
-	if (sysfdsDirty)
-	{
-		sysfds.clear();
-		indices.clear();
-		
-		for (auto& it : ufds)
-		{
-			sysfds.push_back(it.second);
-			indices[sysfds.size() - 1] = it.first;
-		}
-		
-		sysfdsDirty = false;
-	}
-	
-	for (size_t i = 0; i < sysfds.size(); i++)
-	{
-		sysfds[i].events = ufds[indices[i]].events;
-		sysfds[i].revents = 0;
-	}
-	
-	// Wait for events
-	if (poll(sysfds.data(), sysfds.size(),timeOutMs) < 0)
-		return false;
-	
-	// Copy back
-	for (size_t i = 0; i < sysfds.size(); i++)
-	{
-		assert(indices[i].fd == sysfds[i].fd);
-		ufds[indices[i]] = sysfds[i];
-	}
-
-	return true;
-}
-
-std::optional<std::string> SystemPoll::GetError(FileDescriptor fd) const
-{
-	if (ufds.find(fd) == ufds.end()) return std::nullopt;
-	
-	std::optional<std::string> error;
-	auto pfd = ufds.at(fd);
-	if ((pfd.revents & POLLHUP) || (pfd.revents & POLLERR))
-	{
-		error = FormatString("revents:0x%x,errno:%d", pfd.revents, errno);
-	}
-	
-	return error;
-}
-
 
 EventLoop::EventLoop(std::unique_ptr<Poll> poll) : poll(std::move(poll))
 {
@@ -320,7 +161,7 @@ bool EventLoop::SetPriority(int priority)
 	return !pthread_setschedparam(thread.native_handle(), priority ? SCHED_FIFO : SCHED_OTHER ,&param);
 }
 
-bool EventLoop::Start(std::function<void(void)> loop)
+bool EventLoop::StartWithLoop(std::function<void(void)> loop)
 {
 	//If already started
 	if (running)
@@ -330,6 +171,10 @@ bool EventLoop::Start(std::function<void(void)> loop)
 	//Log
 	TRACE_EVENT("eventloop", "EventLoop::Start(loop)");
 	Debug("-EventLoop::Start()\n");
+	
+	auto cleanUp = std::make_shared<ScopedCleanUp>([this](){
+		CleanUp();
+	});
 	
 #if __APPLE__
 	//Create pipe
@@ -350,12 +195,12 @@ bool EventLoop::Start(std::function<void(void)> loop)
 		return Error("-EventLoop::Start() | could not start pipe [errno:%d]\n",errno);
 	
 	
-	if (!poll->AddFd({Poll::FileDescriptor::Category::Signaling, pipe[0]}))
+	if (!poll->AddFd({Poll::PollFd::Category::Signaling, pipe[0]}))
 	{
 		return Error("Failed to add signaling fd to event poll\n");
 	}
 	
-	if (!poll->SetEventMask({Poll::FileDescriptor::Category::Signaling, pipe[0]}, Poll::Event::In))
+	if (!poll->SetEventMask({Poll::PollFd::Category::Signaling, pipe[0]}, Poll::Event::In))
 	{
 		return Error("Failed to set event mask\n");
 	}
@@ -367,7 +212,9 @@ bool EventLoop::Start(std::function<void(void)> loop)
 	signaled.clear();
 	
 	//Start thread and run
-	thread = std::thread(loop);
+	thread = std::thread([loop, cleanUp](){
+		loop();
+	});
 	
 	//Done
 	return true;
@@ -391,6 +238,10 @@ bool EventLoop::Start()
 	TRACE_EVENT("eventloop", "EventLoop::Start()");
 	Debug("-EventLoop::Start() [this:%p]\n", this);
 	
+	auto cleanUp = std::make_shared<ScopedCleanUp>([this](){
+		CleanUp();
+	});
+	
 #if __APPLE__
 	//Create pipe
 	if (::pipe(pipe)==-1)
@@ -410,12 +261,12 @@ bool EventLoop::Start()
 		return Error("-EventLoop::Start() | could not start pipe [errno:%d]\n",errno);
 	
 	
-	if (!poll->AddFd({Poll::FileDescriptor::Category::Signaling, pipe[0]}))
+	if (!poll->AddFd({Poll::PollFd::Category::Signaling, pipe[0]}))
 	{
 		return Error("Failed to add signaling fd to event poll\n");
 	}
 	
-	if (!poll->SetEventMask({Poll::FileDescriptor::Category::Signaling, pipe[0]}, Poll::Event::In))
+	if (!poll->SetEventMask({Poll::PollFd::Category::Signaling, pipe[0]}, Poll::Event::In))
 	{
 		return Error("Failed to set event mask\n");
 	}
@@ -427,7 +278,7 @@ bool EventLoop::Start()
 	signaled.clear();
 	
 	//Start thread and run
-	thread = std::thread([this](){ Run(); });
+	thread = std::thread([this, cleanUp](){ Run(); });
 	
 	//Done
 	return true;
@@ -456,15 +307,6 @@ bool EventLoop::Stop()
 		//Nulifi thread
 		thread.join();
 	}
-	
-	//Close pipe
-	if (pipe[0]!=FD_INVALID) close(pipe[0]);
-	if (pipe[1]!=FD_INVALID) close(pipe[1]);
-	
-	//Empyt pipe
-	pipe[0] = pipe[1] = FD_INVALID;
-	
-	poll->Clear();
 	
 	//Log
 	Debug("<EventLoop::Stop()\n");
@@ -712,9 +554,9 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 	while(running && now<=until)
 	{
 		//TRACE_EVENT("eventloop", "EventLoop::Run::Iteration");
-		poll->ForEachFd([this](Poll::FileDescriptor pfd) {
+		poll->ForEachFd([this](Poll::PollFd pfd) {
 			
-			if (pfd.category == Poll::FileDescriptor::Category::Signaling) return;
+			if (pfd.category == Poll::PollFd::Category::Signaling) return;
 			
 			auto events = GetPollEventMask(pfd.fd);
 			if (events)
@@ -740,7 +582,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 			
 			//UltraDebug("<EventLoop::Run() | poll timeout:%d timers:%d tasks:%d\n",timeout,timers.size(),tasks.size_approx());
 			
-			poll->ForEachFd([this](Poll::FileDescriptor pfd) {
+			poll->ForEachFd([this](Poll::PollFd pfd) {
 
 				auto events = poll->GetEvents(pfd);
 
@@ -748,7 +590,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 				auto error = poll->GetError(pfd);
 				if (error)
 				{
-					if (pfd.category == Poll::FileDescriptor::Category::Signaling)
+					if (pfd.category == Poll::PollFd::Category::Signaling)
 					{
 						ClearSignal();
 						throw std::runtime_error("Error occurred on signaling fd: " + *error);
@@ -764,7 +606,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 								
 				if (events & Poll::Event::In)
 				{
-					if (pfd.category == Poll::FileDescriptor::Category::Signaling)
+					if (pfd.category == Poll::PollFd::Category::Signaling)
 					{
 						ClearSignal();
 					}
@@ -777,7 +619,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 				//Check read is possible
 				if (events & Poll::Event::Out)
 				{
-					assert(pfd.category != Poll::FileDescriptor::Category::Signaling);
+					assert(pfd.category != Poll::PollFd::Category::Signaling);
 					OnPollOut(pfd.fd);
 				}
 			});
@@ -921,3 +763,15 @@ void EventLoop::ProcessTriggers(const std::chrono::milliseconds& now)
 	TRACE_EVENT_END("eventloop");
 }
 
+
+void EventLoop::CleanUp()
+{
+	//Close pipe
+	if (pipe[0]!=FD_INVALID) close(pipe[0]);
+	if (pipe[1]!=FD_INVALID) close(pipe[1]);
+	
+	//Empyt pipe
+	pipe[0] = pipe[1] = FD_INVALID;
+	
+	poll->Clear();
+}

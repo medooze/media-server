@@ -91,13 +91,13 @@ protected:
 	inline Listener* GetListener() { return listener; }
 	int WriteData(const BYTE* data, const DWORD size);
 	void ParseData(const BYTE* data, const DWORD size);
+	
+	std::optional<uint16_t> GetPollEventMask(int fd) const override;
+	void OnPollIn(int fd) override;
+	void OnPollOut(int fd) override;
+	void OnPollError(int fd, const std::string& errorMsg) override;
+	
 private:
-	
-	std::optional<uint16_t> GetPollEventMask(int pfd) const override;
-	void OnPollIn(int pfd) override;
-	void OnPollOut(int pfd) override;
-	void OnPollError(int pfd, const std::string& errorMsg) override;
-	
 	DWORD SerializeChunkData(BYTE* data, const DWORD size);
 
 	void ProcessControlMessage(DWORD streamId, BYTE type, RTMPObject* msg);
@@ -122,7 +122,7 @@ private:
 	typedef std::map<DWORD, RTMPChunkOutputStream*> RTMPChunkOutputStreams;
 	typedef std::map<DWORD, std::function<void(bool, AMFData*, const std::vector<AMFData*>&)>> Transactions;
 private:
-	int fd = FD_INVALID;
+	int fileDescriptor = FD_INVALID;
 	short eventMask = 0;
 	bool inited = false;
 	State state = State::NONE;
