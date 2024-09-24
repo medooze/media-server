@@ -38,7 +38,7 @@ void RTPOutgoingSourceGroup::AddListener(Listener* listener)
 	Debug("-RTPOutgoingSourceGroup::AddListener() [listener:%p]\n",listener);
 	
 	//Add it sync
-	AsyncSafe([listener]( std::chrono::milliseconds now) {
+	AsyncSafe([=](std::chrono::milliseconds now) {
 		listeners.insert(listener);
 	});
 	
@@ -90,10 +90,10 @@ RTPPacket::shared RTPOutgoingSourceGroup::GetPacket(WORD seq) const
 void RTPOutgoingSourceGroup::onPLIRequest(DWORD ssrc)
 {
 	//Send asycn
-	AsyncSafe([ssrc]( std::chrono::milliseconds now) {
+	AsyncSafe([=](std::chrono::milliseconds now) {
 		//Deliver to all listeners
 		for (auto listener : listeners)
-			listener->onPLIRequest(self.get(),ssrc);
+			listener->onPLIRequest(this,ssrc);
 	});
 }
 
@@ -103,17 +103,17 @@ void RTPOutgoingSourceGroup::onREMB(DWORD ssrc, DWORD bitrate)
 	media.remb = bitrate;
 	
 	//Send asycn
-	AsyncSafe([ssrc, bitrate]( std::chrono::milliseconds now) {
+	AsyncSafe([=](std::chrono::milliseconds now) {
 		//Deliver to all listeners
 		for (auto listener : listeners)
-			listener->onREMB(self.get(),ssrc,bitrate);
+			listener->onREMB(this,ssrc,bitrate);
 	});
 }
 
 void RTPOutgoingSourceGroup::UpdateAsync(std::function<void(std::chrono::milliseconds)> callback)
 {
 	//Update it sync
-	AsyncSafe([]( std::chrono::milliseconds now) {
+	AsyncSafe([=](std::chrono::milliseconds now) {
 		//Set last updated time
 		lastUpdated = now.count();
 		//Update
@@ -128,7 +128,7 @@ void RTPOutgoingSourceGroup::UpdateAsync(std::function<void(std::chrono::millise
 void RTPOutgoingSourceGroup::Update()
 {
 	//Update it sync
-	AsyncSafe([]( std::chrono::milliseconds now) {
+	AsyncSafe([=](std::chrono::milliseconds now) {
 		//Set last updated time
 		lastUpdated = now.count();
 		//Update
@@ -143,7 +143,7 @@ void RTPOutgoingSourceGroup::Update()
 void RTPOutgoingSourceGroup::Update(QWORD now)
 {
 	//Update it sync
-	AsyncSafe([now]( std::chrono::milliseconds) {
+	AsyncSafe([=](std::chrono::milliseconds) {
 		//Set last updated time
 		lastUpdated = now;
 		//Update
@@ -161,10 +161,10 @@ void RTPOutgoingSourceGroup::Stop()
 	Debug("-RTPOutgoingSourceGroup::Stop()\r\n");
 
 	//Add it sync
-	AsyncSafe([]( std::chrono::milliseconds now) {
+	AsyncSafe([=](std::chrono::milliseconds now) {
 		//Signal them we have been ended
 		for (auto listener : listeners)
-			listener->onEnded(self.get());
+			listener->onEnded(this);
 		//No mor listeners
 		listeners.clear();
 	});

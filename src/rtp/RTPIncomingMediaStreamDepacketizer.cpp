@@ -91,7 +91,7 @@ void RTPIncomingMediaStreamDepacketizer::AddMediaListener(const MediaFrame::List
 		return;
 
 	//Add listener Sync
-	AsyncSafe([listener](auto now){
+	AsyncSafe([=](auto now){
 		//Add to set
 		listeners.insert(listener);
 	});

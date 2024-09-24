@@ -88,8 +88,7 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 	}
 	
 	// Asynchronously check if we can reduce latency if all frames comes early
-	AsyncSafe([early, now, unifiedTs, refTime, refTimestamp, 
-				streamIdentifier, updateRefsPacketEarlyThresholdMs, state = state]( std::chrono::milliseconds) {
+	AsyncSafe([=](std::chrono::milliseconds) {
 		
 		if (state == State::Reset)
 		{

@@ -462,7 +462,7 @@ int DTLSConnection::Init()
 	SSL_do_handshake(ssl);
 	
 	//Start timeout
-	timeout = CreateTimerSafe(0ms, [=](auto now){
+	timeout = CreateTimerSafe(0ms, [](auto self, auto now){
 		//UltraDebug("-DTLSConnection::Timeout()\n");
 		//Check if still inited
 		if (inited)
@@ -713,7 +713,7 @@ int DTLSConnection::Renegotiate()
 {
 	TRACE_EVENT("dtls", "DTLSConnection::Renegotiate");
 	//Run in event loop thread
-	AsyncSafe([=](auto now){
+	AsyncSafe([](auto self, auto now){
 		if (ssl)
 		{
 

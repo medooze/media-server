@@ -154,7 +154,7 @@ void SimulcastMediaFrameListener::ForwardFrame(VideoFrame& frame)
 
 void SimulcastMediaFrameListener::Push(std::shared_ptr<VideoFrame>&& frame)
 {
-	AsyncSafe([frame = std::move(frame)]( std::chrono::milliseconds now) mutable {
+	AsyncSafe([=, frame = std::move(frame)](std::chrono::milliseconds now) mutable {
 		PushAsync(now, std::move(frame));
 	});
 }

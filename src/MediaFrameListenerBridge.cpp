@@ -133,7 +133,7 @@ void MediaFrameListenerBridge::SetMaxDelayMs(std::chrono::milliseconds maxDelayM
 {
 	UltraDebug("-MediaFrameListenerBridge::SetMaxDelayMs() [delay:%lld]\n", maxDelayMs.count());
 
-	AsyncSafe([maxDelayMs](auto now) {
+	AsyncSafe([=](auto now) {
 		maxDispatchingDelayMs = maxDelayMs;
 		if (dispatchingDelayMs > maxDispatchingDelayMs)
 			dispatchingDelayMs = maxDispatchingDelayMs;
@@ -144,7 +144,7 @@ void MediaFrameListenerBridge::SetDelayMs(std::chrono::milliseconds delayMs)
 {
 	UltraDebug("-MediaFrameListenerBridge::SetDelayMs() [delay:%lld]\n", delayMs.count());
 
-	AsyncSafe([delayMs](auto now) {
+	AsyncSafe([=](auto now) {
 		// Set a delay limit so the queue wouldn't grow without control if something is wrong, i.e. the packet
 		// time info was not valid
 		if (delayMs > maxDispatchingDelayMs)
@@ -162,7 +162,7 @@ void MediaFrameListenerBridge::SetDelayMs(std::chrono::milliseconds delayMs)
 void MediaFrameListenerBridge::AddListener(RTPIncomingMediaStream::Listener* listener)
 {
 	Debug("-MediaFrameListenerBridge::AddListener() [this:%p,listener:%p]\n", this, listener);
-	AsyncSafe([listener]( std::chrono::milliseconds now){
+	AsyncSafe([=](std::chrono::milliseconds now){
 		listeners.insert(listener);
 	});
 }
@@ -184,7 +184,7 @@ void MediaFrameListenerBridge::SetFrameDispatchCoordinator(const std::shared_ptr
 
 void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& frame)
 {
-	AsyncSafe([ignored, frame = std::shared_ptr<MediaFrame>(frame.Clone())] (auto now){
+	AsyncSafe([=, frame = std::shared_ptr<MediaFrame>(frame.Clone())] (auto now){
 		onMediaFrameAsync(now, ignored, frame);
 	});
 }
@@ -525,7 +525,7 @@ void MediaFrameListenerBridge::DispatchPackets(const std::vector<RTPPacket::shar
 
 void MediaFrameListenerBridge::Reset()
 {
-	AsyncSafe([]( std::chrono::milliseconds now){
+	AsyncSafe([=](std::chrono::milliseconds now){
 		reset = true;
 	});
 }
@@ -542,7 +542,7 @@ void MediaFrameListenerBridge::Update()
 void MediaFrameListenerBridge::UpdateAsync(std::function<void(std::chrono::milliseconds)> callback)
 {
 	//Update it sync
-	AsyncSafe([]( std::chrono::milliseconds now) {
+	AsyncSafe([=](std::chrono::milliseconds now) {
 		Update(now);
 	}, callback);
 }
@@ -589,7 +589,7 @@ void MediaFrameListenerBridge::AddMediaListener(const MediaFrame::Listener::shar
 {
 	Debug("-MediaFrameListenerBridge::AddMediaListener() [this:%p,listener:%p]\n", this, listener.get());
 
-	AsyncSafe([listener]( std::chrono::milliseconds now){
+	AsyncSafe([=](std::chrono::milliseconds now){
 		//Add to set
 		mediaFrameListeners.insert(listener);
 	});
