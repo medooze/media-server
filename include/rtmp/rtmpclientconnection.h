@@ -54,7 +54,8 @@ public:
 	RTMPClientConnection(const std::wstring& tag);
 	virtual ~RTMPClientConnection();
 
-	ErrorCode Connect(const char* server, int port, const char* app, RTMPClientConnection::Listener* listener);
+	virtual ErrorCode Connect(const char* server, int port, const char* app, RTMPClientConnection::Listener* listener);
+	
 	DWORD SendCommand(DWORD streamId, const wchar_t* name, AMFData* params, AMFData* extra)
 		{ return SendCommandInternal(streamId, name, params, extra, std::nullopt); }
 	DWORD SendCommand(DWORD streamId, const wchar_t* name, AMFData* params, AMFData* extra, std::function<void(bool, AMFData*, const std::vector<AMFData*>&)> callback)
@@ -79,14 +80,13 @@ public:
 	QWORD GetOutBytes() const	{ return outBytes;	}
 
 protected:
-	
-	virtual RTMPClientConnection::ErrorCode prepareForConnection() { return RTMPClientConnection::ErrorCode::NoError; };
 	virtual bool IsConnectionReady() { return inited; };
 	virtual void OnReadyToTransfer() {};
 	virtual void ProcessReceivedData(const uint8_t* data, size_t size);
 	virtual void AddPendingRtmpData(const uint8_t* data, size_t size);
 	
-	virtual void OnLoopExit() override;
+	void OnLoopEnter() override;
+	void OnLoopExit() override;
 	
 	inline Listener* GetListener() { return listener; }
 	int WriteData(const BYTE* data, const DWORD size);
@@ -97,8 +97,7 @@ private:
 	void OnPollIn(int pfd) override;
 	void OnPollOut(int pfd) override;
 	void OnPollError(int pfd, const std::string& errorMsg) override;
-
-	static  void* run(void* par);
+	
 	DWORD SerializeChunkData(BYTE* data, const DWORD size);
 
 	void ProcessControlMessage(DWORD streamId, BYTE type, RTMPObject* msg);

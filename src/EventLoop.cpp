@@ -698,6 +698,7 @@ void EventLoop::Signal()
 void EventLoop::Run(const std::chrono::milliseconds &duration)
 {
 	//Log(">EventLoop::Run() | [%p,running:%d,duration:%llu]\n",this,running,duration.count());
+	OnLoopEnter();
 	
 	signal(SIGIO,[](int){});
 	
@@ -756,6 +757,9 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 					{
 						OnPollError(pfd.fd, *error);
 					}
+					
+					// In case of error, no need further processing for the fd
+					return;
 				}
 								
 				if (events & Poll::Event::In)
@@ -780,7 +784,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		}
 		catch (std::exception& ex)
 		{
-			Error("-EventLoop::Run() Exception occurred: %s\n", ex.what());
+			Error("-EventLoop::Run() Exception occurred while polling: %s\n", ex.what());
 			break;
 		}
 		

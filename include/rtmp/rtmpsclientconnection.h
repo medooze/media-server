@@ -11,8 +11,9 @@ class RTMPSClientConnection :
 public:
 	RTMPSClientConnection(const std::wstring& tag);
 
+	ErrorCode Connect(const char* server, int port, const char* app, RTMPClientConnection::Listener* listener) override;
+	
 protected:
-	virtual RTMPClientConnection::ErrorCode prepareForConnection() override;
 	virtual bool IsConnectionReady() override;
 	virtual void OnReadyToTransfer() override;
 	virtual void ProcessReceivedData(const uint8_t* data, size_t size) override;

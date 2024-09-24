@@ -61,10 +61,7 @@ RTMPClientConnection::~RTMPClientConnection()
 }
 
 RTMPClientConnection::ErrorCode RTMPClientConnection::Connect(const char* server, int port, const char* app, Listener* listener)
-{
-	auto result = prepareForConnection();
-	if (result != RTMPClientConnection::ErrorCode::NoError) return result;
-	
+{	
 	sockaddr_in addr;
 	hostent* host;
 
@@ -139,6 +136,12 @@ RTMPClientConnection::ErrorCode RTMPClientConnection::Connect(const char* server
 	return EventLoop::StartWithFd(fd) ? RTMPClientConnection::ErrorCode::NoError : RTMPClientConnection::ErrorCode::Generic;
 }
 
+void RTMPClientConnection::OnLoopEnter()
+{
+	//Block signals to avoid exiting on SIGUSR1
+	blocksignals();
+}
+
 void RTMPClientConnection::OnLoopExit()
 {
 	//If got socket
@@ -182,24 +185,6 @@ int RTMPClientConnection::Disconnect()
 	Log("<RTMPClientConnection::Disconnect() Ended RTMP connection\n");
 
 	return 1;
-}
-
-/***********************
-* run
-*       Helper thread function
-************************/
-void* RTMPClientConnection::run(void* par)
-{
-	//Block signals to avoid exiting on SIGUSR1
-	blocksignals();
-
-	//Obtenemos el parametro
-	RTMPClientConnection* con = (RTMPClientConnection*)par;
-
-	//Ejecutamos
-	con->Run();
-	//Exit
-	return NULL;
 }
 
 std::optional<uint16_t> RTMPClientConnection::GetPollEventMask(int pfd) const

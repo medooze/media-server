@@ -117,13 +117,16 @@ public:
 };
 
 /**
- * Hash function for constant access to association array.
+ * Hash function for FileDescriptor
  */
 struct FileDescriptorHash
 {
 	size_t operator()(const Poll::FileDescriptor& fd) const
 	{
-		return std::hash<size_t>()((uint64_t(static_cast<std::underlying_type<Poll::FileDescriptor::Category>::type>(fd.category)) << 32) + uint32_t(fd.fd));
+		// While this hash function works when size of int is not 4, but it might be better way to
+		// calculate in that case. Assert here for reminder.
+		static_assert(sizeof(int) == 4);
+		return (uint64_t(static_cast<std::underlying_type<Poll::FileDescriptor::Category>::type>(fd.category)) << 32) + uint32_t(fd.fd);
 	}
 };
 
@@ -141,16 +144,16 @@ public:
 	void ForEachFd(std::function<void(FileDescriptor)> func) override;
 	bool SetEventMask(FileDescriptor fd, uint16_t eventMask) override;
 	uint16_t GetEvents(FileDescriptor fd) const override;
-	std::optional<std::string> GetError(FileDescriptor fd) const;
+	std::optional<std::string> GetError(FileDescriptor fd) const override;
 	
 private:
 	std::unordered_map<FileDescriptor, pollfd, FileDescriptorHash> ufds;
 	
-	// Cache for constant access time
+	// Cache for constant time complexity
 	bool tempfdsDirty = false;
 	std::vector<FileDescriptor> tempfds;
 	
-	// Cache for constant access time
+	// Cache for constant time complexity
 	bool sysfdsDirty = false;
 	std::vector<pollfd> sysfds;
 	std::unordered_map<size_t, FileDescriptor> indices;
@@ -263,8 +266,9 @@ protected:
 	}
 	
 	/**
-	 * Get updated event mask for a file descriptor. Note if the return optional doesn't have value, the
-	 * current event mask wouldn't be changed.
+	 * Get updated event mask for a file descriptor. 
+	 * 
+	 * Note if the return optional doesn't have value, the current event mask wouldn't be changed.
 	 */
 	virtual std::optional<uint16_t> GetPollEventMask(int pfd) const { return std::nullopt; };
 	
@@ -272,24 +276,29 @@ protected:
 	 * Callback to be called when it is ready to read from the file descriptor. If exception throws, the loop
 	 * will exit.
 	 */
-	virtual void OnPollIn(int pfd) { };
+	virtual void OnPollIn(int pfd) {};
 	
 	/**
-	 * Callback to be called when it is ready to read from the file descriptor. If exception throws, the loop
+	 * Callback to be called when it is ready to write to the file descriptor. If exception throws, the loop
 	 * will exit.
 	 */
-	virtual void OnPollOut(int pfd) { };
+	virtual void OnPollOut(int pfd) {};
 	
 	/**
-	 * Callback to be called when it is ready to read from the file descriptor.If exception throws, the loop
+	 * Callback to be called when error occured on the file descriptor.If exception throws, the loop
 	 * will exit.
 	 */
-	virtual void OnPollError(int pfd, const std::string& errorMsg) { };
+	virtual void OnPollError(int pfd, const std::string& errorMsg) {};
+	
+	/**
+	 * Called when the Run() function was entered.
+	 */
+	virtual void OnLoopEnter() {};
 	
 	/**
 	 * Called when the Run() function was exited.
 	 */
-	virtual void OnLoopExit() { };
+	virtual void OnLoopExit() {};
 
 private:
 
