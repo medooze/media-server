@@ -277,6 +277,12 @@ void RTMPClientConnection::OnPollError(int fd, const std::string& errorMsg)
 	if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::PollError);
 	throw std::runtime_error("-RTMPClientConnection::OnPollError() Error occurred: " + errorMsg);
 }
+
+void RTMPClientConnection::OnSignallingError(const std::string& errorMsg)
+{	
+	if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::PollError);
+	throw std::runtime_error("-RTMPClientConnection::OnSignallingError() Error occurred: " + errorMsg);
+}
 	
 void RTMPClientConnection::SignalWriteNeeded()
 {

@@ -143,6 +143,12 @@ protected:
 	virtual void OnPollError(int fd, const std::string& errorMsg) {};
 	
 	/**
+	 * Callback to be called when error occured on signalling file descriptor. If exception throws, the loop
+	 * will exit.
+	 */
+	virtual void OnSignallingError(const std::string& errorMsg) {}
+	
+	/**
 	 * Called when the Run() function was entered.
 	 */
 	virtual void OnLoopEnter() {};

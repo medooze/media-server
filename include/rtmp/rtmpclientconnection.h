@@ -96,6 +96,7 @@ protected:
 	void OnPollIn(int fd) override;
 	void OnPollOut(int fd) override;
 	void OnPollError(int fd, const std::string& errorMsg) override;
+	void OnSignallingError(const std::string& errorMsg) override;
 	
 private:
 	DWORD SerializeChunkData(BYTE* data, const DWORD size);

@@ -593,7 +593,9 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 					if (pfd.category == Poll::PollFd::Category::Signaling)
 					{
 						ClearSignal();
-						throw std::runtime_error("Error occurred on signaling fd: " + *error);
+						
+						Error("-EventLoop::Run() Error occured on signaling fd: %s\n", error->c_str());
+						OnSignallingError(*error);
 					}
 					else
 					{
