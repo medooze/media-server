@@ -1,11 +1,11 @@
 #include "tracing.h"
 #include "EventLoop.h"
+#include "ScopedCleanUp.h"
 
 #include <sys/socket.h>
 #include <netinet/tcp.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <sys/poll.h>
 
 #include <errno.h>
 #include <unistd.h>
@@ -69,7 +69,7 @@ void free_cpu_set(cpu_set_t* s) {
 }
 #endif
 
-EventLoop::EventLoop()
+EventLoop::EventLoop(std::unique_ptr<Poll> poll) : poll(std::move(poll))
 {
 	Debug("-EventLoop::EventLoop() [this:%p]\n", this);
 }
@@ -139,13 +139,6 @@ bool EventLoop::SetAffinity(std::thread::native_handle_type thread, int cpu)
 
 bool EventLoop::SetAffinity(int cpu)
 {
-#ifdef 	SO_INCOMING_CPU
-	//If got socket
-	if (fd)
-		//Set incoming socket cpu affinity
-		(void)setsockopt(fd, SOL_SOCKET, SO_INCOMING_CPU, &cpu, sizeof(cpu));
-#endif
-
 	//Set event loop thread affinity
 	return EventLoop::SetAffinity(thread.native_handle(), cpu);
 
@@ -168,7 +161,7 @@ bool EventLoop::SetPriority(int priority)
 	return !pthread_setschedparam(thread.native_handle(), priority ? SCHED_FIFO : SCHED_OTHER ,&param);
 }
 
-bool EventLoop::Start(std::function<void(void)> loop)
+bool EventLoop::StartWithLoop(std::function<void(void)> loop)
 {
 	//If already started
 	if (running)
@@ -179,6 +172,10 @@ bool EventLoop::Start(std::function<void(void)> loop)
 	TRACE_EVENT("eventloop", "EventLoop::Start(loop)");
 	Debug("-EventLoop::Start()\n");
 	
+	auto cleanUp = std::make_shared<ScopedCleanUp>([this](){
+		CleanUp();
+	});
+	
 #if __APPLE__
 	//Create pipe
 	if (::pipe(pipe)==-1)
@@ -196,9 +193,17 @@ bool EventLoop::Start(std::function<void(void)> loop)
 	if (pipe[0]==FD_INVALID || pipe[1]==FD_INVALID)
 		//Error
 		return Error("-EventLoop::Start() | could not start pipe [errno:%d]\n",errno);
-			
-	//Store socket
-	this->fd = FD_INVALID;
+	
+	
+	if (!poll->AddFd({Poll::PollFd::Category::Signaling, pipe[0]}))
+	{
+		return Error("Failed to add signaling fd to event poll\n");
+	}
+	
+	if (!poll->SetEventMask({Poll::PollFd::Category::Signaling, pipe[0]}, Poll::Event::In))
+	{
+		return Error("Failed to set event mask\n");
+	}
 	
 	//Running
 	running = true;
@@ -207,13 +212,22 @@ bool EventLoop::Start(std::function<void(void)> loop)
 	signaled.clear();
 	
 	//Start thread and run
-	thread = std::thread(loop);
+	thread = std::thread([loop, cleanUp](){
+		loop();
+	});
 	
 	//Done
 	return true;
 }
 
-bool EventLoop::Start(int fd)
+bool EventLoop::StartWithFd(int fd)
+{
+	poll->Clear();
+	
+	return AddFd(fd) && Start();
+}
+
+bool EventLoop::Start()
 {
 	//If already started
 	if (running)
@@ -221,8 +235,12 @@ bool EventLoop::Start(int fd)
 		return Error("-EventLoop::Start() | Already running\n");
 	
 	//Log
-	TRACE_EVENT("eventloop", "EventLoop::Start(fd)");
-	Debug("-EventLoop::Start() [fd:%d,this:%p]\n",fd,this);
+	TRACE_EVENT("eventloop", "EventLoop::Start()");
+	Debug("-EventLoop::Start() [this:%p]\n", this);
+	
+	auto cleanUp = std::make_shared<ScopedCleanUp>([this](){
+		CleanUp();
+	});
 	
 #if __APPLE__
 	//Create pipe
@@ -242,8 +260,16 @@ bool EventLoop::Start(int fd)
 		//Error
 		return Error("-EventLoop::Start() | could not start pipe [errno:%d]\n",errno);
 	
-	//Store socket
-	this->fd = fd;
+	
+	if (!poll->AddFd({Poll::PollFd::Category::Signaling, pipe[0]}))
+	{
+		return Error("Failed to add signaling fd to event poll\n");
+	}
+	
+	if (!poll->SetEventMask({Poll::PollFd::Category::Signaling, pipe[0]}, Poll::Event::In))
+	{
+		return Error("Failed to set event mask\n");
+	}
 	
 	//Running
 	running = true;
@@ -252,7 +278,7 @@ bool EventLoop::Start(int fd)
 	signaled.clear();
 	
 	//Start thread and run
-	thread = std::thread([this](){ Run(); });
+	thread = std::thread([this, cleanUp](){ Run(); });
 	
 	//Done
 	return true;
@@ -267,7 +293,7 @@ bool EventLoop::Stop()
 	
 	//Log
 	TRACE_EVENT("eventloop", "EventLoop::Stop");
-	Debug(">EventLoop::Stop() [fd:%d,this:%p]\n",fd,this);
+	Debug(">EventLoop::Stop() [this:%p]\n",this);
 	
 	//Not running
 	running = false;
@@ -282,15 +308,8 @@ bool EventLoop::Stop()
 		thread.join();
 	}
 	
-	//Close pipe
-	if (pipe[0]!=FD_INVALID) close(pipe[0]);
-	if (pipe[1]!=FD_INVALID) close(pipe[1]);
-	
-	//Empyt pipe
-	pipe[0] = pipe[1] = FD_INVALID;
-	
 	//Log
-	Debug("<EventLoop::Stop() [fd:%d]\n",fd);
+	Debug("<EventLoop::Stop()\n");
 	
 	//Done
 	return true;
@@ -461,7 +480,6 @@ void EventLoop::TimerImpl::Reschedule(const std::chrono::milliseconds& ms, const
 
 void EventLoop::CancelTimer(TimerImpl::shared timer)
 {
-
 	//UltraDebug(">EventLoop::CancelTimer() \n");
 
 	//We don't have to repeat this
@@ -522,20 +540,8 @@ void EventLoop::Signal()
 void EventLoop::Run(const std::chrono::milliseconds &duration)
 {
 	//Log(">EventLoop::Run() | [%p,running:%d,duration:%llu]\n",this,running,duration.count());
+	OnLoopEnter();
 	
-	//Set values for polling
-	ufds[0].fd = fd;
-	ufds[1].fd = pipe[0];
-	//Set to wait also for write events on pipe for signaling
-	ufds[1].events = POLLIN | POLLERR | POLLHUP;
-
-	//Set non blocking so we can get an error when we are closed by end
-	int fsflags = fcntl(fd,F_GETFL,0);
-	fsflags |= O_NONBLOCK;
-	(void)fcntl(fd,F_SETFL,fsflags);
-
-
-	//Catch all IO errors and do nothing
 	signal(SIGIO,[](int){});
 	
 	//Get now
@@ -548,46 +554,82 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 	while(running && now<=until)
 	{
 		//TRACE_EVENT("eventloop", "EventLoop::Run::Iteration");
-		ufds[0].events = GetPollEvents();
-		//Clear readed events
-		ufds[0].revents = 0;
-		ufds[1].revents = 0;
+		poll->ForEachFd([this](Poll::PollFd pfd) {
+			
+			if (pfd.category == Poll::PollFd::Category::Signaling) return;
+			
+			auto events = GetPollEventMask(pfd.fd);
+			if (events)
+				poll->SetEventMask(pfd, *events);
+		});
 		
 		//Until signaled or one each 10 seconds to prevent deadlocks
 		int timeout = GetNextTimeout(10E3, until);
 
 		//UltraDebug(">EventLoop::Run() | poll timeout:%d timers:%d tasks:%d size:%d\n",timeout,timers.size(),tasks.size_approx(), sizeof(ufds) / sizeof(pollfd));
 		
-		//Wait for events
+		try
 		{
-			//TRACE_EVENT("eventloop", "poll", "timeout", timeout);
-			(void)poll(ufds,sizeof(ufds)/sizeof(pollfd),timeout);
-		}
-		
-		//Update now
-		now = Now();
-		
-		//UltraDebug("<EventLoop::Run() | poll timeout:%d timers:%d tasks:%d\n",timeout,timers.size(),tasks.size_approx());
+			//Wait for events
+			if (!poll->Wait(timeout))
+			{
+				Error("Event poll wait failed.\n");
+				break;
+			}
+			
+			//Update now
+			now = Now();
+			
+			//UltraDebug("<EventLoop::Run() | poll timeout:%d timers:%d tasks:%d\n",timeout,timers.size(),tasks.size_approx());
+			
+			poll->ForEachFd([this](Poll::PollFd pfd) {
 
-		//Check for cancel
-		if ((ufds[0].revents & POLLHUP) || (ufds[0].revents & POLLERR) || (ufds[1].revents & POLLHUP) || (ufds[1].revents & POLLERR))
+				auto events = poll->GetEvents(pfd);
+
+				//Check error
+				auto error = poll->GetError(pfd);
+				if (error)
+				{
+					if (pfd.category == Poll::PollFd::Category::Signaling)
+					{
+						ClearSignal();
+						
+						Error("-EventLoop::Run() Error occured on signaling fd: %s\n", error->c_str());
+						OnSignallingError(*error);
+					}
+					else
+					{
+						OnPollError(pfd.fd, *error);
+					}
+					
+					// In case of error, no need further processing for the fd
+					return;
+				}
+								
+				if (events & Poll::Event::In)
+				{
+					if (pfd.category == Poll::PollFd::Category::Signaling)
+					{
+						ClearSignal();
+					}
+					else
+					{
+						OnPollIn(pfd.fd);
+					}
+				}
+				
+				//Check read is possible
+				if (events & Poll::Event::Out)
+				{
+					assert(pfd.category != Poll::PollFd::Category::Signaling);
+					OnPollOut(pfd.fd);
+				}
+			});
+		}
+		catch (std::exception& ex)
 		{
-			//Error
-			Log("-EventLoop::Run() | Pool error event [revents:%d,errno:%d]\n",ufds[0].revents,errno);
-			//Exit
+			Error("-EventLoop::Run() Exception occurred while polling: %s\n", ex.what());
 			break;
-		}
-		
-		//Read first
-		if (ufds[0].revents & POLLIN)
-		{
-			OnPollIn(ufds[0].fd);
-		}
-		
-		//Check read is possible
-		if (ufds[0].revents & POLLOUT)
-		{
-			OnPollOut(ufds[0].fd);
 		}
 		
 		//Process pendint tasks
@@ -596,11 +638,6 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		//Timers triggered
 		ProcessTriggers(now);
 		
-		//Read first from signal pipe
-		if (ufds[1].revents & POLLIN)
-			//Clear signal flag
-			ClearSignal();
-		
 		//Update now
 		now = Now();
 	}
@@ -608,6 +645,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 	//Run queued tasks before exiting
 	ProcessTasks(now);
 
+	OnLoopExit();
 	//Log("<EventLoop::Run()\n");
 }
 
@@ -727,3 +765,15 @@ void EventLoop::ProcessTriggers(const std::chrono::milliseconds& now)
 	TRACE_EVENT_END("eventloop");
 }
 
+
+void EventLoop::CleanUp()
+{
+	//Close pipe
+	if (pipe[0]!=FD_INVALID) close(pipe[0]);
+	if (pipe[1]!=FD_INVALID) close(pipe[1]);
+	
+	//Empyt pipe
+	pipe[0] = pipe[1] = FD_INVALID;
+	
+	poll->Clear();
+}

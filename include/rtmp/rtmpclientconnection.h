@@ -54,15 +54,16 @@ public:
 	RTMPClientConnection(const std::wstring& tag);
 	virtual ~RTMPClientConnection();
 
-	ErrorCode Connect(const char* server, int port, const char* app, RTMPClientConnection::Listener* listener);
+	virtual ErrorCode Connect(const char* server, int port, const char* app, RTMPClientConnection::Listener* listener);
+	
 	DWORD SendCommand(DWORD streamId, const wchar_t* name, AMFData* params, AMFData* extra)
 		{ return SendCommandInternal(streamId, name, params, extra, std::nullopt); }
 	DWORD SendCommand(DWORD streamId, const wchar_t* name, AMFData* params, AMFData* extra, std::function<void(bool, AMFData*, const std::vector<AMFData*>&)> callback)
 		{ return SendCommandInternal(streamId, name, params, extra, std::optional(callback)); }
 	int Disconnect();
 
-	void  SetUserData(DWORD data) { this->data = data; }
-	DWORD GetUserData() { return data; }
+	void  SetUserData(DWORD userData) { this->userData = userData; }
+	DWORD GetUserData() { return userData; }
 
 	//Listener for the media data
 	virtual void onAttached(RTMPMediaStream* stream);
@@ -79,23 +80,25 @@ public:
 	QWORD GetOutBytes() const	{ return outBytes;	}
 
 protected:
-	
-	virtual RTMPClientConnection::ErrorCode OnConnect();
-	
-	virtual bool Stop() override;
 	virtual bool IsConnectionReady() { return inited; };
 	virtual void OnReadyToTransfer() {};
 	virtual void ProcessReceivedData(const uint8_t* data, size_t size);
 	virtual void AddPendingRtmpData(const uint8_t* data, size_t size);
 	
+	void OnLoopEnter() override;
+	void OnLoopExit() override;
+	
 	inline Listener* GetListener() { return listener; }
 	int WriteData(const BYTE* data, const DWORD size);
 	void ParseData(const BYTE* data, const DWORD size);
-private:
 	
-	int Run();
-
-	static  void* run(void* par);
+	std::optional<uint16_t> GetPollEventMask(int fd) const override;
+	void OnPollIn(int fd) override;
+	void OnPollOut(int fd) override;
+	void OnPollError(int fd, const std::string& errorMsg) override;
+	void OnSignallingError(const std::string& errorMsg) override;
+	
+private:
 	DWORD SerializeChunkData(BYTE* data, const DWORD size);
 
 	void ProcessControlMessage(DWORD streamId, BYTE type, RTMPObject* msg);
@@ -120,8 +123,8 @@ private:
 	typedef std::map<DWORD, RTMPChunkOutputStream*> RTMPChunkOutputStreams;
 	typedef std::map<DWORD, std::function<void(bool, AMFData*, const std::vector<AMFData*>&)>> Transactions;
 private:
-	int fd = FD_INVALID;
-	pollfd ufds[2] = {};
+	int fileDescriptor = FD_INVALID;
+	short eventMask = 0;
 	bool inited = false;
 	State state = State::NONE;
 
@@ -169,13 +172,17 @@ private:
 	QWORD outBytes = 0;
 
 	bool	needsAuth = false;
-	DWORD	data = 0;
+	DWORD	userData = 0;
 	std::wstring tag;
 	std::wstring user;
 	std::wstring pwd;
 	std::wstring method;
 	std::wstring challenge;
 	std::wstring opaque;
+	
+	static constexpr unsigned int BufferSize = 4096*2;
+	uint8_t buffer[BufferSize];
+	bool connected = false;
 };
 
 #endif

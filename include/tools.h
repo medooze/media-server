@@ -11,6 +11,7 @@
 #include <signal.h>
 #include <climits>
 #include <pthread.h>
+#include <stdarg.h>
 
 int Log(const char *msg, ...);
 
@@ -548,5 +549,23 @@ static constexpr T ConvertTimestampClockRate(T ts, uint64_t originalRate, uint64
 	return originalRate == targetRate ? ts : (ts * T(targetRate) / T(originalRate));
 }
 
+/**
+ * @brief Format string
+ * 
+ * @param fmt Format with specificers
+ * @param ... Aguments
+ * @return The result string
+ */
+inline std::string FormatString(const char* fmt, ...)
+{
+	va_list ap;
+	va_start(ap, fmt);
+	auto sz = std::snprintf(nullptr, 0, fmt, ap);
+	std::vector<char> tmp(sz + 1);
+	sz = std::snprintf(tmp.data(), tmp.size(), fmt, ap);
+	va_end(ap);
+	
+	return std::string(tmp.data(), sz);
+}
 
 #endif
