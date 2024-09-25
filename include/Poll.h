@@ -27,7 +27,7 @@ public:
 	/**
 	 * Event types.
 	 */
-	enum Event
+	enum Event : uint16_t
 	{
 		In 	= 0x1,
 		Out 	= 0x2,
