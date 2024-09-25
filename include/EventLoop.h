@@ -140,13 +140,19 @@ protected:
 	 * Callback to be called when error occured on the file descriptor.If exception throws, the loop
 	 * will exit.
 	 */
-	virtual void OnPollError(int fd, const std::string& errorMsg) {};
+	virtual void OnPollError(int fd, const std::string& errorMsg)
+	{
+		throw std::runtime_error("-RTMPClientConnection::OnPollError() Error occurred: " + errorMsg);
+	};
 	
 	/**
 	 * Callback to be called when error occured on signalling file descriptor. If exception throws, the loop
 	 * will exit.
 	 */
-	virtual void OnSignallingError(const std::string& errorMsg) {}
+	virtual void OnSignallingError(const std::string& errorMsg)
+	{
+		throw std::runtime_error("-RTMPClientConnection::OnSignallingError() Error occurred: " + errorMsg);
+	}
 	
 	/**
 	 * Called when the Run() function was entered.
