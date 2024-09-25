@@ -142,7 +142,7 @@ protected:
 	 */
 	virtual void OnPollError(int fd, const std::string& errorMsg)
 	{
-		throw std::runtime_error("-RTMPClientConnection::OnPollError() Error occurred: " + errorMsg);
+		throw std::runtime_error("-EventLoop::OnPollError() Error occurred: " + errorMsg);
 	};
 	
 	/**
@@ -151,7 +151,7 @@ protected:
 	 */
 	virtual void OnSignallingError(const std::string& errorMsg)
 	{
-		throw std::runtime_error("-RTMPClientConnection::OnSignallingError() Error occurred: " + errorMsg);
+		throw std::runtime_error("-EventLoop::OnSignallingError() Error occurred: " + errorMsg);
 	}
 	
 	/**
