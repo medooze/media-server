@@ -30,3 +30,10 @@ TEST(TestTools, TestAlignMemory)
 	
 	ASSERT_EQ(0xff, data[112]);
 }
+
+TEST(TestTools, TestFormatString)
+{
+	EXPECT_EQ("Test number: 9", FormatString("Test number: %d", 9));
+	EXPECT_EQ("Test string: test", FormatString("Test string: %s", "test"));
+	EXPECT_EQ("Test float: 9.000000", FormatString("Test float: %f", 9.0f));
+}
