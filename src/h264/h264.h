@@ -137,6 +137,7 @@ public:
 		Debug("\toffset_for_top_to_bottom_field=%d\n",		offset_for_top_to_bottom_field);
 		Debug("\tnum_ref_frames_in_pic_order_cnt_cycle=%u\n",	num_ref_frames_in_pic_order_cnt_cycle);
 		Debug("\tnum_ref_frames=%u\n",				num_ref_frames);
+		Debug("\tchroma_format_idc=%u\n",				chroma_format_idc);
 		Debug("\tgaps_in_frame_num_value_allowed_flag=%u\n",	gaps_in_frame_num_value_allowed_flag);
 		Debug("\tpic_width_in_mbs_minus1=%u\n",			pic_width_in_mbs_minus1);
 		Debug("\tpic_height_in_map_units_minus1=%u\n",		pic_height_in_map_units_minus1);
