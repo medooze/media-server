@@ -112,37 +112,6 @@ public:
 	}
 
 public:
-	BYTE			profile_idc = 0;
-	bool			constraint_set0_flag = false;
-	bool			constraint_set1_flag = false;
-	bool			constraint_set2_flag = false;
-	BYTE			reserved_zero_5bits  = 0;
-	BYTE			level_idc = 0;
-	BYTE			seq_parameter_set_id = 0;
-	BYTE			log2_max_frame_num_minus4 = 0;
-	BYTE			pic_order_cnt_type = 0;
-	BYTE			log2_max_pic_order_cnt_lsb_minus4 = 0;
-	bool			delta_pic_order_always_zero_flag = false;
-	int			    offset_for_non_ref_pic = 0;
-	int			    offset_for_top_to_bottom_field = 0;
-	BYTE			num_ref_frames_in_pic_order_cnt_cycle = 0;
-	std::vector<int>	offset_for_ref_frame;
-	DWORD			num_ref_frames = 0;
-	DWORD			chroma_format_idc = 0;
-	bool			gaps_in_frame_num_value_allowed_flag = false;
-	DWORD			pic_width_in_mbs_minus1 = 0;
-	DWORD			pic_height_in_map_units_minus1 = 0;
-	bool			frame_mbs_only_flag = false;
-	bool			mb_adaptive_frame_field_flag = false;
-	bool			direct_8x8_inference_flag = false;
-	bool			frame_cropping_flag = false;
-	DWORD			frame_crop_left_offset = 0;
-	DWORD			frame_crop_right_offset = 0;
-	DWORD			frame_crop_top_offset = 0;
-	DWORD			frame_crop_bottom_offset = 0;
-	//bool			vui_parameters_present_flag = false;
-	bool			separate_colour_plane_flag = 0;
-
 	DWORD GetWidth()	{ return ((pic_width_in_mbs_minus1 +1)*16) - frame_crop_right_offset *2 - frame_crop_left_offset *2; }
 	DWORD GetHeight()	{ return ((2 - frame_mbs_only_flag)* (pic_height_in_map_units_minus1 +1) * 16) - frame_crop_bottom_offset*2 - frame_crop_top_offset*2; }
 
@@ -182,7 +151,36 @@ public:
 		Debug("\tseparate_colour_plane_flag=%u\n",		separate_colour_plane_flag);
 		Debug("/]\n");
 	}
-	
+	BYTE			profile_idc = 0;
+	bool			constraint_set0_flag = false;
+	bool			constraint_set1_flag = false;
+	bool			constraint_set2_flag = false;
+	BYTE			reserved_zero_5bits  = 0;
+	BYTE			level_idc = 0;
+	BYTE			seq_parameter_set_id = 0;
+	BYTE			log2_max_frame_num_minus4 = 0;
+	BYTE			pic_order_cnt_type = 0;
+	BYTE			log2_max_pic_order_cnt_lsb_minus4 = 0;
+	bool			delta_pic_order_always_zero_flag = false;
+	int			    offset_for_non_ref_pic = 0;
+	int			    offset_for_top_to_bottom_field = 0;
+	BYTE			num_ref_frames_in_pic_order_cnt_cycle = 0;
+	std::vector<int>	offset_for_ref_frame;
+	DWORD			num_ref_frames = 0;
+	DWORD			chroma_format_idc = 0;
+	bool			gaps_in_frame_num_value_allowed_flag = false;
+	DWORD			pic_width_in_mbs_minus1 = 0;
+	DWORD			pic_height_in_map_units_minus1 = 0;
+	bool			frame_mbs_only_flag = false;
+	bool			mb_adaptive_frame_field_flag = false;
+	bool			direct_8x8_inference_flag = false;
+	bool			frame_cropping_flag = false;
+	DWORD			frame_crop_left_offset = 0;
+	DWORD			frame_crop_right_offset = 0;
+	DWORD			frame_crop_top_offset = 0;
+	DWORD			frame_crop_bottom_offset = 0;
+	//bool			vui_parameters_present_flag = false;
+	bool			separate_colour_plane_flag = 0;
 };
 
 class H264PictureParameterSet
@@ -258,30 +256,6 @@ public:
 	}
 
 public:
-	BYTE			pic_parameter_set_id = 0;
-	BYTE			seq_parameter_set_id = 0;
-	bool			entropy_coding_mode_flag = false;
-	bool			pic_order_present_flag = false;
-	int			num_slice_groups_minus1 = 0;
-	BYTE			slice_group_map_type = 0;
-	std::vector<DWORD>	run_length_minus1;
-	std::vector<DWORD>	top_left;
-	std::vector<DWORD>	bottom_right;
-	bool			slice_group_change_direction_flag = false;
-	int			slice_group_change_rate_minus1 = 0;
-	int			pic_size_in_map_units_minus1 = 0;
-	std::vector<DWORD>	slice_group_id;
-	BYTE			num_ref_idx_l0_active_minus1 = 0;
-	BYTE			num_ref_idx_l1_active_minus1 = 0;
-	bool			weighted_pred_flag = false;
-	BYTE			weighted_bipred_idc = 0;
-	int			pic_init_qp_minus26 = 0;
-	int			pic_init_qs_minus26 = 0;
-	int			chroma_qp_index_offset = 0;
-	bool			deblocking_filter_control_present_flag = false;
-	bool			constrained_intra_pred_flag = false;
-	bool			redundant_pic_cnt_present_flag = false;
-
 	void Dump() const
 	{
 		Debug("[H264PictureParameterSet \n");
@@ -306,6 +280,29 @@ public:
 		Debug("\tredundant_pic_cnt_present_flag=%u\n",		redundant_pic_cnt_present_flag);
 		Debug("/]\n");
 	}
+	BYTE			pic_parameter_set_id = 0;
+	BYTE			seq_parameter_set_id = 0;
+	bool			entropy_coding_mode_flag = false;
+	bool			pic_order_present_flag = false;
+	int			num_slice_groups_minus1 = 0;
+	BYTE			slice_group_map_type = 0;
+	std::vector<DWORD>	run_length_minus1;
+	std::vector<DWORD>	top_left;
+	std::vector<DWORD>	bottom_right;
+	bool			slice_group_change_direction_flag = false;
+	int			slice_group_change_rate_minus1 = 0;
+	int			pic_size_in_map_units_minus1 = 0;
+	std::vector<DWORD>	slice_group_id;
+	BYTE			num_ref_idx_l0_active_minus1 = 0;
+	BYTE			num_ref_idx_l1_active_minus1 = 0;
+	bool			weighted_pred_flag = false;
+	BYTE			weighted_bipred_idc = 0;
+	int			pic_init_qp_minus26 = 0;
+	int			pic_init_qs_minus26 = 0;
+	int			chroma_qp_index_offset = 0;
+	bool			deblocking_filter_control_present_flag = false;
+	bool			constrained_intra_pred_flag = false;
+	bool			redundant_pic_cnt_present_flag = false;	
 };
 
 class H264SliceHeader
