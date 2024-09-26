@@ -462,7 +462,7 @@ int DTLSConnection::Init()
 	SSL_do_handshake(ssl);
 	
 	//Start timeout
-	timeout = CreateTimerSafe(0ms, [](auto now){
+	timeout = CreateTimerSafe(0ms, [=](auto now){
 		//UltraDebug("-DTLSConnection::Timeout()\n");
 		//Check if still inited
 		if (inited)
