@@ -387,7 +387,7 @@ public:
 		Debug("\tslice_type=%u\n", slice_type);
 		Debug("\tpic_parameter_set_id=%u\n", pic_parameter_set_id);
 		Debug("\tcolour_plane_id=%u\n", colour_plane_id);
-		Debug("\field_pic_flag=%d\n", field_pic_flag);
+		Debug("\tfield_pic_flag=%d\n", field_pic_flag);
 		Debug("\tbottom_field_flag=%d\n", bottom_field_flag);
 		Debug("/]\n");
 	}
