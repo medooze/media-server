@@ -6,7 +6,7 @@
 namespace mpegts
 {
 
-void Header::Encode(BufferWritter& writer)
+void Header::Encode(BufferWritter& writer) const
 {
 	if (writer.GetLeft() < Size())
 		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
@@ -91,7 +91,7 @@ void Header::Dump() const
 }
 
 
-void AdaptationField::Encode(BufferWritter& writer)
+void AdaptationField::Encode(BufferWritter& writer) const
 {
 	if (writer.GetLeft() < Size())
 		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
@@ -223,7 +223,7 @@ Packet Packet::Parse(BufferReader& reader)
 namespace pes
 {
 
-void Header::Encode(BufferWritter& writer)
+void Header::Encode(BufferWritter& writer) const
 {
 	if (writer.GetLeft() < Size())
 		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
@@ -260,7 +260,7 @@ Header Header::Parse(BufferReader& reader)
 	return header;
 }
 
-void HeaderExtension::Encode(BufferWritter& writer)
+void HeaderExtension::Encode(BufferWritter& writer) const
 {
 	if (writer.GetLeft() < Size())
 		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
@@ -481,7 +481,7 @@ Packet Packet::Parse(BufferReader& reader)
 
 namespace adts
 {
-	void Header::Encode(BufferWritter& writer)
+	void Header::Encode(BufferWritter& writer) const
 	{
 		if (writer.GetLeft() < Size())
 			throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));

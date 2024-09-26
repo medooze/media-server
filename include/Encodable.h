@@ -13,7 +13,7 @@ public:
 	/**
 	 * Encode the content
 	 */
-	virtual void Encode(BufferWritter& writer) = 0;
+	virtual void Encode(BufferWritter& writer) const = 0;
 	
 	/**
 	 * The memory size needed for encoding. It must match

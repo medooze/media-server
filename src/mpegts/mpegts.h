@@ -31,7 +31,7 @@ struct Header : public Encodable
 	uint8_t  continuityCounter = 0;
 
 	// Encodable overrides
-	void Encode(BufferWritter& writer) override;
+	void Encode(BufferWritter& writer) const override;
 	size_t Size() const override;
 	
 	static Header Parse(BufferReader& reader);
@@ -53,7 +53,7 @@ struct AdaptationField : public Encodable
 	std::optional<uint64_t> pcr;
 	
 	// Encodable overrides
-	void Encode(BufferWritter& writer) override;
+	void Encode(BufferWritter& writer) const override;
 	size_t Size() const override;
 	
 	static AdaptationField Parse(BufferReader& reader);
@@ -102,7 +102,7 @@ struct Header : public Encodable
 	uint16_t packetLength = 0;
 
 	// Encodable overrides
-	void Encode(BufferWritter& writer) override;
+	void Encode(BufferWritter& writer) const override;
 	size_t Size() const override;
 	
 	static Header Parse(BufferReader& reader);
@@ -130,7 +130,7 @@ struct HeaderExtension : public Encodable
 	size_t	stuffingCount = 0;
 
 	// Encodable overrides
-	void Encode(BufferWritter& writer) override;
+	void Encode(BufferWritter& writer) const override;
 	size_t Size() const override;
 	
 	static HeaderExtension Parse(BufferReader& reader);
@@ -175,7 +175,7 @@ struct Header : public Encodable
 	uint16_t crc = 0;
 
 	// Encodable overrides
-	void Encode(BufferWritter& writer) override;
+	void Encode(BufferWritter& writer) const override;
 	size_t Size() const override;
 	
 	static Header Parse(BufferReader& reader);

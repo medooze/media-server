@@ -10,7 +10,7 @@ namespace mpegts
 namespace psi
 {
 
-void SyntaxData::Encode(BufferWritter& writer)
+void SyntaxData::Encode(BufferWritter& writer) const
 {
 	if (writer.GetLeft() < Size())
 		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
@@ -23,10 +23,20 @@ void SyntaxData::Encode(BufferWritter& writer)
 	bitWriter.Put(1, isCurrent);
 	bitWriter.Put(8, sectionNumber);
 	bitWriter.Put(8, lastSectionNumber);
-	
-	auto encodable = std::get_if<std::unique_ptr<Encodable>>(&data);
-	if (encodable)
-		(*encodable)->Encode(writer);
+		
+	std::visit([&writer](auto&& arg){
+		using T = std::decay_t<decltype(arg)>;
+		if constexpr (std::is_same_v<T, ProgramAssociation> || std::is_same_v<T, ProgramMap>)
+		{
+			arg.Encode(writer);
+		}
+		else if constexpr (std::is_same_v<T, BufferReader>)
+		{
+			auto reader = arg;
+			size_t num = reader.GetLeft();
+			memcpy(writer.Consume(num), reader.GetData(num), num); 
+		}
+	}, data);
 }
 
 size_t SyntaxData::Size() const
@@ -35,9 +45,9 @@ size_t SyntaxData::Size() const
 		
 	std::visit([&totalSize](auto&& arg){
 		using T = std::decay_t<decltype(arg)>;
-		if constexpr (std::is_same_v<T, std::unique_ptr<Encodable>>)
+		if constexpr (std::is_same_v<T, ProgramAssociation> || std::is_same_v<T, ProgramMap>)
 		{
-			totalSize += arg->Size();
+			totalSize += arg.Size();
 		}
 		else if constexpr (std::is_same_v<T, BufferReader>)
 		{
@@ -49,10 +59,9 @@ size_t SyntaxData::Size() const
 }
 
 
-std::unique_ptr<SyntaxData> SyntaxData::Parse(BufferReader& reader)
+SyntaxData SyntaxData::Parse(BufferReader& reader)
 {
-	std::unique_ptr<SyntaxData> syntaxDataPtr = std::make_unique<SyntaxData>();
-	SyntaxData& syntaxData = *syntaxDataPtr;
+	SyntaxData syntaxData = {};
 
 	/*
 	 * Table ID extension		16	Informational only identifier. The PAT uses this for the transport stream identifier and the PMT uses this for the Program num
@@ -86,10 +95,10 @@ std::unique_ptr<SyntaxData> SyntaxData::Parse(BufferReader& reader)
 
 	//TODO: check crc?
 	
-	return syntaxDataPtr;
+	return syntaxData;
 }
 
-void Table::Encode(BufferWritter& writer)
+void Table::Encode(BufferWritter& writer) const
 {
 	if (writer.GetLeft() < Size())
 		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
@@ -104,15 +113,23 @@ void Table::Encode(BufferWritter& writer)
 	bitwriter.Put(1, privateBit);
 	bitwriter.Put(2, _reserved1);
 	bitwriter.Put(12, Size() - 3);
-	
-	auto encodable = std::get_if<std::unique_ptr<Encodable>>(&data);
-	if (encodable)
-		(*encodable)->Encode(writer);
+		
+	std::visit([&writer](auto&& arg){
+		using T = std::decay_t<decltype(arg)>;
+		if constexpr (std::is_same_v<T, SyntaxData>)
+		{
+			arg.Encode(writer);
+		}
+		else if constexpr (std::is_same_v<T, BufferReader>)
+		{
+			auto reader = arg;
+			size_t num = reader.GetLeft();
+			memcpy(writer.Consume(num), reader.GetData(num), num); 
+		}
+	}, data);
 		
 	uint32_t crc = Crc32(writer.GetData() + mark, writer.GetLength() - mark);
 	writer.Set4(crc);
-	
-	Log("Size: %d crc: 0x%x\n",  writer.GetLength() - mark, crc);
 }
 
 size_t Table::Size() const
@@ -121,9 +138,9 @@ size_t Table::Size() const
 	
 	std::visit([&totalSize](auto&& arg){
 		using T = std::decay_t<decltype(arg)>;
-		if constexpr (std::is_same_v<T, std::unique_ptr<Encodable>>)
+		if constexpr (std::is_same_v<T, SyntaxData>)
 		{
-			totalSize += arg->Size();
+			totalSize += arg.Size();
 		}
 		else if constexpr (std::is_same_v<T, BufferReader>)
 		{
@@ -134,10 +151,9 @@ size_t Table::Size() const
 	return totalSize;
 }
 
-std::unique_ptr<Table> Table::Parse(BufferReader& reader)
+Table Table::Parse(BufferReader& reader)
 {
-	std::unique_ptr<Table> tablePtr = std::make_unique<Table>();
-	Table& table = *tablePtr;
+	Table table = {};
 
 	/*
 	 * Table ID			8	Table Identifier, that defines the structure of the syntax section and other contained data.
@@ -182,12 +198,12 @@ std::unique_ptr<Table> Table::Parse(BufferReader& reader)
 	}
 
 	// return parsed table
-	return tablePtr;
+	return table;
 }
 
 // PAT
 
-void ProgramAssociation::Encode(BufferWritter& writer)
+void ProgramAssociation::Encode(BufferWritter& writer) const
 {
 	if (writer.GetLeft() < Size())
 		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
@@ -207,7 +223,7 @@ size_t ProgramAssociation::Size() const
 
 ProgramAssociation ProgramAssociation::Parse(BufferReader& reader)
 {
-	ProgramAssociation programAssociation;
+	ProgramAssociation programAssociation = {};
 
 	/*
 	 * Program num		16	Relates to the Table ID extension in the associated PMT. A value of 0 is reserved for a NIT packet identifier.
@@ -229,7 +245,7 @@ ProgramAssociation ProgramAssociation::Parse(BufferReader& reader)
 	return programAssociation;
 }
 
-void ProgramMap::ElementaryStream::Encode(BufferWritter& writer)
+void ProgramMap::ElementaryStream::Encode(BufferWritter& writer) const
 {
 	BitWriter bitwriter(writer, 5);
 	
@@ -257,7 +273,7 @@ size_t ProgramMap::ElementaryStream::Size() const
 
 ProgramMap::ElementaryStream ProgramMap::ElementaryStream::Parse(BufferReader& reader)
 {
-	ProgramMap::ElementaryStream elementaryStream;
+	ProgramMap::ElementaryStream elementaryStream = {};
 
 	/*
 	 * stream type				8	This defines the structure of the data contained within the elementary packet identifier.
@@ -292,7 +308,7 @@ ProgramMap::ElementaryStream ProgramMap::ElementaryStream::Parse(BufferReader& r
 
 // PMT
 
-void ProgramMap::Encode(BufferWritter& writer)
+void ProgramMap::Encode(BufferWritter& writer) const
 {
 	BitWriter bitwriter(writer, 4);
 	
@@ -321,7 +337,7 @@ size_t ProgramMap::Size() const
 
 ProgramMap ProgramMap::Parse(BufferReader& reader)
 {
-	ProgramMap programMap;
+	ProgramMap programMap = {};
 
 	/*
 	 * Reserved bits			3	Set to 0x07 (all bits on)

@@ -15,43 +15,6 @@ namespace mpegts
 namespace psi
 {
 
-/** PSI syntax section, optionally surrounding table data */
-struct SyntaxData : public Encodable
-{
-	// fields preceding table data
-	uint16_t tableIdExtension;
-	uint8_t _reserved1;
-	uint8_t versionNumber;
-	bool isCurrent;
-	uint8_t sectionNumber;
-	uint8_t lastSectionNumber;
-
-	std::variant<BufferReader, std::unique_ptr<Encodable>> data;
-
-	// fields following table data
-	uint32_t crc32;
-
-	void Encode(BufferWritter& writer) override;
-	size_t Size() const override;
-	
-	static std::unique_ptr<SyntaxData> Parse(BufferReader& reader);
-};
-
-/** PSI table section (checksum not verified if present) */
-struct Table : public Encodable
-{
-	uint8_t tableId = 0;
-	bool sectionSyntaxIndicator = false;
-	bool privateBit = false;
-	uint8_t _reserved1 = 0x3;
-	
-	std::variant<BufferReader, std::unique_ptr<Encodable>> data;
-	
-	void Encode(BufferWritter& writer) override;
-	size_t Size() const override;
-	
-	static std::unique_ptr<Table> Parse(BufferReader& reader);
-};
 
 /** PSI table data for a Program Association Table */
 struct ProgramAssociation : public Encodable
@@ -62,7 +25,7 @@ struct ProgramAssociation : public Encodable
 	uint16_t programNum = 0;
 	uint16_t pmtPid = 0;
 
-	void Encode(BufferWritter& writer) override;
+	void Encode(BufferWritter& writer) const override;
 	size_t Size() const override;
 	
 	/** parse a single PAT entry */
@@ -89,7 +52,7 @@ struct ProgramMap : public Encodable
 		
 		BufferReader descriptor;
 		
-		void Encode(BufferWritter& writer) override;
+		void Encode(BufferWritter& writer) const override;
 		size_t Size() const override;
 
 		static ElementaryStream Parse(BufferReader& reader);
@@ -99,22 +62,50 @@ struct ProgramMap : public Encodable
 	
 	std::vector<ElementaryStream> streams;
 
-	void Encode(BufferWritter& writer) override;
+	void Encode(BufferWritter& writer) const override;
 	size_t Size() const override;
 	
 	static ProgramMap Parse(BufferReader& reader);
 };
 
-template <typename T>
-T DowncastEncodable(const std::variant<BufferReader, std::unique_ptr<Encodable>>& data)
-{
-	auto encodable = std::get_if<std::unique_ptr<Encodable>>(&data);
-	
-	if (!encodable)
-		throw std::runtime_error("failed to downcast Encodable object");
 
-	return static_cast<T>(encodable->get());
-}
+/** PSI syntax section, optionally surrounding table data */
+struct SyntaxData : public Encodable
+{
+	// fields preceding table data
+	uint16_t tableIdExtension = 0;
+	uint8_t _reserved1 = 0x3;
+	uint8_t versionNumber = 0;
+	bool isCurrent = false;
+	uint8_t sectionNumber = 0;
+	uint8_t lastSectionNumber = 0;
+
+	std::variant<BufferReader, ProgramMap, ProgramAssociation> data;
+
+	// fields following table data
+	uint32_t crc32 = 0;
+
+	void Encode(BufferWritter& writer) const override;
+	size_t Size() const override;
+	
+	static SyntaxData Parse(BufferReader& reader);
+};
+
+/** PSI table section (checksum not verified if present) */
+struct Table : public Encodable
+{
+	uint8_t tableId = 0;
+	bool sectionSyntaxIndicator = false;
+	bool privateBit = false;
+	uint8_t _reserved1 = 0x3;
+	
+	std::variant<BufferReader, SyntaxData> data;
+	
+	void Encode(BufferWritter& writer) const override;
+	size_t Size() const override;
+	
+	static Table Parse(BufferReader& reader);
+};
 
 }; //namespace mpegts::psi
 }; //namespace mpegts
