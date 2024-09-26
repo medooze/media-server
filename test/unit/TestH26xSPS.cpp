@@ -13,24 +13,23 @@ TEST(TestH26xSPS, TestParseSPS1)
 
 	spsParser.Decode(spsData.data(), spsData.size());
 	// spsParser.Dump();
-    auto spsInfo = spsParser.GetSPSData();
 
-    EXPECT_EQ(66, spsInfo.profile_idc);
-    EXPECT_EQ(1, spsInfo.constraint_set0_flag);
-    EXPECT_EQ(1, spsInfo.constraint_set1_flag);
-    EXPECT_EQ(0, spsInfo.constraint_set2_flag);
-    EXPECT_EQ(0, spsInfo.reserved_zero_5bits);
-    EXPECT_EQ(22, spsInfo.level_idc);
-    EXPECT_EQ(0, spsInfo.seq_parameter_set_id);
-    EXPECT_EQ(1, spsInfo.log2_max_frame_num_minus4);
-    EXPECT_EQ(2, spsInfo.pic_order_cnt_type);
-    EXPECT_EQ(16, spsInfo.num_ref_frames);
-    EXPECT_EQ(0, spsInfo.gaps_in_frame_num_value_allowed_flag);
-    EXPECT_EQ(19, spsInfo.pic_width_in_mbs_minus1);
-    EXPECT_EQ(14, spsInfo.pic_height_in_map_units_minus1);
-    EXPECT_EQ(1, spsInfo.frame_mbs_only_flag);
-    EXPECT_EQ(1, spsInfo.direct_8x8_inference_flag);
-    EXPECT_EQ(0, spsInfo.frame_cropping_flag);
+    EXPECT_EQ(66, spsParser.profile_idc);
+    EXPECT_EQ(1, spsParser.constraint_set0_flag);
+    EXPECT_EQ(1, spsParser.constraint_set1_flag);
+    EXPECT_EQ(0, spsParser.constraint_set2_flag);
+    EXPECT_EQ(0, spsParser.reserved_zero_5bits);
+    EXPECT_EQ(22, spsParser.level_idc);
+    EXPECT_EQ(0, spsParser.seq_parameter_set_id);
+    EXPECT_EQ(1, spsParser.log2_max_frame_num_minus4);
+    EXPECT_EQ(2, spsParser.pic_order_cnt_type);
+    EXPECT_EQ(16, spsParser.num_ref_frames);
+    EXPECT_EQ(0, spsParser.gaps_in_frame_num_value_allowed_flag);
+    EXPECT_EQ(19, spsParser.pic_width_in_mbs_minus1);
+    EXPECT_EQ(14, spsParser.pic_height_in_map_units_minus1);
+    EXPECT_EQ(1, spsParser.frame_mbs_only_flag);
+    EXPECT_EQ(1, spsParser.direct_8x8_inference_flag);
+    EXPECT_EQ(0, spsParser.frame_cropping_flag);
 
 }
 
@@ -46,30 +45,29 @@ TEST(TestH26xSPS, TestParseSPS2)
 
 	spsParser.Decode(spsData.data(), spsData.size());
 	// spsParser.Dump();
-    auto spsInfo = spsParser.GetSPSData();
 
-	EXPECT_EQ(100, spsInfo.profile_idc);
-    EXPECT_EQ(0, spsInfo.constraint_set0_flag);
-    EXPECT_EQ(0, spsInfo.constraint_set1_flag);
-    EXPECT_EQ(0, spsInfo.constraint_set2_flag);
-    EXPECT_EQ(0, spsInfo.reserved_zero_5bits);
-    EXPECT_EQ(51, spsInfo.level_idc);
-    EXPECT_EQ(0, spsInfo.seq_parameter_set_id);
-    EXPECT_EQ(1, spsInfo.chroma_format_idc);
-    EXPECT_EQ(2, spsInfo.log2_max_frame_num_minus4);
-    EXPECT_EQ(0, spsInfo.pic_order_cnt_type);
-    EXPECT_EQ(4, spsInfo.log2_max_pic_order_cnt_lsb_minus4);
-    EXPECT_EQ(16, spsInfo.num_ref_frames);
-    EXPECT_EQ(0, spsInfo.gaps_in_frame_num_value_allowed_flag);
-    EXPECT_EQ(119, spsInfo.pic_width_in_mbs_minus1);
-    EXPECT_EQ(67, spsInfo.pic_height_in_map_units_minus1);
-    EXPECT_EQ(1, spsInfo.frame_mbs_only_flag);
-    EXPECT_EQ(1, spsInfo.direct_8x8_inference_flag);
-    EXPECT_EQ(1, spsInfo.frame_cropping_flag);
-    EXPECT_EQ(0, spsInfo.frame_crop_left_offset);
-    EXPECT_EQ(0, spsInfo.frame_crop_right_offset);
-    EXPECT_EQ(0, spsInfo.frame_crop_top_offset);
-    EXPECT_EQ(4, spsInfo.frame_crop_bottom_offset);
+	EXPECT_EQ(100, spsParser.profile_idc);
+    EXPECT_EQ(0, spsParser.constraint_set0_flag);
+    EXPECT_EQ(0, spsParser.constraint_set1_flag);
+    EXPECT_EQ(0, spsParser.constraint_set2_flag);
+    EXPECT_EQ(0, spsParser.reserved_zero_5bits);
+    EXPECT_EQ(51, spsParser.level_idc);
+    EXPECT_EQ(0, spsParser.seq_parameter_set_id);
+    EXPECT_EQ(1, spsParser.chroma_format_idc);
+    EXPECT_EQ(2, spsParser.log2_max_frame_num_minus4);
+    EXPECT_EQ(0, spsParser.pic_order_cnt_type);
+    EXPECT_EQ(4, spsParser.log2_max_pic_order_cnt_lsb_minus4);
+    EXPECT_EQ(16, spsParser.num_ref_frames);
+    EXPECT_EQ(0, spsParser.gaps_in_frame_num_value_allowed_flag);
+    EXPECT_EQ(119, spsParser.pic_width_in_mbs_minus1);
+    EXPECT_EQ(67, spsParser.pic_height_in_map_units_minus1);
+    EXPECT_EQ(1, spsParser.frame_mbs_only_flag);
+    EXPECT_EQ(1, spsParser.direct_8x8_inference_flag);
+    EXPECT_EQ(1, spsParser.frame_cropping_flag);
+    EXPECT_EQ(0, spsParser.frame_crop_left_offset);
+    EXPECT_EQ(0, spsParser.frame_crop_right_offset);
+    EXPECT_EQ(0, spsParser.frame_crop_top_offset);
+    EXPECT_EQ(4, spsParser.frame_crop_bottom_offset);
 
 
 }
