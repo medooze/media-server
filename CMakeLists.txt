@@ -205,6 +205,8 @@ add_executable(MediaServerUnitTest
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestFecProbeGenerator.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestSpliceInfoSection.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestH26xNal.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestH26xSPS.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestH26xPPS.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestHEVCBitstream.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestHEVCDescriptor.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/data/FramesArrivalInfo.cpp
