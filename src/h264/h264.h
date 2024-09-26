@@ -12,11 +12,6 @@ public:
 		RbspReader reader(buffer, bufferSize);
 		RbspBitReader r(reader);
 
-		for (int i = 0; i < bufferSize; i++)
-		{
-			printf("0x%x, ", buffer[i]);
-		}
-
 		try {
 			//Read SPS
 			data.profile_idc = r.Get(8);
