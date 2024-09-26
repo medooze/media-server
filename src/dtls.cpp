@@ -713,7 +713,7 @@ int DTLSConnection::Renegotiate()
 {
 	TRACE_EVENT("dtls", "DTLSConnection::Renegotiate");
 	//Run in event loop thread
-	AsyncSafe([](auto now){
+	AsyncSafe([this](auto now){
 		if (ssl)
 		{
 
