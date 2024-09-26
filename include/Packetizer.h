@@ -25,7 +25,7 @@ public:
 	
 	virtual ~Packetizer() = default;
 	
-	void AddMessage(const std::shared_ptr<T>& message, bool forceSeparatePacket = false)
+	void AddMessage(const std::shared_ptr<T>& message, bool forceSeparatePacket = true)
 	{
 		if (messages.full())
 		{
