@@ -43,8 +43,8 @@ void RTPIncomingMediaStreamMultiplexer::AddListener(RTPIncomingMediaStream::List
 	Debug("-RTPIncomingMediaStreamMultiplexer::AddListener() [listener:%p,this:%p]\n",listener,this);
 	
 	//Dispatch in thread sync
-	AsyncSafe([listener](auto self, auto now){
-		self->listeners.insert(listener);
+	AsyncSafe([=](auto now){
+		listeners.insert(listener);
 	});
 }
 
@@ -67,11 +67,11 @@ void RTPIncomingMediaStreamMultiplexer::onRTP(const RTPIncomingMediaStream* stre
 	if (!muted)
 	{
 		//Dispatch in thread async
-		AsyncSafe([packet](auto self, auto now){
+		AsyncSafe([=](auto now){
 			//Deliver to all listeners
-			for (auto listener : self->listeners)
+			for (auto listener : listeners)
 				//Dispatch rtp packet
-				listener->onRTP(self.get(), packet);
+				listener->onRTP(this,packet);
 		});
 	}
 }
@@ -85,15 +85,15 @@ void RTPIncomingMediaStreamMultiplexer::onRTP(const RTPIncomingMediaStream* stre
 	if (!muted)
 	{
 		//Dispatch in thread async
-		AsyncSafe([packets, ssrc = stream->GetMediaSSRC()](auto self, auto now){
+		AsyncSafe([=,ssrc = stream->GetMediaSSRC()](auto now){
 			//Trace method
 			TRACE_EVENT("rtp", "RTPIncomingMediaStreamMultiplexer::onRTP async", "ssrc", ssrc, "packets", packets.size());
 			//Process each packet in order, if we reverse the order of the loops, the last listeners would have a lot of delay
 			for (const auto& packet : packets)
 				//Deliver to all listeners
-				for (auto listener : self->listeners)
+				for (auto listener : listeners)
 					//Dispatch rtp packet
-					listener->onRTP(self.get(), packet);
+					listener->onRTP(this,packet);
 		});
 	}
 }
@@ -105,13 +105,13 @@ void RTPIncomingMediaStreamMultiplexer::onBye(const RTPIncomingMediaStream* stre
 	TRACE_EVENT("rtp", "RTPIncomingMediaStreamMultiplexer::onBye", "ssrc", stream->GetMediaSSRC());
 
 	//Dispatch in thread async
-	AsyncSafe([ssrc = stream->GetMediaSSRC()](auto self, auto now){
+	AsyncSafe([=, ssrc = stream->GetMediaSSRC()](auto now){
 		//Trace method
 		TRACE_EVENT("rtp", "RTPIncomingMediaStreamMultiplexer::onBye async", "ssrc", ssrc);
 		//Deliver to all listeners
-		for (auto listener : self->listeners)
+		for (auto listener : listeners)
 			//Dispatch rtp packet
-			listener->onBye(self.get());
+			listener->onBye(this);
 	});
 }
 

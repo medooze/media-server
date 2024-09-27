@@ -27,8 +27,8 @@ MediaFrameListenerBridge::MediaFrameListenerBridge(TimeService& timeService,DWOR
 void MediaFrameListenerBridge::OnCreated()
 {
 	//Create packet dispatch timer
-	dispatchTimer = CreateTimerSafe([](auto self, auto now){
-		self->Dispatch(now);
+	dispatchTimer = CreateTimerSafe([=]( auto now){
+		Dispatch(now);
 	});
 	dispatchTimer->SetName("MediaFrameListenerBridge::dispatchTimer");
 }
@@ -133,10 +133,10 @@ void MediaFrameListenerBridge::SetMaxDelayMs(std::chrono::milliseconds maxDelayM
 {
 	UltraDebug("-MediaFrameListenerBridge::SetMaxDelayMs() [delay:%lld]\n", maxDelayMs.count());
 
-	AsyncSafe([maxDelayMs](auto self, auto now) {
-		self->maxDispatchingDelayMs = maxDelayMs;
-		if (self->dispatchingDelayMs > self->maxDispatchingDelayMs)
-			self->dispatchingDelayMs = self->maxDispatchingDelayMs;
+	AsyncSafe([=](auto now) {
+		maxDispatchingDelayMs = maxDelayMs;
+		if (dispatchingDelayMs > maxDispatchingDelayMs)
+			dispatchingDelayMs = maxDispatchingDelayMs;
 	});
 }
 
@@ -144,17 +144,17 @@ void MediaFrameListenerBridge::SetDelayMs(std::chrono::milliseconds delayMs)
 {
 	UltraDebug("-MediaFrameListenerBridge::SetDelayMs() [delay:%lld]\n", delayMs.count());
 
-	AsyncSafe([delayMs](auto self, auto now) {
+	AsyncSafe([=](auto now) { 
 		// Set a delay limit so the queue wouldn't grow without control if something is wrong, i.e. the packet
 		// time info was not valid
-		if (delayMs > self->maxDispatchingDelayMs)
+		if (delayMs > maxDispatchingDelayMs)
 		{
-			Warning("-MediaFrameListenerBridge::SetDelayMs() too large dispatch delay:%lldms max:%lldms\n", delayMs.count(), self->maxDispatchingDelayMs.count());
-			self->dispatchingDelayMs = self->maxDispatchingDelayMs;
+			Warning("-MediaFrameListenerBridge::SetDelayMs() too large dispatch delay:%lldms max:%lldms\n", delayMs.count(), maxDispatchingDelayMs.count());
+			dispatchingDelayMs = maxDispatchingDelayMs;
 		}
 		else
 		{
-			self->dispatchingDelayMs = delayMs;
+			dispatchingDelayMs = delayMs;
 		}
 	});
 }
@@ -162,8 +162,8 @@ void MediaFrameListenerBridge::SetDelayMs(std::chrono::milliseconds delayMs)
 void MediaFrameListenerBridge::AddListener(RTPIncomingMediaStream::Listener* listener)
 {
 	Debug("-MediaFrameListenerBridge::AddListener() [this:%p,listener:%p]\n", this, listener);
-	AsyncSafe([listener](auto self, std::chrono::milliseconds now){
-		self->listeners.insert(listener);
+	AsyncSafe([=](auto now){
+		listeners.insert(listener);
 	});
 }
 
@@ -184,8 +184,8 @@ void MediaFrameListenerBridge::SetFrameDispatchCoordinator(const std::shared_ptr
 
 void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& frame)
 {
-	AsyncSafe([ignored, frame = std::shared_ptr<MediaFrame>(frame.Clone())] (auto self, auto now){
-		self->onMediaFrameAsync(now, ignored, frame);
+	AsyncSafe([=, frame = std::shared_ptr<MediaFrame>(frame.Clone())] (auto now){
+		onMediaFrameAsync(now, ignored, frame);
 	});
 }
 
@@ -525,8 +525,8 @@ void MediaFrameListenerBridge::DispatchPackets(const std::vector<RTPPacket::shar
 
 void MediaFrameListenerBridge::Reset()
 {
-	AsyncSafe([](auto self, std::chrono::milliseconds now){
-		self->reset = true;
+	AsyncSafe([=](auto now){
+		reset = true;
 	});
 }
 
@@ -542,8 +542,8 @@ void MediaFrameListenerBridge::Update()
 void MediaFrameListenerBridge::UpdateAsync(std::function<void(std::chrono::milliseconds)> callback)
 {
 	//Update it sync
-	AsyncSafe([](auto self, std::chrono::milliseconds now) {
-		self->Update(now);
+	AsyncSafe([this](auto now) {
+		Update(now);
 	}, callback);
 }
 
@@ -589,9 +589,9 @@ void MediaFrameListenerBridge::AddMediaListener(const MediaFrame::Listener::shar
 {
 	Debug("-MediaFrameListenerBridge::AddMediaListener() [this:%p,listener:%p]\n", this, listener.get());
 
-	AsyncSafe([listener](auto self, std::chrono::milliseconds now){
+	AsyncSafe([=](std::chrono::milliseconds now){
 		//Add to set
-		self->mediaFrameListeners.insert(listener);
+		mediaFrameListeners.insert(listener);
 	});
 }
 

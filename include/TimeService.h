@@ -88,7 +88,7 @@ public:
 			auto self = selfWeak.lock();
 			if (!self) return;
 			
-			func(self, now);
+			func(now);
 		});
 	}
 
@@ -103,7 +103,7 @@ public:
 			auto self = selfWeak.lock();
 			if (!self) return;
 
-			func(self, now);
+			func(now);
 		}, std::forward<Callback>(callback));
 	}
 	
@@ -118,7 +118,7 @@ public:
 			auto self = selfWeak.lock();
 			if (!self) return;
 			
-			func(self, now);
+			func(now);
 		});
 	}
 	
@@ -133,7 +133,7 @@ public:
 			auto self = selfWeak.lock();
 			if (!self) return;
 			
-			func(self, now);
+			func(now);
 		});
 	}
 	
@@ -148,7 +148,7 @@ public:
 			auto self = selfWeak.lock();
 			if (!self) return;
 			
-			func(self, now);
+			func(now);
 		});
 	}
 
@@ -163,7 +163,7 @@ public:
 			auto self = selfWeak.lock();
 			if (!self) return;
 			
-			func(self, now);
+			func(now);
 		});
 	}
 	

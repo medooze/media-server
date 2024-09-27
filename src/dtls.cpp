@@ -462,15 +462,15 @@ int DTLSConnection::Init()
 	SSL_do_handshake(ssl);
 	
 	//Start timeout
-	timeout = CreateTimerSafe(0ms, [](auto self, auto now){
+	timeout = CreateTimerSafe(0ms, [this](auto now){
 		//UltraDebug("-DTLSConnection::Timeout()\n");
 		//Check if still inited
-		if (self->inited)
+		if (inited)
 		{
 			//Run timeut
-			if (DTLSv1_handle_timeout(self->ssl)!=-1)
+			if (DTLSv1_handle_timeout(ssl)!=-1)
 				//Check if there is any pending data
-				self->CheckPending();
+				CheckPending();
 		}
 	});
 
@@ -713,13 +713,13 @@ int DTLSConnection::Renegotiate()
 {
 	TRACE_EVENT("dtls", "DTLSConnection::Renegotiate");
 	//Run in event loop thread
-	AsyncSafe([](auto self, auto now){
-		if (self->ssl)
+	AsyncSafe([this](auto now){
+		if (ssl)
 		{
 
 			TRACE_EVENT("dtls", "DTLSConnection::Renegotiate::Work");
-			SSL_renegotiate(self->ssl);
-			SSL_do_handshake(self->ssl);
+			SSL_renegotiate(ssl);
+			SSL_do_handshake(ssl);
 		}
 	});
 	

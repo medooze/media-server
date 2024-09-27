@@ -1870,7 +1870,7 @@ bool DTLSICETransport::AddOutgoingSourceGroup(const RTPOutgoingSourceGroup::shar
 	Log("-DTLSICETransport::AddOutgoingSourceGroup() [group:%p,ssrc:%u,fec:%u,rtx:%u]\n",group.get(), group->media.ssrc, group->fec.ssrc, group->rtx.ssrc);
 	
 	//Dispatch to the event loop thread
-	AsyncSafe([group](auto self, std::chrono::milliseconds now){
+	AsyncSafe([=](auto now){
 
 		//Get ssrcs
 		const auto media = group->media.ssrc;
@@ -1879,21 +1879,21 @@ bool DTLSICETransport::AddOutgoingSourceGroup(const RTPOutgoingSourceGroup::shar
 
 		//TODO: pass a callback for confirming creation
 		//Check they are not already assigned
-		if (media && self->outgoing.find(media) != self->outgoing.end())
+		if (media && outgoing.find(media) != outgoing.end())
 		{
 			//Error
 			Error("-DTLSICETransport::AddOutgoingSourceGroup() | media ssrc already assigned");
 			return;
 		}
 
-		if (fec && self->outgoing.find(fec) != self->outgoing.end())
+		if (fec && outgoing.find(fec) != outgoing.end())
 		{
 			//Error
 			Error("-DTLSICETransport::AddOutgoingSourceGroup() | fec ssrc already assigned");
 			return;
 		}
 
-		if (rtx && self->outgoing.find(rtx) != self->outgoing.end())
+		if (rtx && outgoing.find(rtx) != outgoing.end())
 		{
 			//Error
 			Error("-DTLSICETransport::AddOutgoingSourceGroup() | rtx ssrc already assigned");
@@ -1903,27 +1903,27 @@ bool DTLSICETransport::AddOutgoingSourceGroup(const RTPOutgoingSourceGroup::shar
 		//Add it for each group ssrc
 		if (media)
 		{
-			self->outgoing[media] = group;
-			self->send.AddStream(media);
+			outgoing[media] = group;
+			send.AddStream(media);
 		}
 		if (fec)
 		{
-			self->outgoing[fec] = group;
-			self->send.AddStream(fec);
+			outgoing[fec] = group;
+			send.AddStream(fec);
 		}
 		if (rtx)
 		{
-			self->outgoing[rtx] = group;
-			self->send.AddStream(rtx);
+			outgoing[rtx] = group;
+			send.AddStream(rtx);
 		}
 
 		//If we don't have a mainSSRC
-		if (self->mainSSRC==1 && media)
+		if (mainSSRC==1 && media)
 			//Set it
-			self->mainSSRC = media;
+			mainSSRC = media;
 
 		//Check if we need to start or stop the timer
-		self->CheckProbeTimer();
+		CheckProbeTimer();
 
 		//TODO: Send SDES
 	});
@@ -1938,7 +1938,7 @@ bool DTLSICETransport::RemoveOutgoingSourceGroup(const RTPOutgoingSourceGroup::s
 	Log("-DTLSICETransport::RemoveOutgoingSourceGroup() [ssrc:%u,fec:%u,rtx:%u]\n", group->media.ssrc, group->fec.ssrc, group->rtx.ssrc);
 
 	//Dispatch to the event loop thread
-	AsyncSafe([group](auto self, std::chrono::milliseconds now){
+	AsyncSafe([=](auto now){
 		Log("-DTLSICETransport::RemoveOutgoingSourceGroup() | Async [ssrc:%u,fec:%u,rtx:%u]\n", group->media.ssrc, group->fec.ssrc, group->rtx.ssrc);
 		//Get ssrcs
 		std::vector<DWORD> ssrcs;
@@ -1950,8 +1950,8 @@ bool DTLSICETransport::RemoveOutgoingSourceGroup(const RTPOutgoingSourceGroup::s
 		if (media)
 		{
 			//Remove from ssrc mapping and srtp session
-			self->outgoing.erase(media);
-			self->send.RemoveStream(media);
+			outgoing.erase(media);
+			send.RemoveStream(media);
 			//Add group ssrcs
 			ssrcs.push_back(media);
 		}
@@ -1959,8 +1959,8 @@ bool DTLSICETransport::RemoveOutgoingSourceGroup(const RTPOutgoingSourceGroup::s
 		if (fec)
 		{
 			//Remove from ssrc mapping and srtp session
-			self->outgoing.erase(fec);
-			self->send.RemoveStream(fec);
+			outgoing.erase(fec);
+			send.RemoveStream(fec);
 			//Add group ssrcs
 			ssrcs.push_back(fec);
 		}
@@ -1968,27 +1968,27 @@ bool DTLSICETransport::RemoveOutgoingSourceGroup(const RTPOutgoingSourceGroup::s
 		if (rtx)
 		{
 			//Remove from ssrc mapping and srtp session
-			self->outgoing.erase(rtx);
-			self->send.RemoveStream(rtx);
+			outgoing.erase(rtx);
+			send.RemoveStream(rtx);
 			//Add group ssrcs
 			ssrcs.push_back(rtx);
 			//Clear history
 			//TODO: make it fine grained
-			self->history.clear();
+			history.clear();
 		}
 		
 		//If it was our main ssrc
-		if (self->mainSSRC == group->media.ssrc)
+		if (mainSSRC==group->media.ssrc)
 			//Set first
-			self->mainSSRC = self->outgoing.begin() != self->outgoing.end() ? self->outgoing.begin()->second->media.ssrc : 1;
+			mainSSRC = outgoing.begin()!=outgoing.end() ? outgoing.begin()->second->media.ssrc : 1;
 		
 		//Send BYE
-		self->Send(RTCPCompoundPacket::Create(RTCPBye::Create(ssrcs,"terminated")));
+		Send(RTCPCompoundPacket::Create(RTCPBye::Create(ssrcs,"terminated")));
 
 		//If last one
-		if (self->outgoing.size() == 0 && self->probingTimer)
+		if (outgoing.size()==0 && probingTimer)
 			//Stop probing timer
-			self->probingTimer->Cancel();
+			probingTimer->Cancel();
 	});
 	
 	//Done
@@ -2012,13 +2012,13 @@ bool DTLSICETransport::AddIncomingSourceGroup(const RTPIncomingSourceGroup::shar
 		return Error("No media ssrc or rid defined, stream will not be added\n");
 	
 	//Dispatch to the event loop thread
-	AsyncSafe([group, isRTXEnabled](auto self, std::chrono::milliseconds now){
+	AsyncSafe([=](auto now){
 		//Get ssrcs
 		const auto media = group->media.ssrc;
 		const auto rtx   = group->rtx.ssrc;
 		
 		//Check they are not already assigned
-		if (media && self->incoming.find(media) != self->incoming.end())
+		if (media && incoming.find(media)!=incoming.end())
 		{
 			//Error
 			Warning("-DTLSICETransport::AddIncomingSourceGroup() media ssrc already assigned\n");
@@ -2026,7 +2026,7 @@ bool DTLSICETransport::AddIncomingSourceGroup(const RTPIncomingSourceGroup::shar
 		}
 		
 			
-		if (rtx && self->incoming.find(rtx) != self->incoming.end())
+		if (rtx && incoming.find(rtx)!=incoming.end())
 		{
 			//Error
 			Warning("-DTLSICETransport::AddIncomingSourceGroup() rtx ssrc already assigned\n");
@@ -2035,39 +2035,39 @@ bool DTLSICETransport::AddIncomingSourceGroup(const RTPIncomingSourceGroup::shar
 
 		//Add rid if any
 		if (!group->rid.empty())
-			self->rids[group->mid + "@" + group->rid] = group;
+			rids[group->mid + "@" + group->rid] = group;
 
 		//Add mid if any
 		if (!group->mid.empty())
 		{
 			//Find mid 
-			auto it = self->mids.find(group->mid);
+			auto it = mids.find(group->mid);
 			//If not there
-			if (it != self->mids.end())
+			if (it!=mids.end())
 				//Append
 				it->second.insert(group);
 			else
 				//Add new set
-				self->mids[group->mid] = { group };
+				mids[group->mid] = { group };
 		}
 
 		//Add it for each group ssrc
 		if (media)
 		{
-			self->incoming[media] = group;
-			self->recv.AddStream(media);
+			incoming[media] = group;
+			recv.AddStream(media);
 		}
 		if (rtx)
 		{
-			self->incoming[rtx] = group;
-			self->recv.AddStream(rtx);
+			incoming[rtx] = group;
+			recv.AddStream(rtx);
 		}
 
 		//Set RTX supported flag only for video
 		group->SetRTXEnabled(isRTXEnabled);
 
 		//If it is video and the transport wide cc is not enabled enable and not overriding the bitrate estimation
-		bool remb = group->type == MediaFrame::Video && self->sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC) == RTPMap::NotFound && !self->overrideBWE && !self->disableREMB;
+		bool remb = group->type == MediaFrame::Video && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC) == RTPMap::NotFound && !overrideBWE && !disableREMB;
 
 		//Start distpaching
 		group->Start(remb);
@@ -2083,23 +2083,23 @@ bool DTLSICETransport::RemoveIncomingSourceGroup(const RTPIncomingSourceGroup::s
 	Log("-DTLSICETransport::RemoveIncomingSourceGroup() [mid:'%s',rid:'%s',ssrc:%u,rtx:%u]\n",group->mid.c_str(),group->rid.c_str(),group->media.ssrc,group->rtx.ssrc);
 	
 	//Dispatch to the event loop thread
-	AsyncSafe([group](auto self, std::chrono::milliseconds now){
+	AsyncSafe([=](auto now){
 
 		//Remove rid if any
 		if (!group->rid.empty())
-			self->rids.erase(group->mid + "@" + group->rid);
+			rids.erase(group->mid + "@" + group->rid);
 
 		//Find mid 
-		auto it = self->mids.find(group->mid);
+		auto it = mids.find(group->mid);
 		//If found
-		if (it != self->mids.end())
+		if (it!=mids.end())
 		{
 			//Erase group
 			it->second.erase(group);
 			//If it is empty now
 			if(it->second.empty())
 				//Remove from mids
-				self->mids.erase(it);
+				mids.erase(it);
 		}
 
 		//Get ssrcs
@@ -2110,15 +2110,15 @@ bool DTLSICETransport::RemoveIncomingSourceGroup(const RTPIncomingSourceGroup::s
 		if (media)
 		{
 			//Remove from ssrc mapping and srtp session
-			self->incoming.erase(media);
-			self->recv.RemoveStream(media);
+			incoming.erase(media);
+			recv.RemoveStream(media);
 		}
 		//IF got rtx ssrc
 		if (rtx)
 		{
 			//Remove from ssrc mapping and srtp session
-			self->incoming.erase(rtx);
-			self->recv.RemoveStream(rtx);
+			incoming.erase(rtx);
+			recv.RemoveStream(rtx);
 		}
 
 		//Stop distpaching
@@ -2215,9 +2215,9 @@ int DTLSICETransport::SendPLI(DWORD ssrc)
 	Debug("-DTLSICETransport::SendPLI() | [ssrc:%u]\n",ssrc);
 	
 	//Execute on the event loop thread and do not wait
-	AsyncSafe([ssrc](auto self, std::chrono::milliseconds now){
+	AsyncSafe([=](auto now){
 		//Get group
-		RTPIncomingSourceGroup* group = self->GetIncomingSourceGroup(ssrc);
+		RTPIncomingSourceGroup* group = GetIncomingSourceGroup(ssrc);
 
 		//If not found
 		if (!group)
@@ -2237,10 +2237,10 @@ int DTLSICETransport::SendPLI(DWORD ssrc)
 		auto rtcp = RTCPCompoundPacket::Create();
 
 		//Add to rtcp
-		rtcp->CreatePacket<RTCPPayloadFeedback>(RTCPPayloadFeedback::PictureLossIndication,self->mainSSRC,ssrc);
+		rtcp->CreatePacket<RTCPPayloadFeedback>(RTCPPayloadFeedback::PictureLossIndication,mainSSRC,ssrc);
 
 		//Send packet
-		self->Send(rtcp);
+		Send(rtcp);
 	});
 	
 	return 1;
@@ -2252,10 +2252,9 @@ int DTLSICETransport::Reset(DWORD ssrc)
 	Debug("-DTLSICETransport::Reset() | [ssrc:%u]\n", ssrc);
 
 	//Execute on the event loop thread and do not wait
-	AsyncSafe([ssrc](auto self, auto now) {
-
+	AsyncSafe([=](auto now) {
 		//Get group
-		RTPIncomingSourceGroup* group = self->GetIncomingSourceGroup(ssrc);
+		RTPIncomingSourceGroup* group = GetIncomingSourceGroup(ssrc);
 
 		//If not found
 		if (!group)
@@ -2265,8 +2264,8 @@ int DTLSICETransport::Reset(DWORD ssrc)
 		group->ResetPackets();
 
 		//Reset srtp session
-		self->recv.RemoveStream(group->media.ssrc);
-		self->recv.AddStream(group->media.ssrc);
+		recv.RemoveStream(group->media.ssrc);
+		recv.AddStream(group->media.ssrc);
 
 		//Reset
 		group->media.Reset();
@@ -2275,8 +2274,8 @@ int DTLSICETransport::Reset(DWORD ssrc)
 		if (group->rtx.ssrc)
 		{
 			//Reset srtp session
-			self->recv.RemoveStream(group->rtx.ssrc);
-			self->recv.AddStream(group->rtx.ssrc);
+			recv.RemoveStream(group->rtx.ssrc);
+			recv.AddStream(group->rtx.ssrc);
 		}
 
 		//Reset
@@ -2957,27 +2956,27 @@ void DTLSICETransport::Start()
 	dcOptions.localPort = 5000;
 	dcOptions.remotePort = 5000;
 	//Run ice timeout timer
-	iceTimeoutTimer = CreateTimerSafe(IceTimeout,[](auto self, auto now){
+	iceTimeoutTimer = CreateTimerSafe(IceTimeout,[=](auto now){
 		//Log
 		Debug("-DTLSICETransport::onIceTimeoutTimer() ICE timeout\n");
 		//If got listener
-		if (self->listener)
+		if (listener)
 			//Fire timeout 
-			self->listener->onICETimeout();
+			listener->onICETimeout();
 	});
 	//Set name for debug
 	iceTimeoutTimer->SetName("DTLSICETransport - ice timeout");
 	//Create new probe timer
-	probingTimer = CreateTimerSafe([](auto self, std::chrono::milliseconds ms) {
+	probingTimer = CreateTimerSafe([=](std::chrono::milliseconds ms) {
 		//Do probe
-		self->Probe(ms.count());
+		Probe(ms.count());
 		});
 	//Set name for debug
 	probingTimer->SetName("DTLSICETransport - bwe probe");
 	//Create sse timer
-	sseTimer = CreateTimerSafe([](auto self, std::chrono::milliseconds ms) {
+	sseTimer = CreateTimerSafe([=](std::chrono::milliseconds ms) {
 		//Send feedback now
-		self->SendTransportWideFeedbackMessage(self->lastMediaSSRC);
+		SendTransportWideFeedbackMessage(lastMediaSSRC);
 	});
 	//Set name for debug
 	sseTimer->SetName("DTLSICETransport - twcc feedback");
@@ -3045,10 +3044,9 @@ int DTLSICETransport::Enqueue(const RTPPacket::shared& packet)
 		"ssrc", packet->GetSSRC(),
 		"seqNum", packet->GetSeqNum());
 
-	// @todo We should check this now.
 	//TODO: check if we are actuall sending from a different thread ocasionally
 	//Send async
-	//AsyncSafe([](auto self, std::chrono::milliseconds now){
+	//AsyncSafe([=](std::chrono::milliseconds now){
 		//Send
 		Send(packet);
 	//});
@@ -3217,9 +3215,9 @@ void DTLSICETransport::SetListener(const Listener::shared& listener)
 {
 	Debug(">DTLSICETransport::SetListener() [this:%p,listener:%p]\n", this, listener.get());
 	//Add in main thread async
-	AsyncSafe([listener](auto self, std::chrono::milliseconds now){
+	AsyncSafe([=](auto now){
 		//Store listener
-		self->listener = listener;
+		this->listener = listener;
 	});
 }
 
@@ -3298,15 +3296,15 @@ void DTLSICETransport::CheckProbeTimer()
 	Debug("-DTLSICETransport::CheckProbeTimer() | [probingTimer:%d]\n",!!probingTimer);
 
 	//Dispatch to the event loop thread
-	AsyncSafe([](auto self, auto now) {
+	AsyncSafe([=](auto now) {
 		//If we don't have timer anumore
-		if (!self->probingTimer)
+		if (!probingTimer)
 			//Do nothing
 			return;
 		//No video
 		bool video = false;
 		//Check if there is any video source
-		for (const auto& [ssrc,outgoing] : self->outgoing)
+		for (const auto& [ssrc,outgoing] : outgoing)
 		{
 			//If it is video
 			if (outgoing->type == MediaFrame::Video)
@@ -3318,15 +3316,15 @@ void DTLSICETransport::CheckProbeTimer()
 		}
 	
 		//Check if we have to start if
-		if (self->senderSideEstimationEnabled && self->probe && video && self->state == DTLSState::Connected)
+		if (this->senderSideEstimationEnabled && this->probe && video && state == DTLSState::Connected)
 		{
 			//If not already started
-			if (!self->probingTimer->IsScheduled())
+			if (!probingTimer->IsScheduled())
 				//Start probing timer again
-				self->probingTimer->Repeat(ProbingInterval);
+				probingTimer->Repeat(ProbingInterval);
 		} else {
 			//Stop probing
-			self->probingTimer->Cancel();
+			probingTimer->Cancel();
 		}
 	});
 }

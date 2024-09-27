@@ -41,8 +41,8 @@ void RTPIncomingSourceGroup::AddListener(RTPIncomingMediaStream::Listener* liste
 	Debug("-RTPIncomingSourceGroup::AddListener() [listener:%p]\n",listener);
 	
 	//Add it sync
-	AsyncSafe([listener](auto self, std::chrono::milliseconds now) {
-		self->listeners.insert(listener);
+	AsyncSafe([=](auto){
+		listeners.insert(listener);
 	});
 }
 
@@ -186,33 +186,33 @@ void RTPIncomingSourceGroup::UpdateAsync(std::function<void(std::chrono::millise
 	TRACE_EVENT("rtp", "RTPIncomingSourceGroup::Update");
 
 	//Update it sync
-	AsyncSafe([](auto self, std::chrono::milliseconds now) {
+	AsyncSafe([=](std::chrono::milliseconds now) {
 		//Set last updated time
-		self->lastUpdated = now.count();
+		lastUpdated = now.count();
 		//Update
-		self->media.Update(now.count());
+		media.Update(now.count());
 		//Update
-		self->rtx.Update(now.count());
+		rtx.Update(now.count());
 	}, callback);
 }
 
 void RTPIncomingSourceGroup::SetMaxWaitTime(DWORD maxWaitingTime)
 {
 	//Update it sync
-	AsyncSafe([maxWaitingTime](auto self, std::chrono::milliseconds now) {
+	AsyncSafe([=](std::chrono::milliseconds now) {
 		//Set it
-		self->packets.SetMaxWaitTime(maxWaitingTime);
+		packets.SetMaxWaitTime(maxWaitingTime);
 		//Store overriden value
-		self->maxWaitingTime = maxWaitingTime;
+		this->maxWaitingTime = maxWaitingTime;
 	});
 }
 
 void RTPIncomingSourceGroup::ResetMaxWaitTime()
 {
 	//Update it sync
-	AsyncSafe([](auto self, std::chrono::milliseconds now) {
+	AsyncSafe([=](std::chrono::milliseconds now) {
 		//Remove override
-		self->maxWaitingTime.reset();
+		maxWaitingTime.reset();
 	});
 }
 
@@ -255,7 +255,7 @@ void RTPIncomingSourceGroup::Start(bool remb)
 	Debug("-RTPIncomingSourceGroup::Start() | [remb:%d]\n",remb);
 
 	//Create dispatch timer
-	dispatchTimer = CreateTimerSafe([](auto self, auto now) { self->DispatchPackets(now.count()); });
+	dispatchTimer = CreateTimerSafe([this](auto now) { DispatchPackets(now.count()); });
 	//Set name for debug
 	dispatchTimer->SetName("RTPIncomingSourceGroup - dispatch");
 	
