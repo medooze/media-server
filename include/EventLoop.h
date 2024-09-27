@@ -148,9 +148,7 @@ private:
 	void CleanUp();
 
 	std::thread			thread;
-	
-	//@todo It looks we only need one pipe for signaling
-	int		pipe[2]		= {FD_INVALID, FD_INVALID};
+	std::unique_ptr<FileDescriptor>	pipeFds[2];
 	std::unique_ptr<Poll>		poll;
 	std::atomic_flag signaled	= ATOMIC_FLAG_INIT;
 	volatile bool	running		= false;

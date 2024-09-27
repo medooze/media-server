@@ -176,6 +176,9 @@ bool EventLoop::StartWithLoop(std::function<void(void)> loop)
 		CleanUp();
 	});
 	
+	
+	int pipe[2] = {FD_INVALID, FD_INVALID};
+	
 #if __APPLE__
 	//Create pipe
 	if (::pipe(pipe)==-1)
@@ -189,6 +192,10 @@ bool EventLoop::StartWithLoop(std::function<void(void)> loop)
 #else
 	pipe[0] = pipe[1] = eventfd(0, EFD_NONBLOCK);
 #endif	
+
+	pipeFds[0] = std::make_unique<FileDescriptor>(pipe[0]);
+	pipeFds[1] = std::make_unique<FileDescriptor>(pipe[1]);
+
 	//Check values
 	if (pipe[0]==FD_INVALID || pipe[1]==FD_INVALID)
 		//Error
@@ -245,6 +252,8 @@ bool EventLoop::Start()
 		CleanUp();
 	});
 	
+	int pipe[2] = {FD_INVALID, FD_INVALID};
+	
 #if __APPLE__
 	//Create pipe
 	if (::pipe(pipe)==-1)
@@ -258,6 +267,10 @@ bool EventLoop::Start()
 #else
 	pipe[0] = pipe[1] = eventfd(0, EFD_NONBLOCK);
 #endif	
+
+	pipeFds[0] = std::make_unique<FileDescriptor>(pipe[0]);
+	pipeFds[1] = std::make_unique<FileDescriptor>(pipe[1]);
+
 	//Check values
 	if (pipe[0]==FD_INVALID || pipe[1]==FD_INVALID)
 		//Error
@@ -556,7 +569,7 @@ void EventLoop::Signal()
 	uint64_t one = 1;
 	
 	//If we are in the same thread or already signaled and pipe is ok
-	if (std::this_thread::get_id()==thread.get_id() || signaled.test_and_set() || pipe[1] == FD_INVALID)
+	if (std::this_thread::get_id()==thread.get_id() || signaled.test_and_set() || *pipeFds[1] == FD_INVALID)
 		//No need to do anything
 		return;
 	
@@ -566,7 +579,7 @@ void EventLoop::Signal()
 	
 	
 	//Write to tbe pipe, and assign to one to avoid warning in compile time
-	one = write(pipe[1],(uint8_t*)&one,sizeof(one));
+	one = write(*pipeFds[1],(uint8_t*)&one,sizeof(one));
 }
 
 void EventLoop::Run(const std::chrono::milliseconds &duration)
@@ -709,7 +722,7 @@ void EventLoop::ClearSignal()
 {
 	uint64_t data = 0;
 	//Remove pending data on signal pipe
-	while (read(pipe[0], &data, sizeof(uint64_t)) > 0)
+	while (read(*pipeFds[0], &data, sizeof(uint64_t)) > 0)
 	{
 		//DO nothing
 	}
@@ -797,11 +810,8 @@ void EventLoop::ProcessTriggers(const std::chrono::milliseconds& now)
 void EventLoop::CleanUp()
 {
 	//Close pipe
-	if (pipe[0]!=FD_INVALID) close(pipe[0]);
-	if (pipe[1]!=FD_INVALID) close(pipe[1]);
-	
-	//Empyt pipe
-	pipe[0] = pipe[1] = FD_INVALID;
+	pipeFds[0].reset();
+	pipeFds[1].reset();
 	
 	poll->Clear();
 }
