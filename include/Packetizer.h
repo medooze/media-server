@@ -140,14 +140,13 @@ public:
 				encodable->Encode(awriter);
 				assert(sz == awriter.GetLength());
 				
+				pos = 0;
+				
 				// check force sperate flag
-				if (forceSeparate && pos > 0)
+				if (forceSeparate && bytes > 0)
 				{
-					pos = 0;
 					return bytes;
 				}
-				
-				pos = 0;
 			}
 			
 			// Fill the writer as much as possible
