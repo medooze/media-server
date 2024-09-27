@@ -840,6 +840,8 @@ void RTPSession::onRTCPPacket(const BYTE* buffer, DWORD size)
 						break;
 					case RTCPRTPFeedback::TransportWideFeedbackMessage:
 						break;
+					default:
+						break;
 				}
 				break;
 			}
@@ -898,7 +900,7 @@ void RTPSession::onRTCPPacket(const BYTE* buffer, DWORD size)
 							}
 						}
 						break;
-					case RTCPPayloadFeedback::UNKNOWN:
+					default:
 						break;
 				}
 				break;
