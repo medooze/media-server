@@ -168,7 +168,7 @@ public:
 		//Get code num
 		DWORD codeNum = GetExpGolomb();
 		//Conver to signed
-		return codeNum & 0x01 ? codeNum >> 1 : -(codeNum >> 1);
+		return codeNum & 0x01 ? (codeNum+1) >> 1 : -(codeNum >> 1);
 	}
 
 	inline void Flush()
