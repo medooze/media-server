@@ -71,7 +71,7 @@ private:
 	int64_t  lastFeedbackDelta = 0;
 	int fd = FD_INVALID;
 
-	size_t bweStatsFileSizeLimit = 0;
+	ssize_t bweStatsFileSizeLimit = 0;
 	ssize_t bweStatsBytesWritten = 0;
 	std::string bweStatsFileName;
 	ssize_t bweStatsFileCount = 0;
