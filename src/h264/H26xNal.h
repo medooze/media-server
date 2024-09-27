@@ -72,6 +72,9 @@ public:
 
 	inline void Skip(size_t num)
 	{
+		//Don't update pos if we have not consumed any bytes
+		if (!num) return;
+
 		DWORD len = 0;
 		DWORD z = zeros;
 
