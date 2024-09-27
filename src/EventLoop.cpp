@@ -211,6 +211,9 @@ bool EventLoop::StartWithLoop(std::function<void(void)> loop)
 	//Not signaled
 	signaled.clear();
 	
+	//Block signals to avoid exiting on SIGUSR1
+	blocksignals();
+	
 	//Start thread and run
 	thread = std::thread([loop, cleanUp](){
 		loop();
@@ -276,6 +279,9 @@ bool EventLoop::Start()
 
 	//Not signaled
 	signaled.clear();
+	
+	//Block signals to avoid exiting on SIGUSR1
+	blocksignals();
 	
 	//Start thread and run
 	thread = std::thread([this, cleanUp](){ Run(); });
@@ -517,6 +523,32 @@ const std::chrono::milliseconds EventLoop::Now()
 	return now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
 }
 
+bool EventLoop::AddFd(int fd, std::optional<uint16_t> eventMask)
+{
+	Poll::PollFd pfd = {Poll::PollFd::Category::IO, fd};
+	if (!poll->AddFd(pfd)) return false;
+	
+	if (eventMask.has_value())
+	{
+		return poll->SetEventMask(pfd, *eventMask);
+	}
+	
+	return true;
+}
+
+bool EventLoop::RemoveFd(int fd)
+{
+	return poll->RemoveFd({Poll::PollFd::Category::IO, fd});
+}
+
+void EventLoop::ForEachFd(const std::function<void(int)>& func)
+{
+	poll->ForEachFd([&func](Poll::PollFd pfd) {
+		if (pfd.category == Poll::PollFd::Category::IO) func(pfd.fd);
+	});
+}
+	
+
 void EventLoop::Signal()
 {
 	TRACE_EVENT("eventloop", "EventLoop::Signal");
@@ -583,46 +615,42 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 			//UltraDebug("<EventLoop::Run() | poll timeout:%d timers:%d tasks:%d\n",timeout,timers.size(),tasks.size_approx());
 			
 			poll->ForEachFd([this](Poll::PollFd pfd) {
-
-				auto events = poll->GetEvents(pfd);
-
-				//Check error
+				
 				auto error = poll->GetError(pfd);
-				if (error)
+				switch (pfd.category)
 				{
-					if (pfd.category == Poll::PollFd::Category::Signaling)
+				case Poll::PollFd::Category::Signaling:
+					assert(poll->GetEvents(pfd) != Poll::Event::Out);
+					// Always clear signal
+					ClearSignal();
+					if (error)
 					{
-						ClearSignal();
-						
 						Error("-EventLoop::Run() Error occured on signaling fd: %s\n", error->c_str());
 						OnSignallingError(*error);
 					}
-					else
+					break;
+				case Poll::PollFd::Category::IO:
+					if (error)
 					{
 						OnPollError(pfd.fd, *error);
 					}
-					
-					// In case of error, no need further processing for the fd
-					return;
-				}
-								
-				if (events & Poll::Event::In)
-				{
-					if (pfd.category == Poll::PollFd::Category::Signaling)
-					{
-						ClearSignal();
-					}
 					else
 					{
-						OnPollIn(pfd.fd);
+						auto events = poll->GetEvents(pfd);
+						if (events & Poll::Event::In)
+						{
+							OnPollIn(pfd.fd);
+						}
+						
+						if (events & Poll::Event::Out)
+						{
+							OnPollOut(pfd.fd);
+						}
 					}
-				}
-				
-				//Check read is possible
-				if (events & Poll::Event::Out)
-				{
-					assert(pfd.category != Poll::PollFd::Category::Signaling);
-					OnPollOut(pfd.fd);
+					break;
+				default:
+					assert(false);
+					break;
 				}
 			});
 		}
