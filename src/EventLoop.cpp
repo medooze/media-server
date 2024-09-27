@@ -176,6 +176,9 @@ bool EventLoop::StartWithLoop(std::function<void(void)> loop)
 		CleanUp();
 	});
 	
+	
+	int pipe[2] = {FD_INVALID, FD_INVALID};
+	
 #if __APPLE__
 	//Create pipe
 	if (::pipe(pipe)==-1)
@@ -189,6 +192,10 @@ bool EventLoop::StartWithLoop(std::function<void(void)> loop)
 #else
 	pipe[0] = pipe[1] = eventfd(0, EFD_NONBLOCK);
 #endif	
+
+	pipeFds[0] = std::make_unique<FileDescriptor>(pipe[0]);
+	pipeFds[1] = std::make_unique<FileDescriptor>(pipe[1]);
+
 	//Check values
 	if (pipe[0]==FD_INVALID || pipe[1]==FD_INVALID)
 		//Error
@@ -210,6 +217,9 @@ bool EventLoop::StartWithLoop(std::function<void(void)> loop)
 
 	//Not signaled
 	signaled.clear();
+	
+	//Block signals to avoid exiting on SIGUSR1
+	blocksignals();
 	
 	//Start thread and run
 	thread = std::thread([loop, cleanUp](){
@@ -242,6 +252,8 @@ bool EventLoop::Start()
 		CleanUp();
 	});
 	
+	int pipe[2] = {FD_INVALID, FD_INVALID};
+	
 #if __APPLE__
 	//Create pipe
 	if (::pipe(pipe)==-1)
@@ -255,6 +267,10 @@ bool EventLoop::Start()
 #else
 	pipe[0] = pipe[1] = eventfd(0, EFD_NONBLOCK);
 #endif	
+
+	pipeFds[0] = std::make_unique<FileDescriptor>(pipe[0]);
+	pipeFds[1] = std::make_unique<FileDescriptor>(pipe[1]);
+
 	//Check values
 	if (pipe[0]==FD_INVALID || pipe[1]==FD_INVALID)
 		//Error
@@ -276,6 +292,9 @@ bool EventLoop::Start()
 
 	//Not signaled
 	signaled.clear();
+	
+	//Block signals to avoid exiting on SIGUSR1
+	blocksignals();
 	
 	//Start thread and run
 	thread = std::thread([this, cleanUp](){ Run(); });
@@ -517,6 +536,32 @@ const std::chrono::milliseconds EventLoop::Now()
 	return now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
 }
 
+bool EventLoop::AddFd(int fd, std::optional<uint16_t> eventMask)
+{
+	Poll::PollFd pfd = {Poll::PollFd::Category::IO, fd};
+	if (!poll->AddFd(pfd)) return false;
+	
+	if (eventMask.has_value())
+	{
+		return poll->SetEventMask(pfd, *eventMask);
+	}
+	
+	return true;
+}
+
+bool EventLoop::RemoveFd(int fd)
+{
+	return poll->RemoveFd({Poll::PollFd::Category::IO, fd});
+}
+
+void EventLoop::ForEachFd(const std::function<void(int)>& func)
+{
+	poll->ForEachFd([&func](Poll::PollFd pfd) {
+		if (pfd.category == Poll::PollFd::Category::IO) func(pfd.fd);
+	});
+}
+	
+
 void EventLoop::Signal()
 {
 	TRACE_EVENT("eventloop", "EventLoop::Signal");
@@ -524,7 +569,7 @@ void EventLoop::Signal()
 	uint64_t one = 1;
 	
 	//If we are in the same thread or already signaled and pipe is ok
-	if (std::this_thread::get_id()==thread.get_id() || signaled.test_and_set() || pipe[1] == FD_INVALID)
+	if (std::this_thread::get_id()==thread.get_id() || signaled.test_and_set() || *pipeFds[1] == FD_INVALID)
 		//No need to do anything
 		return;
 	
@@ -534,7 +579,7 @@ void EventLoop::Signal()
 	
 	
 	//Write to tbe pipe, and assign to one to avoid warning in compile time
-	one = write(pipe[1],(uint8_t*)&one,sizeof(one));
+	one = write(*pipeFds[1],(uint8_t*)&one,sizeof(one));
 }
 
 void EventLoop::Run(const std::chrono::milliseconds &duration)
@@ -583,46 +628,42 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 			//UltraDebug("<EventLoop::Run() | poll timeout:%d timers:%d tasks:%d\n",timeout,timers.size(),tasks.size_approx());
 			
 			poll->ForEachFd([this](Poll::PollFd pfd) {
-
-				auto events = poll->GetEvents(pfd);
-
-				//Check error
+				
 				auto error = poll->GetError(pfd);
-				if (error)
+				switch (pfd.category)
 				{
-					if (pfd.category == Poll::PollFd::Category::Signaling)
+				case Poll::PollFd::Category::Signaling:
+					assert(poll->GetEvents(pfd) != Poll::Event::Out);
+					// Always clear signal
+					ClearSignal();
+					if (error)
 					{
-						ClearSignal();
-						
 						Error("-EventLoop::Run() Error occured on signaling fd: %s\n", error->c_str());
 						OnSignallingError(*error);
 					}
-					else
+					break;
+				case Poll::PollFd::Category::IO:
+					if (error)
 					{
 						OnPollError(pfd.fd, *error);
 					}
-					
-					// In case of error, no need further processing for the fd
-					return;
-				}
-								
-				if (events & Poll::Event::In)
-				{
-					if (pfd.category == Poll::PollFd::Category::Signaling)
-					{
-						ClearSignal();
-					}
 					else
 					{
-						OnPollIn(pfd.fd);
+						auto events = poll->GetEvents(pfd);
+						if (events & Poll::Event::In)
+						{
+							OnPollIn(pfd.fd);
+						}
+						
+						if (events & Poll::Event::Out)
+						{
+							OnPollOut(pfd.fd);
+						}
 					}
-				}
-				
-				//Check read is possible
-				if (events & Poll::Event::Out)
-				{
-					assert(pfd.category != Poll::PollFd::Category::Signaling);
-					OnPollOut(pfd.fd);
+					break;
+				default:
+					assert(false);
+					break;
 				}
 			});
 		}
@@ -681,7 +722,7 @@ void EventLoop::ClearSignal()
 {
 	uint64_t data = 0;
 	//Remove pending data on signal pipe
-	while (read(pipe[0], &data, sizeof(uint64_t)) > 0)
+	while (read(*pipeFds[0], &data, sizeof(uint64_t)) > 0)
 	{
 		//DO nothing
 	}
@@ -769,11 +810,8 @@ void EventLoop::ProcessTriggers(const std::chrono::milliseconds& now)
 void EventLoop::CleanUp()
 {
 	//Close pipe
-	if (pipe[0]!=FD_INVALID) close(pipe[0]);
-	if (pipe[1]!=FD_INVALID) close(pipe[1]);
-	
-	//Empyt pipe
-	pipe[0] = pipe[1] = FD_INVALID;
+	pipeFds[0].reset();
+	pipeFds[1].reset();
 	
 	poll->Clear();
 }

@@ -92,30 +92,9 @@ protected:
 	
 	// Functions to add/remove/iterate file descriptors
 	
-	inline bool AddFd(int fd, std::optional<uint16_t> eventMask = std::nullopt)
-	{
-		Poll::PollFd pfd = {Poll::PollFd::Category::IO, fd};
-		if (!poll->AddFd(pfd)) return false;
-		
-		if (eventMask.has_value())
-		{
-			return poll->SetEventMask(pfd, *eventMask);
-		}
-		
-		return true;
-	}
-	
-	inline bool RemoveFd(int fd)
-	{
-		return poll->RemoveFd({Poll::PollFd::Category::IO, fd});
-	}
-	
-	inline void ForEachFd(const std::function<void(int)>& func)
-	{
-		poll->ForEachFd([&func](Poll::PollFd pfd) {
-			if (pfd.category == Poll::PollFd::Category::IO) func(pfd.fd);
-		});
-	}
+	bool AddFd(int fd, std::optional<uint16_t> eventMask = std::nullopt);
+	bool RemoveFd(int fd);
+	void ForEachFd(const std::function<void(int)>& func);
 	
 	/**
 	 * Get updated event mask for a file descriptor. 
@@ -169,9 +148,7 @@ private:
 	void CleanUp();
 
 	std::thread			thread;
-	
-	//@todo It looks we only need one pipe for signaling
-	int		pipe[2]		= {FD_INVALID, FD_INVALID};
+	std::unique_ptr<FileDescriptor>	pipeFds[2];
 	std::unique_ptr<Poll>		poll;
 	std::atomic_flag signaled	= ATOMIC_FLAG_INIT;
 	volatile bool	running		= false;

@@ -136,12 +136,6 @@ RTMPClientConnection::ErrorCode RTMPClientConnection::Connect(const char* server
 	return EventLoop::StartWithFd(fileDescriptor) ? RTMPClientConnection::ErrorCode::NoError : RTMPClientConnection::ErrorCode::Generic;
 }
 
-void RTMPClientConnection::OnLoopEnter()
-{
-	//Block signals to avoid exiting on SIGUSR1
-	blocksignals();
-}
-
 void RTMPClientConnection::OnLoopExit()
 {
 	//If got socket

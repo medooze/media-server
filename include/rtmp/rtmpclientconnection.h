@@ -85,7 +85,6 @@ protected:
 	virtual void ProcessReceivedData(const uint8_t* data, size_t size);
 	virtual void AddPendingRtmpData(const uint8_t* data, size_t size);
 	
-	void OnLoopEnter() override;
 	void OnLoopExit() override;
 	
 	inline Listener* GetListener() { return listener; }
