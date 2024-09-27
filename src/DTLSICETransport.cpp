@@ -1882,21 +1882,21 @@ bool DTLSICETransport::AddOutgoingSourceGroup(const RTPOutgoingSourceGroup::shar
 		if (media && outgoing.find(media) != outgoing.end())
 		{
 			//Error
-			Error("-DTLSICETransport::AddOutgoingSourceGroup() | media ssrc already assigned");
+			Error("-DTLSICETransport::AddOutgoingSourceGroup() | media ssrc already assigned [ssrc:%u]\n", media);
 			return;
 		}
 
 		if (fec && outgoing.find(fec)!=outgoing.end())
 		{
 			//Error
-			Error("-DTLSICETransport::AddOutgoingSourceGroup() | fec ssrc already assigned");
+			Error("-DTLSICETransport::AddOutgoingSourceGroup() | fec ssrc already assigned [ssrc:%u]\n", fec);
 			return;
 		}
 
 		if (rtx && outgoing.find(rtx) != outgoing.end())
 		{
 			//Error
-			Error("-DTLSICETransport::AddOutgoingSourceGroup() | rtx ssrc already assigned");
+			Error("-DTLSICETransport::AddOutgoingSourceGroup() | rtx ssrc already assigned [ssrc:%u]\n", rtx);
 			return;
 		}
 	
@@ -2021,7 +2021,7 @@ bool DTLSICETransport::AddIncomingSourceGroup(const RTPIncomingSourceGroup::shar
 		if (media && incoming.find(media)!=incoming.end())
 		{
 			//Error
-			Warning("-DTLSICETransport::AddIncomingSourceGroup() media ssrc already assigned\n");
+			Warning("-DTLSICETransport::AddIncomingSourceGroup() media ssrc already assigned [ssrc:%u]\n", media);
 			return;
 		}
 		
@@ -2029,7 +2029,7 @@ bool DTLSICETransport::AddIncomingSourceGroup(const RTPIncomingSourceGroup::shar
 		if (rtx && incoming.find(rtx)!=incoming.end())
 		{
 			//Error
-			Warning("-DTLSICETransport::AddIncomingSourceGroup() rtx ssrc already assigned\n");
+			Warning("-DTLSICETransport::AddIncomingSourceGroup() rtx ssrc already assigned [ssrc:%u]\n", rtx);
 			return;
 		}
 
