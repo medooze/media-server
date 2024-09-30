@@ -40,9 +40,16 @@ struct ProgramMap : public Encodable
 	/** data for an Elementary Stream entry in a PMT */
 	struct ElementaryStream : public Encodable
 	{
+		/**
+		 * This is part of stream type values.
+		 * 
+		 * See ISO/IEC 13818-1 section 2.4.4.10 for complete list.
+		 */
 		enum StreamType
 		{
-			AAC_ADTS = 0x0F,
+			MPEG1Audio = 0x03,
+			MPEG2Audio = 0x04,
+			ADTSAAC = 0x0F,
 			AVC = 0x1B,
 			HEVC = 0x24
 		};
