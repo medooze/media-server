@@ -569,7 +569,7 @@ void EventLoop::Signal()
 	uint64_t one = 1;
 	
 	//If we are in the same thread or already signaled and pipe is ok
-	if (std::this_thread::get_id()==thread.get_id() || signaled.test_and_set() || *pipeFds[1] == FD_INVALID)
+	if (std::this_thread::get_id()==thread.get_id() || signaled.test_and_set() || !pipeFds[1])
 		//No need to do anything
 		return;
 	
@@ -720,11 +720,14 @@ int EventLoop::GetNextTimeout(int defaultTimeout, const std::chrono::millisecond
 
 void EventLoop::ClearSignal()
 {
-	uint64_t data = 0;
-	//Remove pending data on signal pipe
-	while (read(*pipeFds[0], &data, sizeof(uint64_t)) > 0)
+	if (pipeFds[0])
 	{
-		//DO nothing
+		uint64_t data = 0;
+		//Remove pending data on signal pipe
+		while (read(*pipeFds[0], &data, sizeof(uint64_t)) > 0)
+		{
+			//DO nothing
+		}
 	}
 	//We are not signaled anymore
 	signaled.clear();
