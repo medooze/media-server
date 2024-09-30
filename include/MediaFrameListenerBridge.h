@@ -22,7 +22,6 @@ class MediaFrameListenerBridge :
 {
 public:
 	using shared = std::shared_ptr<MediaFrameListenerBridge>;
-
 public:
 	static constexpr uint32_t NoSeqNum = std::numeric_limits<uint32_t>::max();
 	static constexpr uint64_t NoTimestamp = std::numeric_limits<uint64_t>::max();
