@@ -90,10 +90,6 @@ SyntaxData SyntaxData::Parse(BufferReader& reader)
 
 	size_t dataSize = reader.GetLeft() - 4;
 	syntaxData.data			= BufferReader(reader.GetData(dataSize), dataSize);
-
-	syntaxData.crc32		= reader.Get4();
-
-	//TODO: check crc?
 	
 	return syntaxData;
 }
@@ -192,7 +188,14 @@ Table Table::Parse(BufferReader& reader)
 	{
 		// we have a syntax section surrounding data
 		table.data = SyntaxData::Parse(dataReader);
-	} else {
+		
+		auto crc32 = reader.Get4();
+		(void)crc32;
+
+		//TODO: check crc?
+	} 
+	else 
+	{
 		// whole contents are data
 		table.data = dataReader;
 	}

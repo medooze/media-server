@@ -82,9 +82,6 @@ struct SyntaxData : public Encodable
 
 	std::variant<BufferReader, ProgramMap, ProgramAssociation> data;
 
-	// fields following table data
-	uint32_t crc32 = 0;
-
 	void Encode(BufferWritter& writer) const override;
 	size_t Size() const override;
 	
