@@ -210,6 +210,7 @@ add_executable(MediaServerUnitTest
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestH26xNal.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestHEVCBitstream.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestHEVCDescriptor.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestPacketizer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/data/FramesArrivalInfo.cpp
 )
 

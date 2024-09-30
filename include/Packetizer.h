@@ -118,10 +118,9 @@ public:
 				{
 					pos = 0;
 					buffer.Reset();
-					
 					current.reset();
-					
 					hasData = false;
+					
 					return bytes;
 				}
 				
