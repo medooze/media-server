@@ -96,6 +96,11 @@ void AdaptationField::Encode(BufferWritter& writer) const
 	if (writer.GetLeft() < Size())
 		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
 	
+	if (opcrFlag || splicingPointFlag || transportPrivateDataFlag || adaptationFieldExtensionFlag)
+	{
+		throw std::runtime_error("The field is not implemented for encoding");
+	}
+	
 	writer.Set1(Size() - 1);
 	
 	BitWriter bitwriter(writer, 1);
@@ -104,13 +109,10 @@ void AdaptationField::Encode(BufferWritter& writer) const
 	bitwriter.Put(1, randomAccessIndicator);
 	bitwriter.Put(1, elementaryStreamPriorityIndicator);
 	bitwriter.Put(1, pcrFlag);
-	// Set all other flags to 0
-	bitwriter.Put(4, 0);
-	
-	if (opcrFlag || splicingPointFlag || transportPrivateDataFlag || adaptationFieldExtensionFlag)
-	{
-		throw std::runtime_error("not implemented");
-	}
+	bitwriter.Put(1, opcrFlag);
+	bitwriter.Put(1, splicingPointFlag);
+	bitwriter.Put(1, transportPrivateDataFlag);
+	bitwriter.Put(1, adaptationFieldExtensionFlag);
 	
 	if (pcr)
 	{
@@ -264,6 +266,9 @@ void HeaderExtension::Encode(BufferWritter& writer) const
 {
 	if (writer.GetLeft() < Size())
 		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
+		
+	if (escrFlag || rateFlag || trickModeFlag || aditionalInfoFlag || crcFlag || extensionFlag)
+		throw std::runtime_error("The field is not implemented for encoding");
 	
 	BitWriter bitwriter(writer, 3);
 	
@@ -486,7 +491,7 @@ namespace adts
 		if (writer.GetLeft() < Size())
 			throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
 		
-		BitWriter bitwriter(writer, 7);
+		BitWriter bitwriter(writer, Size());
 		
 		bitwriter.Put(12, syncWord);
 		bitwriter.Put(1, version);
@@ -560,7 +565,7 @@ namespace adts
 		header.numberOfFramesMinus1	 = bitreader.Get(2);
 
 		if (!header.protectionAbsence)
-			header.crc		 = reader.Get2();
+			header.crc		 = bitreader.Get(16);
 
 		//Done reading
 		bitreader.Flush();
