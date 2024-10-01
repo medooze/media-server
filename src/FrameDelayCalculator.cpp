@@ -88,26 +88,25 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 	}
 	
 	// Asynchronously check if we can reduce latency if all frames comes early
-	AsyncSafe([early, now, unifiedTs, refTime, refTimestamp, 
-				streamIdentifier, updateRefsPacketEarlyThresholdMs, state = state](auto self, std::chrono::milliseconds) {
+	AsyncSafe([=, state = state](auto) {
 		
 		if (state == State::Reset)
 		{
-			self->frameArrivalInfo.erase(streamIdentifier);
-			self->allEarlyStartTimeMs.reset();
+			frameArrivalInfo.erase(streamIdentifier);
+			allEarlyStartTimeMs.reset();
 			return;
 		}
 		
-		self->frameArrivalInfo[streamIdentifier] = {now, unifiedTs};
+		frameArrivalInfo[streamIdentifier] = {now, unifiedTs};
 		
 		if (!early)
 		{
-			self->allEarlyStartTimeMs.reset();
+			allEarlyStartTimeMs.reset();
 			return;
 		}
 		
 		// Loop to see if all the streams have arrived earlier
-		bool allEarly = std::all_of(self->frameArrivalInfo.begin(), self->frameArrivalInfo.end(), 
+		bool allEarly = std::all_of(frameArrivalInfo.begin(), frameArrivalInfo.end(), 
 			[&](const auto& info) {
 				if (info.first == streamIdentifier) return true;
 							
@@ -119,25 +118,25 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 			
 		if (allEarly)
 		{
-			if (!self->allEarlyStartTimeMs.has_value())
-				self->allEarlyStartTimeMs = now;
+			if (!allEarlyStartTimeMs.has_value())
+				allEarlyStartTimeMs = now;
 				
 			// If all stream becomes ealier for a while (> 2s), we reduce the latency
-			if ((now - *self->allEarlyStartTimeMs) > 2000ms)
+			if ((now - *allEarlyStartTimeMs) > 2000ms)
 			{
 				// Make reference time earlier for same time stamp, which means
 				// frames will be dispatched ealier.
-				self->reference.Set(refTime - self->updateRefsStepPacketEarlyMs, refTimestamp);
+				reference.Set(refTime - updateRefsStepPacketEarlyMs, refTimestamp);
 
 				// Restart the latency reduction process to have a max reduction rate
 				// at 20ms per second as we don't expect the latency would be too large,
 				// which normall would be below 1 second.
-				self->allEarlyStartTimeMs.reset();
+				allEarlyStartTimeMs.reset();
 			}
 		}
 		else
 		{
-			self->allEarlyStartTimeMs.reset();
+			allEarlyStartTimeMs.reset();
 		}
 	});
 	

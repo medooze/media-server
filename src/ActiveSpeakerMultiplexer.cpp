@@ -10,11 +10,15 @@ static const uint64_t	ScorePerMiliScond = 10;
 static const auto	MinInterval = 10ms;
 
 ActiveSpeakerMultiplexer::ActiveSpeakerMultiplexer(TimeService& timeService, Listener* listener) :
-	timeService(timeService),
+	TimeServiceWrapper<ActiveSpeakerMultiplexer>(timeService),
 	listener(listener)
 {
+}
+
+void ActiveSpeakerMultiplexer::OnCreated()
+{
 	//Create processing timer
-	timer = timeService.CreateTimer(0ms, MinInterval, [this](auto now) { Process(now.count()); });
+	timer = CreateTimerSafe(0ms, MinInterval, [this](auto now) { Process(now.count()); });
 	//Set name for debug
 	timer->SetName("ActiveSpeakerMultiplexer - process");
 }
@@ -33,7 +37,7 @@ void ActiveSpeakerMultiplexer::Stop()
 	timer->Cancel();
 
 	//Stop other stuff sync
-	timeService.Sync([=](auto) {
+	Sync([=](auto) {
 		//TODO:Clean stuff
 
 		//Release incoming sources
@@ -57,7 +61,7 @@ void ActiveSpeakerMultiplexer::AddRTPStreamTransponder(RTPStreamTransponder* tra
 	if (!transpoder)
 		return;
 
-	timeService.Sync([=](const auto& now) {
+	Sync([=](const auto& now) {
 		//Insert new 
 		destinations.try_emplace(transpoder, Destination{id,transpoder});
 	});
@@ -69,7 +73,7 @@ void ActiveSpeakerMultiplexer::RemoveRTPStreamTransponder(RTPStreamTransponder* 
 	if (!transpoder)
 		return;
 
-	timeService.Sync([=](const auto& now) {
+	Sync([=](const auto& now) {
 		//Remove
 		destinations.erase(transpoder);
 	});
@@ -82,7 +86,7 @@ void ActiveSpeakerMultiplexer::AddIncomingSourceGroup(RTPIncomingMediaStream::sh
 	if (!incoming)
 		return;
 
-	timeService.Sync([=](const auto& now){
+	Sync([=](const auto& now){
 		//Insert new 
 		auto [it, inserted] = sources.try_emplace(incoming.get(), Source{id, incoming});
 		//If already present
@@ -101,7 +105,7 @@ void ActiveSpeakerMultiplexer::RemoveIncomingSourceGroup(RTPIncomingMediaStream:
 	if (!incoming)
 		return;
 
-	timeService.Sync([=](const auto& now) {
+	Sync([=](const auto& now) {
 		Debug("-ActiveSpeakerMultiplexer::RemoveIncomingSourceGroup() async [incoming:%p]\n", incoming.get());
 		//Find source
 		auto it = sources.find(incoming.get());
@@ -156,7 +160,7 @@ void ActiveSpeakerMultiplexer::onRTP(const RTPIncomingMediaStream* incoming, con
 		//Exit
 		return;
 
-	timeService.Async([=, packet = packet](auto) {
+	AsyncSafe([=, packet = packet](auto now) {
 		//Double check we have audio level
 		if (!packet->HasAudioLevel())
 			return;
@@ -164,7 +168,6 @@ void ActiveSpeakerMultiplexer::onRTP(const RTPIncomingMediaStream* incoming, con
 		//Get vad level
 		auto vad = packet->GetVAD();
 		auto db	 = packet->GetLevel();
-		auto now = getTimeMS();
 
 		//Check voice is detected and not muted
 		auto speaking = vad && db != 127 && (!noiseGatingThreshold || db < noiseGatingThreshold);
@@ -174,6 +177,7 @@ void ActiveSpeakerMultiplexer::onRTP(const RTPIncomingMediaStream* incoming, con
 		//Accumulate only if audio has been detected 
 		if (speaking)
 		{
+			// Note: Checks for existence of "incoming" pointer are important to ensure it is still valid on exec!
 			//Get incoming source
 			auto it = sources.find(incoming);
 			//check it was present
@@ -189,12 +193,12 @@ void ActiveSpeakerMultiplexer::onRTP(const RTPIncomingMediaStream* incoming, con
 			WORD level = 64 + (127 - db) / 2;
 
 			//Get time diff from last score, we consider 1s as max to coincide with initial bump
-			uint64_t diff = std::min(now - it->second.ts, (uint64_t)1000ul);
+			uint64_t diff = std::min(now.count() - it->second.ts, (uint64_t)1000ul);
 		
 			//Do not accumulate too much so we can switch faster
 			it->second.score = std::min(it->second.score + diff * level / ScorePerMiliScond, maxAcummulatedScore);
 			//Set last update time
-			it->second.ts = now;
+			it->second.ts = now.count();
 			//Add packets for forwarding in case it is selected for multiplex
 			it->second.packets.push_back(packet);
 
@@ -215,10 +219,10 @@ void ActiveSpeakerMultiplexer::onEnded(const RTPIncomingMediaStream* incoming)
 	if (!incoming)
 		return;
 
-	timeService.Async([=](auto) {
-
+	AsyncSafe([=](auto) {
 		Debug("-ActiveSpeakerDetectorFacade::onEnded() async [incoming:%p]\n", incoming);
 
+		// Note: Checks for existence of "incoming" pointer are important to ensure it is still valid on exec!
 		//Find source
 		auto it = sources.find(incoming);
 		//check it was not present

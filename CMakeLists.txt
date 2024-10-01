@@ -141,6 +141,7 @@ add_library(MediaServerLib
     ${CMAKE_CURRENT_LIST_DIR}/src/crc32calc.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/PCAPFile.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/PCAPReader.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/ActiveSpeakerMultiplexer.cpp
 )
 
 target_include_directories(MediaServerLib PUBLIC

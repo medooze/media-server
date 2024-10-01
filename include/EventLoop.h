@@ -60,12 +60,12 @@ public:
 	bool Stop();
 	
 	virtual const std::chrono::milliseconds GetNow() const override { return now; }
-	virtual Timer::shared CreateTimer(const std::function<void(std::chrono::milliseconds)>& callback) override;
-	virtual Timer::shared CreateTimer(const std::chrono::milliseconds& ms, const std::function<void(std::chrono::milliseconds)>& timeout) override;
-	virtual Timer::shared CreateTimer(const std::chrono::milliseconds& ms, const std::chrono::milliseconds& repeat, const std::function<void(std::chrono::milliseconds)>& timeout) override;
-	virtual void Async(const std::function<void(std::chrono::milliseconds)>& func) override;
-	virtual void Async(const std::function<void(std::chrono::milliseconds)>& func, const std::function<void(std::chrono::milliseconds)>& callback) override;
-	virtual std::future<void> Future(const std::function<void(std::chrono::milliseconds)>& func) override;
+	virtual Timer::shared CreateTimerUnsafe(const std::function<void(std::chrono::milliseconds)>& callback) override;
+	virtual Timer::shared CreateTimerUnsafe(const std::chrono::milliseconds& ms, const std::function<void(std::chrono::milliseconds)>& timeout) override;
+	virtual Timer::shared CreateTimerUnsafe(const std::chrono::milliseconds& ms, const std::chrono::milliseconds& repeat, const std::function<void(std::chrono::milliseconds)>& timeout) override;
+	virtual void AsyncUnsafe(const std::function<void(std::chrono::milliseconds)>& func) override;
+	virtual void AsyncUnsafe(const std::function<void(std::chrono::milliseconds)>& func, const std::function<void(std::chrono::milliseconds)>& callback) override;
+	virtual std::future<void> FutureUnsafe(const std::function<void(std::chrono::milliseconds)>& func) override;
 	
 	void Run(const std::chrono::milliseconds &duration = std::chrono::milliseconds::max());
 	
