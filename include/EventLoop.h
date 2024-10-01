@@ -92,9 +92,9 @@ protected:
 	
 	// Functions to add/remove/iterate file descriptors
 	
-	bool AddFd(int fd, std::optional<uint16_t> eventMask = std::nullopt);
-	bool RemoveFd(int fd);
-	void ForEachFd(const std::function<void(int)>& func);
+	bool AddIOFd(int fd, std::optional<uint16_t> eventMask = std::nullopt);
+	bool RemoveIOFd(int fd);
+	void ForEachIOFd(const std::function<void(int)>& func);
 	
 	/**
 	 * Get updated event mask for a file descriptor. 
@@ -144,11 +144,9 @@ protected:
 	virtual void OnLoopExit() {};
 
 private:
-	
-	void CleanUp();
 
 	std::thread			thread;
-	std::unique_ptr<FileDescriptor>	pipeFds[2];
+	FileDescriptor			pipeFds[2];
 	std::unique_ptr<Poll>		poll;
 	std::atomic_flag signaled	= ATOMIC_FLAG_INIT;
 	volatile bool	running		= false;

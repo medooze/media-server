@@ -25,7 +25,7 @@ bool NetEventLoop::SetAffinity(int cpu)
 {
 #ifdef 	SO_INCOMING_CPU
 	//If got socket
-	EventLoop::ForEachFd([cpu](auto pfd) {
+	EventLoop::ForEachIOFd([cpu](auto pfd) {
 		if (pfd != FD_INVALID)
 			//Set incoming socket cpu affinity
 			(void)setsockopt(pfd, SOL_SOCKET, SO_INCOMING_CPU, &cpu, sizeof(cpu));

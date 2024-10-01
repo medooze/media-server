@@ -1,6 +1,5 @@
 #include "tracing.h"
 #include "EventLoop.h"
-#include "ScopedCleanUp.h"
 
 #include <sys/socket.h>
 #include <netinet/tcp.h>
@@ -172,10 +171,7 @@ bool EventLoop::StartWithLoop(std::function<void(void)> loop)
 	TRACE_EVENT("eventloop", "EventLoop::Start(loop)");
 	Debug("-EventLoop::Start()\n");
 	
-	auto cleanUp = std::make_shared<ScopedCleanUp>([this](){
-		CleanUp();
-	});
-	
+	poll->Clear();
 	
 	int pipe[2] = {FD_INVALID, FD_INVALID};
 	
@@ -193,14 +189,18 @@ bool EventLoop::StartWithLoop(std::function<void(void)> loop)
 	pipe[0] = pipe[1] = eventfd(0, EFD_NONBLOCK);
 #endif	
 
-	pipeFds[0] = std::make_unique<FileDescriptor>(pipe[0]);
-	pipeFds[1] = std::make_unique<FileDescriptor>(pipe[1]);
+	pipeFds[0] = FileDescriptor(pipe[0]);
+	pipeFds[1] = FileDescriptor(pipe[1]);
 
 	//Check values
 	if (pipe[0]==FD_INVALID || pipe[1]==FD_INVALID)
 		//Error
 		return Error("-EventLoop::Start() | could not start pipe [errno:%d]\n",errno);
 	
+	// Remove all signaling fds
+	poll->ForEachFd([this](Poll::PollFd pfd){
+		(void)poll->RemoveFd(pfd);
+	});
 	
 	if (!poll->AddFd({Poll::PollFd::Category::Signaling, pipe[0]}))
 	{
@@ -222,7 +222,7 @@ bool EventLoop::StartWithLoop(std::function<void(void)> loop)
 	blocksignals();
 	
 	//Start thread and run
-	thread = std::thread([loop, cleanUp](){
+	thread = std::thread([loop](){
 		loop();
 	});
 	
@@ -234,7 +234,7 @@ bool EventLoop::StartWithFd(int fd)
 {
 	poll->Clear();
 	
-	return AddFd(fd) && Start();
+	return AddIOFd(fd) && Start();
 }
 
 bool EventLoop::Start()
@@ -248,10 +248,6 @@ bool EventLoop::Start()
 	TRACE_EVENT("eventloop", "EventLoop::Start()");
 	Debug("-EventLoop::Start() [this:%p]\n", this);
 	
-	auto cleanUp = std::make_shared<ScopedCleanUp>([this](){
-		CleanUp();
-	});
-	
 	int pipe[2] = {FD_INVALID, FD_INVALID};
 	
 #if __APPLE__
@@ -268,14 +264,18 @@ bool EventLoop::Start()
 	pipe[0] = pipe[1] = eventfd(0, EFD_NONBLOCK);
 #endif	
 
-	pipeFds[0] = std::make_unique<FileDescriptor>(pipe[0]);
-	pipeFds[1] = std::make_unique<FileDescriptor>(pipe[1]);
+	pipeFds[0] = FileDescriptor(pipe[0]);
+	pipeFds[1] = FileDescriptor(pipe[1]);
 
 	//Check values
 	if (pipe[0]==FD_INVALID || pipe[1]==FD_INVALID)
 		//Error
 		return Error("-EventLoop::Start() | could not start pipe [errno:%d]\n",errno);
 	
+	// Remove all signaling fds
+	poll->ForEachFd([this](Poll::PollFd pfd){
+		(void)poll->RemoveFd(pfd);
+	});
 	
 	if (!poll->AddFd({Poll::PollFd::Category::Signaling, pipe[0]}))
 	{
@@ -297,7 +297,7 @@ bool EventLoop::Start()
 	blocksignals();
 	
 	//Start thread and run
-	thread = std::thread([this, cleanUp](){ Run(); });
+	thread = std::thread([this](){ Run(); });
 	
 	//Done
 	return true;
@@ -536,7 +536,7 @@ const std::chrono::milliseconds EventLoop::Now()
 	return now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
 }
 
-bool EventLoop::AddFd(int fd, std::optional<uint16_t> eventMask)
+bool EventLoop::AddIOFd(int fd, std::optional<uint16_t> eventMask)
 {
 	Poll::PollFd pfd = {Poll::PollFd::Category::IO, fd};
 	if (!poll->AddFd(pfd)) return false;
@@ -549,12 +549,12 @@ bool EventLoop::AddFd(int fd, std::optional<uint16_t> eventMask)
 	return true;
 }
 
-bool EventLoop::RemoveFd(int fd)
+bool EventLoop::RemoveIOFd(int fd)
 {
 	return poll->RemoveFd({Poll::PollFd::Category::IO, fd});
 }
 
-void EventLoop::ForEachFd(const std::function<void(int)>& func)
+void EventLoop::ForEachIOFd(const std::function<void(int)>& func)
 {
 	poll->ForEachFd([&func](Poll::PollFd pfd) {
 		if (pfd.category == Poll::PollFd::Category::IO) func(pfd.fd);
@@ -569,7 +569,7 @@ void EventLoop::Signal()
 	uint64_t one = 1;
 	
 	//If we are in the same thread or already signaled and pipe is ok
-	if (std::this_thread::get_id()==thread.get_id() || signaled.test_and_set() || !pipeFds[1])
+	if (std::this_thread::get_id()==thread.get_id() || signaled.test_and_set() || !pipeFds[1].isValid())
 		//No need to do anything
 		return;
 	
@@ -579,7 +579,7 @@ void EventLoop::Signal()
 	
 	
 	//Write to tbe pipe, and assign to one to avoid warning in compile time
-	one = write(*pipeFds[1],(uint8_t*)&one,sizeof(one));
+	one = write(pipeFds[1],(uint8_t*)&one,sizeof(one));
 }
 
 void EventLoop::Run(const std::chrono::milliseconds &duration)
@@ -720,11 +720,11 @@ int EventLoop::GetNextTimeout(int defaultTimeout, const std::chrono::millisecond
 
 void EventLoop::ClearSignal()
 {
-	if (pipeFds[0])
+	if (pipeFds[0].isValid())
 	{
 		uint64_t data = 0;
 		//Remove pending data on signal pipe
-		while (read(*pipeFds[0], &data, sizeof(uint64_t)) > 0)
+		while (read(pipeFds[0], &data, sizeof(uint64_t)) > 0)
 		{
 			//DO nothing
 		}
@@ -807,14 +807,4 @@ void EventLoop::ProcessTriggers(const std::chrono::milliseconds& now)
 		//UltraDebug("<EventLoop::Run() | timer run \n");
 	}
 	TRACE_EVENT_END("eventloop");
-}
-
-
-void EventLoop::CleanUp()
-{
-	//Close pipe
-	pipeFds[0].reset();
-	pipeFds[1].reset();
-	
-	poll->Clear();
 }
