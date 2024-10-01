@@ -1,7 +1,9 @@
 #include "log.h"
 #include "AudioTransrater.h"
+#include <cmath>
 
-AudioTransrater::AudioTransrater()
+AudioTransrater::AudioTransrater():
+	audioBufferPool(MaxPoolSize, MaxPoolSize + 2)
 {
 	//No resampler
 	resampler = NULL;
@@ -41,6 +43,8 @@ int AudioTransrater::Open(DWORD inputRate, DWORD outputRate, DWORD numChannels)
 		//Exit
 		return Error("-AudioTransrater: failed to init SPEEX resampler. Speex err = %d\n", err);
 	}
+	this->inputRate = inputRate;
+	this->outputRate = outputRate;
 
 	//OK
 	return 1;
@@ -58,20 +62,37 @@ void AudioTransrater::Close()
 	}
 }
 
-int AudioTransrater::ProcessBuffer(SWORD * in, DWORD sizeIn, SWORD * out, DWORD * sizeOut)
+AudioBuffer::shared AudioTransrater::ProcessBuffer(const AudioBuffer::shared& audioBuffer)
 {
-	//Check out
-	if (!out || !sizeOut)
-		//Error
-		return Error("-No output buffer/size [%p,%p]\n",out,sizeOut);
+	auto in = audioBuffer->GetData();
+	auto sizeIn = static_cast<uint32_t>(audioBuffer->GetNumSamples());
 
-	//Resample
-	int err = mcu_resampler_process_interleaved_int(resampler, (spx_int16_t*) in, (spx_uint32_t*) & sizeIn, (spx_int16_t*) out, (spx_uint32_t*) sizeOut);
+	auto bufferSize = static_cast<uint32_t>(std::ceil(static_cast<double>(outputRate) / inputRate * sizeIn));	
+	audioBufferPool.SetSize(bufferSize, audioBuffer->GetNumChannels());
+	auto resampledBuffer = audioBufferPool.Acquire();
+	auto resampleSize = bufferSize;
+	auto out = resampledBuffer->GetData();
+	if (!playPTSOffset.has_value())
+		playPTSOffset = audioBuffer->GetTimestamp();
 
+	int err = mcu_resampler_process_interleaved_int(resampler, (spx_int16_t*)in, (spx_uint32_t*)&sizeIn, (spx_int16_t*)out, (spx_uint32_t*)&resampleSize);
 	//Check error
 	if (err)
-		return Error("-AudioTransrater: resampling error. ErrCode = %d.\n", err);
+	{
+		Error("-AudioTransrater: resampling error. ErrCode = %d.\n", err);
+		return {};
+	}
+
+	if (resampleSize != bufferSize)
+		if (!resampledBuffer->Resize(resampleSize))
+			return {};
 	
+	auto ptsDiff = audioBuffer->GetTimestamp() - playPTSOffset.value();
+	// scale the pts based on recordRate which is the clockrate for encoded audio
+	// so that the pts stored in audio buffer is always in encoded audio time base
+	uint64_t scaledPTS = std::round<uint64_t>(ptsDiff * (outputRate / (double)inputRate)) + playPTSOffset.value();
+	resampledBuffer->SetTimestamp(scaledPTS);
+	resampledBuffer->SetClockRate(outputRate);
 	//OK
-	return 1;
+	return resampledBuffer;
 }

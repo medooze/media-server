@@ -46,9 +46,6 @@ private:
 	fifo<SWORD,48000*4>	rateBlockBuffer;
 	QWORD rateBlockBufferPTS;
 
-	QWORD decoderFrameSize = 0;
-	QWORD decoderPTSOffset = std::numeric_limits<QWORD>::max();
-
 	bool			recording = false;
 	bool			playing = false;
 	bool			inited = false;
