@@ -6,15 +6,15 @@ namespace
 {
 
 template <typename T>
-std::pair<T, std::unique_ptr<Buffer>> EncodeAndDecode(const T& encodable)
+std::pair<T, std::unique_ptr<Buffer>> EncodeAndDecode(const T& serializable)
 {
-	auto temp = std::make_unique<Buffer>(encodable.Size());
+	auto temp = std::make_unique<Buffer>(serializable.GetSize());
 	BufferWritter writer(*temp);
-	encodable.Encode(writer);
+	serializable.Serialize(writer);
 	
-	if (encodable.Size() != writer.GetLength())
+	if (serializable.GetSize() != writer.GetLength())
 	{
-		throw std::runtime_error(FormatString("Encoded size is not expected: %llu != %llu", encodable.Size(), writer.GetLength()));
+		throw std::runtime_error(FormatString("Encoded size is not expected: %llu != %llu", serializable.GetSize(), writer.GetLength()));
 	}
 	
 	temp->SetSize(writer.GetLength());
@@ -88,11 +88,11 @@ TEST(TestMpegts, TestPesHeader)
 	ASSERT_EQ(0x1, header.packetStartCodePrefix);
 	ASSERT_EQ(0, header.streamId);
 	ASSERT_EQ(0, header.packetLength);
-	ASSERT_EQ(6, header.Size());
+	ASSERT_EQ(6, header.GetSize());
 	
 	// Header size is always same
 	header.packetLength = 12;
-	ASSERT_EQ(6, header.Size());
+	ASSERT_EQ(6, header.GetSize());
 
 	header.streamId = 0xca;
 	

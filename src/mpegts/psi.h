@@ -15,9 +15,8 @@ namespace mpegts
 namespace psi
 {
 
-
 /** PSI table data for a Program Association Table */
-struct ProgramAssociation : public Encodable
+struct ProgramAssociation : public Serializable
 {
 	static constexpr uint16_t PID = 0x0000;
 	static constexpr uint8_t TABLE_ID = 0x00;
@@ -25,20 +24,20 @@ struct ProgramAssociation : public Encodable
 	uint16_t programNum = 0;
 	uint16_t pmtPid = 0;
 
-	void Encode(BufferWritter& writer) const override;
-	size_t Size() const override;
+	void Serialize(BufferWritter& writer) const override;
+	size_t GetSize() const override;
 	
 	/** parse a single PAT entry */
 	static ProgramAssociation Parse(BufferReader& reader);
 };
 
 /** PSI table data for a Program Map Table */
-struct ProgramMap : public Encodable
+struct ProgramMap : public Serializable
 {
 	static constexpr uint8_t TABLE_ID = 0x02;
 
 	/** data for an Elementary Stream entry in a PMT */
-	struct ElementaryStream : public Encodable
+	struct ElementaryStream : public Serializable
 	{
 		/**
 		 * This is part of stream type values.
@@ -59,8 +58,8 @@ struct ProgramMap : public Encodable
 		
 		BufferReader descriptor;
 		
-		void Encode(BufferWritter& writer) const override;
-		size_t Size() const override;
+		void Serialize(BufferWritter& writer) const override;
+		size_t GetSize() const override;
 
 		static ElementaryStream Parse(BufferReader& reader);
 	};
@@ -69,15 +68,15 @@ struct ProgramMap : public Encodable
 	
 	std::vector<ElementaryStream> streams;
 
-	void Encode(BufferWritter& writer) const override;
-	size_t Size() const override;
+	void Serialize(BufferWritter& writer) const override;
+	size_t GetSize() const override;
 	
 	static ProgramMap Parse(BufferReader& reader);
 };
 
 
 /** PSI syntax section, optionally surrounding table data */
-struct SyntaxData : public Encodable
+struct SyntaxData : public Serializable
 {
 	// fields preceding table data
 	uint16_t tableIdExtension = 0;
@@ -89,14 +88,14 @@ struct SyntaxData : public Encodable
 
 	std::variant<BufferReader, ProgramMap, ProgramAssociation> data;
 
-	void Encode(BufferWritter& writer) const override;
-	size_t Size() const override;
+	void Serialize(BufferWritter& writer) const override;
+	size_t GetSize() const override;
 	
 	static SyntaxData Parse(BufferReader& reader);
 };
 
 /** PSI table section (checksum not verified if present) */
-struct Table : public Encodable
+struct Table : public Serializable
 {
 	uint8_t tableId = 0;
 	bool sectionSyntaxIndicator = false;
@@ -105,11 +104,16 @@ struct Table : public Encodable
 	
 	std::variant<BufferReader, SyntaxData> data;
 	
-	void Encode(BufferWritter& writer) const override;
-	size_t Size() const override;
+	void Serialize(BufferWritter& writer) const override;
+	size_t GetSize() const override;
 	
 	static Table Parse(BufferReader& reader);
 };
+
+
+/** parse a full PSI payload unit */
+std::vector<Table> ParsePayloadUnit(BufferReader& reader);
+
 
 }; //namespace mpegts::psi
 }; //namespace mpegts

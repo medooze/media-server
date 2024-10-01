@@ -4,7 +4,7 @@
 #include <optional>
 #include "BufferReader.h"
 #include "BufferWritter.h"
-#include "Encodable.h"
+#include "Serializable.h"
 
 namespace mpegts
 {
@@ -19,7 +19,7 @@ enum AdaptationFieldControl
 	AdaptationFiedlAndPayload = 3
 };
 
-struct Header : public Encodable
+struct Header : public Serializable
  {
 	uint8_t  syncByte = 0;
 	bool	 transportErrorIndication = false;
@@ -30,16 +30,16 @@ struct Header : public Encodable
 	AdaptationFieldControl adaptationFieldControl = AdaptationFieldControl::Reserved;
 	uint8_t  continuityCounter = 0;
 
-	// Encodable overrides
-	void Encode(BufferWritter& writer) const override;
-	size_t Size() const override;
+	// Serializable overrides
+	void Serialize(BufferWritter& writer) const override;
+	size_t GetSize() const override;
 	
 	static Header Parse(BufferReader& reader);
 	
 	void Dump() const;
 };
 
-struct AdaptationField : public Encodable
+struct AdaptationField : public Serializable
 {
 	bool discontinuityIndicator = false;
 	bool randomAccessIndicator = false;
@@ -52,9 +52,9 @@ struct AdaptationField : public Encodable
 	
 	std::optional<uint64_t> pcr;
 	
-	// Encodable overrides
-	void Encode(BufferWritter& writer) const override;
-	size_t Size() const override;
+	// Serializable overrides
+	void Serialize(BufferWritter& writer) const override;
+	size_t GetSize() const override;
 	
 	static AdaptationField Parse(BufferReader& reader);
 };
@@ -95,20 +95,20 @@ enum PTSDTSIndicator
 	Both = 3
 };
 
-struct Header : public Encodable
+struct Header : public Serializable
 {
 	uint32_t packetStartCodePrefix = 0x000001;
 	uint8_t  streamId = 0;
 	uint16_t packetLength = 0;
 
-	// Encodable overrides
-	void Encode(BufferWritter& writer) const override;
-	size_t Size() const override;
+	// Serializable overrides
+	void Serialize(BufferWritter& writer) const override;
+	size_t GetSize() const override;
 	
 	static Header Parse(BufferReader& reader);
 };
 
-struct HeaderExtension : public Encodable
+struct HeaderExtension : public Serializable
 {
 	uint8_t markerBits = 0x2;
 	uint8_t scramblingControl = 0;
@@ -129,9 +129,9 @@ struct HeaderExtension : public Encodable
 	
 	size_t	stuffingCount = 0;
 
-	// Encodable overrides
-	void Encode(BufferWritter& writer) const override;
-	size_t Size() const override;
+	// Serializable overrides
+	void Serialize(BufferWritter& writer) const override;
+	size_t GetSize() const override;
 	
 	static HeaderExtension Parse(BufferReader& reader);
 };
@@ -155,7 +155,7 @@ enum AudioObjectType
 	AACLC		= 2
 };
 
-struct Header : public Encodable
+struct Header : public Serializable
 {
 	uint16_t syncWord = 0xfff;
 	bool     version = false;
@@ -174,9 +174,9 @@ struct Header : public Encodable
 	uint8_t  numberOfFramesMinus1 = 0;
 	uint16_t crc = 0;
 
-	// Encodable overrides
-	void Encode(BufferWritter& writer) const override;
-	size_t Size() const override;
+	// Serializable overrides
+	void Serialize(BufferWritter& writer) const override;
+	size_t GetSize() const override;
 	
 	static Header Parse(BufferReader& reader);
 };

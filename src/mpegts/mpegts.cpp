@@ -6,9 +6,9 @@
 namespace mpegts
 {
 
-void Header::Encode(BufferWritter& writer) const
+void Header::Serialize(BufferWritter& writer) const
 {
-	if (writer.GetLeft() < Size())
+	if (writer.GetLeft() < GetSize())
 		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
 		
 	BitWriter bitwriter(writer, 4);
@@ -22,7 +22,7 @@ void Header::Encode(BufferWritter& writer) const
 	bitwriter.Put(4, continuityCounter);
 }
 
-size_t Header::Size() const
+size_t Header::GetSize() const
 {
 	return 4;
 }
@@ -91,9 +91,9 @@ void Header::Dump() const
 }
 
 
-void AdaptationField::Encode(BufferWritter& writer) const
+void AdaptationField::Serialize(BufferWritter& writer) const
 {
-	if (writer.GetLeft() < Size())
+	if (writer.GetLeft() < GetSize())
 		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
 	
 	if (opcrFlag || splicingPointFlag || transportPrivateDataFlag || adaptationFieldExtensionFlag)
@@ -101,7 +101,7 @@ void AdaptationField::Encode(BufferWritter& writer) const
 		throw std::runtime_error("The field is not implemented for encoding");
 	}
 	
-	writer.Set1(Size() - 1);
+	writer.Set1(GetSize() - 1);
 	
 	BitWriter bitwriter(writer, 1);
 	
@@ -126,7 +126,7 @@ void AdaptationField::Encode(BufferWritter& writer) const
 	}
 }
 
-size_t AdaptationField::Size() const
+size_t AdaptationField::GetSize() const
 {
 	return 1 + 1 + (pcr ? 6 : 0);
 }
@@ -225,9 +225,9 @@ Packet Packet::Parse(BufferReader& reader)
 namespace pes
 {
 
-void Header::Encode(BufferWritter& writer) const
+void Header::Serialize(BufferWritter& writer) const
 {
-	if (writer.GetLeft() < Size())
+	if (writer.GetLeft() < GetSize())
 		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
 	
 	writer.Set3(packetStartCodePrefix);
@@ -235,7 +235,7 @@ void Header::Encode(BufferWritter& writer) const
 	writer.Set2(packetLength);
 }
 
-size_t Header::Size() const
+size_t Header::GetSize() const
 {
 	return 6;
 }
@@ -262,9 +262,9 @@ Header Header::Parse(BufferReader& reader)
 	return header;
 }
 
-void HeaderExtension::Encode(BufferWritter& writer) const
+void HeaderExtension::Serialize(BufferWritter& writer) const
 {
-	if (writer.GetLeft() < Size())
+	if (writer.GetLeft() < GetSize())
 		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
 		
 	if (escrFlag || rateFlag || trickModeFlag || aditionalInfoFlag || crcFlag || extensionFlag)
@@ -285,7 +285,7 @@ void HeaderExtension::Encode(BufferWritter& writer) const
 	bitwriter.Put(1, aditionalInfoFlag);
 	bitwriter.Put(1, crcFlag);
 	bitwriter.Put(1, extensionFlag);
-	bitwriter.Put(8, Size() - 3);
+	bitwriter.Put(8, GetSize() - 3);
 	
 	assert(ptsdtsIndicator != PTSDTSIndicator::Forbiden);
 	
@@ -330,7 +330,7 @@ void HeaderExtension::Encode(BufferWritter& writer) const
 	writer.PadTo(writer.GetLength() + stuffingCount, 0xff);
 }
 
-size_t HeaderExtension::Size() const
+size_t HeaderExtension::GetSize() const
 {
 	return 3 + (pts ? 5 : 0) + (dts ? 5 : 0) + stuffingCount;
 }
@@ -486,12 +486,12 @@ Packet Packet::Parse(BufferReader& reader)
 
 namespace adts
 {
-	void Header::Encode(BufferWritter& writer) const
+	void Header::Serialize(BufferWritter& writer) const
 	{
-		if (writer.GetLeft() < Size())
+		if (writer.GetLeft() < GetSize())
 			throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
 		
-		BitWriter bitwriter(writer, Size());
+		BitWriter bitwriter(writer, GetSize());
 		
 		bitwriter.Put(12, syncWord);
 		bitwriter.Put(1, version);
@@ -513,7 +513,7 @@ namespace adts
 			bitwriter.Put(16, crc);
 	}
 	
-	size_t Header::Size() const
+	size_t Header::GetSize() const
 	{
 		return 7 + (protectionAbsence ? 0 : 2);
 	}

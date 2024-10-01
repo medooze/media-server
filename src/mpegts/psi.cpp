@@ -10,9 +10,9 @@ namespace mpegts
 namespace psi
 {
 
-void SyntaxData::Encode(BufferWritter& writer) const
+void SyntaxData::Serialize(BufferWritter& writer) const
 {
-	if (writer.GetLeft() < Size())
+	if (writer.GetLeft() < GetSize())
 		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
 	
 	writer.Set2(tableIdExtension);
@@ -28,7 +28,7 @@ void SyntaxData::Encode(BufferWritter& writer) const
 		using T = std::decay_t<decltype(arg)>;
 		if constexpr (std::is_same_v<T, ProgramAssociation> || std::is_same_v<T, ProgramMap>)
 		{
-			arg.Encode(writer);
+			arg.Serialize(writer);
 		}
 		else if constexpr (std::is_same_v<T, BufferReader>)
 		{
@@ -39,7 +39,7 @@ void SyntaxData::Encode(BufferWritter& writer) const
 	}, data);
 }
 
-size_t SyntaxData::Size() const
+size_t SyntaxData::GetSize() const
 {
 	size_t totalSize = 5;
 		
@@ -47,7 +47,7 @@ size_t SyntaxData::Size() const
 		using T = std::decay_t<decltype(arg)>;
 		if constexpr (std::is_same_v<T, ProgramAssociation> || std::is_same_v<T, ProgramMap>)
 		{
-			totalSize += arg.Size();
+			totalSize += arg.GetSize();
 		}
 		else if constexpr (std::is_same_v<T, BufferReader>)
 		{
@@ -94,9 +94,9 @@ SyntaxData SyntaxData::Parse(BufferReader& reader)
 	return syntaxData;
 }
 
-void Table::Encode(BufferWritter& writer) const
+void Table::Serialize(BufferWritter& writer) const
 {
-	if (writer.GetLeft() < Size())
+	if (writer.GetLeft() < GetSize())
 		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
 	
 	auto mark = writer.Mark();
@@ -108,13 +108,13 @@ void Table::Encode(BufferWritter& writer) const
 	bitwriter.Put(1, sectionSyntaxIndicator);
 	bitwriter.Put(1, privateBit);
 	bitwriter.Put(2, _reserved1);
-	bitwriter.Put(12, Size() - 3);
+	bitwriter.Put(12, GetSize() - 3);
 		
 	std::visit([&writer](auto&& arg){
 		using T = std::decay_t<decltype(arg)>;
 		if constexpr (std::is_same_v<T, SyntaxData>)
 		{
-			arg.Encode(writer);
+			arg.Serialize(writer);
 		}
 		else if constexpr (std::is_same_v<T, BufferReader>)
 		{
@@ -128,7 +128,7 @@ void Table::Encode(BufferWritter& writer) const
 	writer.Set4(crc);
 }
 
-size_t Table::Size() const
+size_t Table::GetSize() const
 {
 	size_t totalSize = 3 + 4;  // header + crc
 	
@@ -136,7 +136,7 @@ size_t Table::Size() const
 		using T = std::decay_t<decltype(arg)>;
 		if constexpr (std::is_same_v<T, SyntaxData>)
 		{
-			totalSize += arg.Size();
+			totalSize += arg.GetSize();
 		}
 		else if constexpr (std::is_same_v<T, BufferReader>)
 		{
@@ -204,11 +204,30 @@ Table Table::Parse(BufferReader& reader)
 	return table;
 }
 
+std::vector<Table> ParsePayloadUnit(BufferReader& reader)
+{
+	// read pointer
+	if (reader.GetLeft()<1)
+		throw std::runtime_error("Not enough data to read mpegts psi pointer");
+	uint8_t pointerField = reader.Get1();
+	if (reader.GetLeft()<pointerField)
+		throw std::runtime_error("Not enough data to read mpegts psi pointer filler bytes");
+	reader.GetData(pointerField);
+
+	// read tables until EOF or 0xFF byte (which is followed by stuffing)
+	std::vector<Table> tables;
+	while (reader.GetLeft() > 0 && reader.Peek1() != 0xFF)
+		// FIXME: it would probably be nice to catch parsing errors and return partial result
+		tables.push_back(Table::Parse(reader));
+
+	return tables;
+}
+
 // PAT
 
-void ProgramAssociation::Encode(BufferWritter& writer) const
+void ProgramAssociation::Serialize(BufferWritter& writer) const
 {
-	if (writer.GetLeft() < Size())
+	if (writer.GetLeft() < GetSize())
 		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
 		
 	writer.Set2(programNum);
@@ -219,7 +238,7 @@ void ProgramAssociation::Encode(BufferWritter& writer) const
 	bitwriter.Put(13, pmtPid);
 }
 
-size_t ProgramAssociation::Size() const
+size_t ProgramAssociation::GetSize() const
 { 
 	return 4;
 }
@@ -248,7 +267,7 @@ ProgramAssociation ProgramAssociation::Parse(BufferReader& reader)
 	return programAssociation;
 }
 
-void ProgramMap::ElementaryStream::Encode(BufferWritter& writer) const
+void ProgramMap::ElementaryStream::Serialize(BufferWritter& writer) const
 {
 	BitWriter bitwriter(writer, 5);
 	
@@ -267,7 +286,7 @@ void ProgramMap::ElementaryStream::Encode(BufferWritter& writer) const
 	}
 }
 
-size_t ProgramMap::ElementaryStream::Size() const
+size_t ProgramMap::ElementaryStream::GetSize() const
 {
 	size_t totalSize = 5;
 		
@@ -311,7 +330,7 @@ ProgramMap::ElementaryStream ProgramMap::ElementaryStream::Parse(BufferReader& r
 
 // PMT
 
-void ProgramMap::Encode(BufferWritter& writer) const
+void ProgramMap::Serialize(BufferWritter& writer) const
 {
 	BitWriter bitwriter(writer, 4);
 	
@@ -322,17 +341,17 @@ void ProgramMap::Encode(BufferWritter& writer) const
 	
 	for (auto& es : streams) 
 	{
-		es.Encode(writer);
+		es.Serialize(writer);
 	}
 }
 
-size_t ProgramMap::Size() const
+size_t ProgramMap::GetSize() const
 { 
 	size_t totalSize = 4;
 	
 	for (auto& es : streams) 
 	{
-		totalSize  += es.Size();
+		totalSize  += es.GetSize();
 	}
 	
 	return totalSize;

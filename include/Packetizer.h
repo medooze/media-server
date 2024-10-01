@@ -4,7 +4,7 @@
 #include "Buffer.h"
 #include "BufferWritter.h"
 #include "CircularQueue.h"
-#include "Encodable.h"
+#include "Serializable.h"
 #include "log.h"
 
 #include <stdint.h>
@@ -14,7 +14,7 @@
 #include <cassert>
 
 /**
- * The Packetizer is a generic class to create packets for Encodable messages. It accepts Encodable
+ * The Packetizer is a generic class to create packets for Serializable messages. It accepts Serializable
  * messages as input and generate packets as requested. The early added message will be packetized
  * early.
  * 
@@ -32,7 +32,7 @@
  * The Packetizer uses a cicular queue to store added messages. The limit of the queue size is set during
  * construction. If the queue is full, the earlest message would be dropped.
  * 
- * @tparam T The message type. It must be derived from Encodable.
+ * @tparam T The message type. It must be derived from Serializable.
  */
 template<typename T>
 class Packetizer
@@ -46,7 +46,7 @@ public:
 	 */
 	Packetizer(size_t maxMessageQueueSize) : messages(maxMessageQueueSize, false), buffer(0)
 	{
-		static_assert(std::is_base_of_v<Encodable, T>);
+		static_assert(std::is_base_of_v<Serializable, T>);
 	}
 	
 	/**
@@ -125,18 +125,18 @@ public:
 				}
 				
 				// Grap the front message
-				auto [encodable, forceSeparate] = messages.front();
-				current = encodable;
+				auto [serializable, forceSeparate] = messages.front();
+				current = serializable;
 				
 				// Remove the message
 				(void)messages.pop_front();
 				
 				// Create a new buffer for the message
-				auto sz = encodable->Size();
+				auto sz = serializable->GetSize();
 				buffer.SetSize(sz);
 				
 				BufferWritter awriter(buffer.GetData(), sz);
-				encodable->Encode(awriter);
+				serializable->Serialize(awriter);
 				assert(sz == awriter.GetLength());
 				
 				pos = 0;
