@@ -86,6 +86,6 @@ private:
 	std::size_t maxallocate = 0;
 
 	DWORD numSamples = 0;
-    DWORD numChannels = 0;
+	DWORD numChannels = 0;
 };
 #endif // !AUDIOBUFFERPOOL_H_
