@@ -7,24 +7,6 @@ using namespace std::chrono;
 
 namespace
 {
-
-
-/**
- * Convert timestamp from one clock rate to another
- * 
- * @param ts The input timestamp
- * @param originalRate The clock rate of the input timestamp
- * @param targetRate The target clock rate
- * 
- * @return The timestamp basing on the target clock rate
- */
-template<typename T>
-static constexpr T ConvertTimestampClockRate(T ts, uint64_t originalRate, uint64_t targetRate)
-{
-	static_assert(sizeof(T) >= 8);
-	return originalRate == targetRate ? ts : (ts * T(targetRate) / T(originalRate));
-}
-
 static constexpr uint64_t UnifiedClockRate = 90 * 1000;
 static constexpr uint64_t MaxClockDesync = 100 * UnifiedClockRate; //100s
 }
