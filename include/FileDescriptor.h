@@ -39,9 +39,9 @@ public:
 	{
 		fd = dup(other.fd);
 	}
-	FileDescriptor& operator=(FileDescriptor other)
+	FileDescriptor& operator=(const FileDescriptor& other)
 	{
-		swap(*this, other);
+		fd = dup(other.fd);
 		return *this;
 	}
 
