@@ -199,7 +199,10 @@ bool EventLoop::StartWithLoop(std::function<void(void)> loop)
 	
 	// Remove all signaling fds
 	poll->ForEachFd([this](Poll::PollFd pfd){
-		(void)poll->RemoveFd(pfd);
+		if (pfd.category == Poll::PollFd::Category::Signaling)
+		{
+			(void)poll->RemoveFd(pfd);
+		}
 	});
 	
 	if (!poll->AddFd({Poll::PollFd::Category::Signaling, pipe[0]}))
@@ -274,7 +277,10 @@ bool EventLoop::Start()
 	
 	// Remove all signaling fds
 	poll->ForEachFd([this](Poll::PollFd pfd){
-		(void)poll->RemoveFd(pfd);
+		if (pfd.category == Poll::PollFd::Category::Signaling)
+		{
+			(void)poll->RemoveFd(pfd);
+		}
 	});
 	
 	if (!poll->AddFd({Poll::PollFd::Category::Signaling, pipe[0]}))
