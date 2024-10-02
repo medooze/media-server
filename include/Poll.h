@@ -123,7 +123,7 @@ struct std::hash<Poll::PollFd>
 		// While this hash function works when size of int is not 4, but it might be better way to
 		// calculate in that case. Assert here for reminder.
 		static_assert(sizeof(int) == 4);
-		return (uint64_t(static_cast<std::underlying_type<Poll::PollFd::Category>::type>(fd.category)) << 32) + uint32_t(fd.fd);
+		return (uint64_t(static_cast<std::underlying_type_t<Poll::PollFd::Category>>(fd.category)) << 32) + uint32_t(fd.fd);
 	}
 };
 
