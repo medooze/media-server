@@ -101,7 +101,7 @@ VideoBuffer::shared VP8Decoder::GetFrame()
 	videoBufferPool.SetSize(img->d_w, img->d_h);
 
 	//Get new frame
-	auto videoBuffer = videoBufferPool.allocate();
+	auto videoBuffer = videoBufferPool.Acquire();
 
 	//Copy timing info
 	CopyPresentedTimingInfo(*ref, videoBuffer);

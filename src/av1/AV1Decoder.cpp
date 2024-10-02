@@ -112,7 +112,7 @@ VideoBuffer::shared AV1Decoder::GetFrame()
 	videoBufferPool.SetSize(ctx->width, ctx->height);
 
 	//Get new frame
-	auto videoBuffer = videoBufferPool.allocate();
+	auto videoBuffer = videoBufferPool.Acquire();
 
 	//Copy timing info
 	CopyPresentedTimingInfo(*ref, videoBuffer);

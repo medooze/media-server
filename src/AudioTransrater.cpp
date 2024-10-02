@@ -3,7 +3,7 @@
 #include <cmath>
 
 AudioTransrater::AudioTransrater():
-	audioBufferPool(MaxPoolSize, MaxPoolSize + 2)
+	audioBufferPool(InitialPoolSize, MaxPoolSize)
 {
 	//No resampler
 	resampler = NULL;

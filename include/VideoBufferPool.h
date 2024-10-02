@@ -46,7 +46,7 @@ public:
 			delete(buffer);
 	}
 
-	VideoBuffer::shared allocate()
+	VideoBuffer::shared Acquire()
 	{
 		VideoBuffer* buffer = nullptr;
 

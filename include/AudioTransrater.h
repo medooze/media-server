@@ -16,7 +16,8 @@ public:
 	bool IsOpen()	{ return resampler!=NULL; }
 	
 private:
-	static constexpr size_t MaxPoolSize = 30;
+	static constexpr size_t InitialPoolSize = 30;
+	static constexpr size_t MaxPoolSize = InitialPoolSize + 2;
 	SpeexResamplerState *resampler;
 	DWORD inputRate=0;
 	DWORD outputRate=0;

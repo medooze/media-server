@@ -119,7 +119,7 @@ VideoBuffer::shared H265Decoder::GetFrame()
 	}
 
 	//Get new frame
-	auto videoBuffer = videoBufferPool.allocate();
+	auto videoBuffer = videoBufferPool.Acquire();
 
 	//Set interlaced flags
 	videoBuffer->SetInterlaced(picture->interlaced_frame);
