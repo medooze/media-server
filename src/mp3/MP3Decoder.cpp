@@ -77,8 +77,8 @@ int MP3Decoder::Decode(const AudioFrame::const_shared& audioFrame)
 {
 	//Check we have config
 	if (!inited)
-		return Error("-AACDecoder::Decode() Not inited\n");
-	
+		return Error("-MP3Decoder::Decode() Not inited\n");
+
 	//Set data
 	packet->data = audioFrame ? (uint8_t*)audioFrame->GetData() : nullptr;
 	packet->size = audioFrame ? audioFrame->GetLength() : 0;
