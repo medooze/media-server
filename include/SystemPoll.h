@@ -20,11 +20,10 @@ public:
 	bool RemoveFd(PollFd pfd) override;
 	void Clear() override;
 	bool Wait(uint32_t timeOutMs) override;
-
-	void ForEachFd(std::function<void(PollFd)> func) override;
 	bool SetEventMask(PollFd pfd, uint16_t eventMask) override;
-	uint16_t GetEvents(PollFd pfd) const override;
-	std::optional<std::string> GetError(PollFd pfd) const override;
+
+	void ForEachFd(PollFd::Category category, std::function<void(int)> func) override;
+	std::pair<uint16_t, int> GetEvents(PollFd::Category category, int fd) const override;
 	
 private:
 	std::unordered_map<PollFd, pollfd> pfds;

@@ -171,58 +171,18 @@ bool EventLoop::StartWithLoop(std::function<void(void)> loop)
 	TRACE_EVENT("eventloop", "EventLoop::Start(loop)");
 	Debug("-EventLoop::Start()\n");
 	
-	poll->Clear();
-	
-	int pipe[2] = {FD_INVALID, FD_INVALID};
-	
-#if __APPLE__
-	//Create pipe
-	if (::pipe(pipe)==-1)
-		//Error
-		return false;
-	
-	//Set non blocking
-	fcntl(pipe[0], F_SETFL , O_NONBLOCK);
-	fcntl(pipe[1], F_SETFL , O_NONBLOCK);
-	
-#else
-	pipe[0] = pipe[1] = eventfd(0, EFD_NONBLOCK);
-#endif	
-
-	pipeFds[0] = FileDescriptor(pipe[0]);
-	pipeFds[1] = FileDescriptor(pipe[1]);
-
-	//Check values
-	if (pipe[0]==FD_INVALID || pipe[1]==FD_INVALID)
-		//Error
-		return Error("-EventLoop::Start() | could not start pipe [errno:%d]\n",errno);
-	
-	// Remove all signaling fds
-	poll->ForEachFd([this](Poll::PollFd pfd){
-		if (pfd.category == Poll::PollFd::Category::Signaling)
-		{
-			(void)poll->RemoveFd(pfd);
-		}
-	});
-	
-	if (!poll->AddFd({Poll::PollFd::Category::Signaling, pipe[0]}))
+	if (!poll->Setup())
 	{
-		return Error("Failed to add signaling fd to event poll\n");
+		return Error("Error to setup poll\n");
 	}
-	
-	if (!poll->SetEventMask({Poll::PollFd::Category::Signaling, pipe[0]}, Poll::Event::In))
-	{
-		return Error("Failed to set event mask\n");
-	}
-	
-	//Running
-	running = true;
-
-	//Not signaled
-	signaled.clear();
 	
 	//Block signals to avoid exiting on SIGUSR1
 	blocksignals();
+	
+	exitCode.reset();
+	
+	//Running
+	running = true;
 	
 	//Start thread and run
 	thread = std::thread([loop](){
@@ -250,57 +210,19 @@ bool EventLoop::Start()
 	//Log
 	TRACE_EVENT("eventloop", "EventLoop::Start()");
 	Debug("-EventLoop::Start() [this:%p]\n", this);
-	
-	int pipe[2] = {FD_INVALID, FD_INVALID};
-	
-#if __APPLE__
-	//Create pipe
-	if (::pipe(pipe)==-1)
-		//Error
-		return false;
-	
-	//Set non blocking
-	fcntl(pipe[0], F_SETFL , O_NONBLOCK);
-	fcntl(pipe[1], F_SETFL , O_NONBLOCK);
-	
-#else
-	pipe[0] = pipe[1] = eventfd(0, EFD_NONBLOCK);
-#endif	
-
-	pipeFds[0] = FileDescriptor(pipe[0]);
-	pipeFds[1] = FileDescriptor(pipe[1]);
-
-	//Check values
-	if (pipe[0]==FD_INVALID || pipe[1]==FD_INVALID)
-		//Error
-		return Error("-EventLoop::Start() | could not start pipe [errno:%d]\n",errno);
-	
-	// Remove all signaling fds
-	poll->ForEachFd([this](Poll::PollFd pfd){
-		if (pfd.category == Poll::PollFd::Category::Signaling)
-		{
-			(void)poll->RemoveFd(pfd);
-		}
-	});
-	
-	if (!poll->AddFd({Poll::PollFd::Category::Signaling, pipe[0]}))
+		
+	if (!poll->Setup())
 	{
-		return Error("Failed to add signaling fd to event poll\n");
+		return Error("Error to setup poll\n");
 	}
-	
-	if (!poll->SetEventMask({Poll::PollFd::Category::Signaling, pipe[0]}, Poll::Event::In))
-	{
-		return Error("Failed to set event mask\n");
-	}
-	
-	//Running
-	running = true;
-
-	//Not signaled
-	signaled.clear();
 	
 	//Block signals to avoid exiting on SIGUSR1
 	blocksignals();
+	
+	exitCode.reset();
+	
+	//Running
+	running = true;
 	
 	//Start thread and run
 	thread = std::thread([this](){ Run(); });
@@ -562,30 +484,22 @@ bool EventLoop::RemoveIOFd(int fd)
 
 void EventLoop::ForEachIOFd(const std::function<void(int)>& func)
 {
-	poll->ForEachFd([&func](Poll::PollFd pfd) {
-		if (pfd.category == Poll::PollFd::Category::IO) func(pfd.fd);
+	poll->ForEachFd(Poll::PollFd::Category::IO, [&func](int fd) {
+		func(fd);
+		return std::nullopt;
 	});
 }
-	
 
 void EventLoop::Signal()
 {
 	TRACE_EVENT("eventloop", "EventLoop::Signal");
-	//UltraDebug("-EventLoop::Signal()\r\n");
-	uint64_t one = 1;
-	
+
 	//If we are in the same thread or already signaled and pipe is ok
-	if (std::this_thread::get_id()==thread.get_id() || signaled.test_and_set() || !pipeFds[1].isValid())
+	if (std::this_thread::get_id()==thread.get_id())
 		//No need to do anything
 		return;
-	
-	//We have signaled it above
-	//worst case scenario is that race happens between this to points
-	//and that we signal it twice
-	
-	
-	//Write to tbe pipe, and assign to one to avoid warning in compile time
-	one = write(pipeFds[1],(uint8_t*)&one,sizeof(one));
+		
+	poll->Signal();
 }
 
 void EventLoop::Run(const std::chrono::milliseconds &duration)
@@ -605,79 +519,60 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 	while(running && now<=until)
 	{
 		//TRACE_EVENT("eventloop", "EventLoop::Run::Iteration");
-		poll->ForEachFd([this](Poll::PollFd pfd) {
+		
+		poll->ForEachFd(Poll::PollFd::Category::IO, [this](int fd) {
 			
-			if (pfd.category == Poll::PollFd::Category::Signaling) return;
-			
-			auto events = GetPollEventMask(pfd.fd);
+			auto events = GetPollEventMask(fd);
 			if (events)
-				poll->SetEventMask(pfd, *events);
+				poll->SetEventMask({Poll::PollFd::Category::IO, fd}, *events);
 		});
 		
 		//Until signaled or one each 10 seconds to prevent deadlocks
 		int timeout = GetNextTimeout(10E3, until);
 
 		//UltraDebug(">EventLoop::Run() | poll timeout:%d timers:%d tasks:%d size:%d\n",timeout,timers.size(),tasks.size_approx(), sizeof(ufds) / sizeof(pollfd));
-		
-		try
+
+		//Wait for events
+		if (!poll->Wait(timeout))
 		{
-			//Wait for events
-			if (!poll->Wait(timeout))
-			{
-				Error("Event poll wait failed.\n");
-				break;
-			}
-			
-			//Update now
-			now = Now();
-			
-			//UltraDebug("<EventLoop::Run() | poll timeout:%d timers:%d tasks:%d\n",timeout,timers.size(),tasks.size_approx());
-			
-			poll->ForEachFd([this](Poll::PollFd pfd) {
-				
-				auto error = poll->GetError(pfd);
-				switch (pfd.category)
-				{
-				case Poll::PollFd::Category::Signaling:
-					assert(poll->GetEvents(pfd) != Poll::Event::Out);
-					// Always clear signal
-					ClearSignal();
-					if (error)
-					{
-						Error("-EventLoop::Run() Error occured on signaling fd: %s\n", error->c_str());
-						OnSignallingError(*error);
-					}
-					break;
-				case Poll::PollFd::Category::IO:
-					if (error)
-					{
-						OnPollError(pfd.fd, *error);
-					}
-					else
-					{
-						auto events = poll->GetEvents(pfd);
-						if (events & Poll::Event::In)
-						{
-							OnPollIn(pfd.fd);
-						}
-						
-						if (events & Poll::Event::Out)
-						{
-							OnPollOut(pfd.fd);
-						}
-					}
-					break;
-				default:
-					assert(false);
-					break;
-				}
-			});
-		}
-		catch (std::exception& ex)
-		{
-			Error("-EventLoop::Run() Exception occurred while polling: %s\n", ex.what());
+			Error("Event poll wait failed.\n");
+			SetStopping(ToUType(PredefinedExitCode::WaitError));
 			break;
 		}
+		
+		//Update now
+		now = Now();
+		
+		//UltraDebug("<EventLoop::Run() | poll timeout:%d timers:%d tasks:%d\n",timeout,timers.size(),tasks.size_approx());
+		
+		poll->ForEachFd(Poll::PollFd::Category::Signaling, [this](int fd) {
+			auto [events, error] = poll->GetEvents(Poll::PollFd::Category::Signaling, fd);
+			// Always clear signal
+			poll->ClearSignal();
+			if (error)
+			{
+				Error("-EventLoop::Run() Error occured on signaling fd: %d\n", error);
+				SetStopping(ToUType(PredefinedExitCode::SignalingError));
+			}
+		});
+		
+		if (!running) break;
+		
+		poll->ForEachFd(Poll::PollFd::Category::IO, [this](int fd) {
+			auto [events, error] = poll->GetEvents(Poll::PollFd::Category::IO, fd);
+			if (error)
+			{
+				OnPollError(fd, error);
+			}
+			else if (events & Poll::Event::In)
+			{
+				OnPollIn(fd);
+			}
+			else if (events & Poll::Event::Out)
+			{
+				OnPollOut(fd);
+			}
+		});
 		
 		//Process pendint tasks
 		ProcessTasks(now);
@@ -692,7 +587,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 	//Run queued tasks before exiting
 	ProcessTasks(now);
 
-	OnLoopExit();
+	OnLoopExit(exitCode.has_value() ? *exitCode : 0);
 	//Log("<EventLoop::Run()\n");
 }
 
@@ -722,21 +617,6 @@ int EventLoop::GetNextTimeout(int defaultTimeout, const std::chrono::millisecond
 	}
 
 	return std::min(timeout, defaultTimeout);
-}
-
-void EventLoop::ClearSignal()
-{
-	if (pipeFds[0].isValid())
-	{
-		uint64_t data = 0;
-		//Remove pending data on signal pipe
-		while (read(pipeFds[0], &data, sizeof(uint64_t)) > 0)
-		{
-			//DO nothing
-		}
-	}
-	//We are not signaled anymore
-	signaled.clear();
 }
 
 void EventLoop::ProcessTasks(const std::chrono::milliseconds& now)

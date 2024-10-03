@@ -36,7 +36,7 @@ protected:
 	virtual std::optional<uint16_t> GetPollEventMask(int fd) const override;
 	virtual void OnPollIn(int fd) override;
 	virtual void OnPollOut(int fd) override;
-	virtual void OnPollError(int fd, const std::string& errorMsg) override;
+	virtual void OnPollError(int fd, int errorCode) override;
 
 private:
 	enum State

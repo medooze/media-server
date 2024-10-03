@@ -79,8 +79,17 @@ public:
 	bool IsRunning() const { return running; }
 
 protected:
+	/**
+	 * Predefined exit codes. They are all negative values. The user defined exit code must be
+	 * non-negative.
+	 */
+	enum class PredefinedExitCode : int
+	{
+		WaitError = -1,
+		SignalingError = -2
+	};
+
 	void Signal();
-	void ClearSignal();
 	inline void AssertThread() const { assert(std::this_thread::get_id()==thread.get_id()); }
 	void CancelTimer(TimerImpl::shared timer);
 	
@@ -97,6 +106,15 @@ protected:
 	void ForEachIOFd(const std::function<void(int)>& func);
 	
 	/**
+	 * Set stopping. This will trigger the current loop to exit.
+	 */
+	inline void SetStopping(int code)
+	{
+		exitCode = code;
+		running = false;
+	}
+	
+	/**
 	 * Get updated event mask for a file descriptor. 
 	 * 
 	 * Note if the return optional doesn't have value, the current event mask wouldn't be changed.
@@ -104,34 +122,19 @@ protected:
 	virtual std::optional<uint16_t> GetPollEventMask(int fd) const { return std::nullopt; };
 	
 	/**
-	 * Callback to be called when it is ready to read from the file descriptor. If exception throws, the loop
-	 * will exit.
+	 * Callback to be called when it is ready to read from the file descriptor. 
 	 */
 	virtual void OnPollIn(int fd) {};
 	
 	/**
-	 * Callback to be called when it is ready to write to the file descriptor. If exception throws, the loop
-	 * will exit.
+	 * Callback to be called when it is ready to write to the file descriptor.
 	 */
 	virtual void OnPollOut(int fd) {};
 	
 	/**
-	 * Callback to be called when error occured on the file descriptor.If exception throws, the loop
-	 * will exit.
+	 * Callback to be called when error occured on the file descriptor.
 	 */
-	virtual void OnPollError(int fd, const std::string& errorMsg)
-	{
-		throw std::runtime_error("-EventLoop::OnPollError() Error occurred: " + errorMsg);
-	};
-	
-	/**
-	 * Callback to be called when error occured on signalling file descriptor. If exception throws, the loop
-	 * will exit.
-	 */
-	virtual void OnSignallingError(const std::string& errorMsg)
-	{
-		throw std::runtime_error("-EventLoop::OnSignallingError() Error occurred: " + errorMsg);
-	}
+	virtual void OnPollError(int fd, int errorCode) {};
 	
 	/**
 	 * Called when the Run() function was entered.
@@ -141,14 +144,12 @@ protected:
 	/**
 	 * Called when the Run() function was exited.
 	 */
-	virtual void OnLoopExit() {};
+	virtual void OnLoopExit(int exitCode) {};
 
 private:
 
 	std::thread			thread;
-	FileDescriptor			pipeFds[2];
 	std::unique_ptr<Poll>		poll;
-	std::atomic_flag signaled	= ATOMIC_FLAG_INIT;
 	volatile bool	running		= false;
 	std::chrono::milliseconds now	= 0ms;
 	moodycamel::ConcurrentQueue<
@@ -158,6 +159,8 @@ private:
 		>
 	>  tasks;
 	std::multimap<std::chrono::milliseconds,TimerImpl::shared> timers;
+	
+	std::optional<int> exitCode;
 };
 
 #endif /* EVENTLOOP_H */

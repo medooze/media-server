@@ -56,7 +56,7 @@ void SystemPoll::Clear()
 }
 
 
-void SystemPoll::ForEachFd(std::function<void(PollFd)> func)
+void SystemPoll::ForEachFd(PollFd::Category category, std::function<void(int)> func)
 {
 	if (tempfdsDirty)
 	{
@@ -71,7 +71,10 @@ void SystemPoll::ForEachFd(std::function<void(PollFd)> func)
 	
 	for (auto& fd : tempfds)
 	{
-		func(fd);
+		if (fd.category == category)
+		{
+			func(fd.fd);
+		}
 	}
 }
 
@@ -97,12 +100,18 @@ bool SystemPoll::SetEventMask(PollFd pfd, uint16_t eventMask)
 	return true;
 }
 
-uint16_t SystemPoll::GetEvents(PollFd pfd) const
+std::pair<uint16_t, int> SystemPoll::GetEvents(PollFd::Category category, int fd) const
 {
-	if (pfds.find(pfd) == pfds.end()) return 0;
+	PollFd pfd = {category, fd};
+	if (pfds.find(pfd) == pfds.end()) return std::make_pair<>(0, 0);
 	
 	uint events = 0;
 	uint16_t revents = pfds.at(pfd).revents;
+	
+	if ((revents & POLLHUP) || (revents & POLLERR))
+	{
+		return std::make_pair<>(0, errno);
+	}
 	
 	if (revents & POLLIN)
 	{
@@ -114,7 +123,7 @@ uint16_t SystemPoll::GetEvents(PollFd pfd) const
 		events |= Event::Out;
 	}
 	
-	return events;
+	return std::make_pair<>(events, 0);
 }
 
 bool SystemPoll::Wait(uint32_t timeOutMs)
@@ -151,19 +160,5 @@ bool SystemPoll::Wait(uint32_t timeOutMs)
 	}
 
 	return true;
-}
-
-std::optional<std::string> SystemPoll::GetError(PollFd pfd) const
-{
-	if (pfds.find(pfd) == pfds.end()) return std::nullopt;
-	
-	std::optional<std::string> error;
-	auto syspfd = pfds.at(pfd);
-	if ((syspfd.revents & POLLHUP) || (syspfd.revents & POLLERR))
-	{
-		error = FormatString("revents:0x%x,errno:%d", syspfd.revents, errno);
-	}
-	
-	return error;
 }
 

@@ -1,11 +1,14 @@
 #ifndef POLL_H
 #define POLL_H
 
+#include "FileDescriptor.h"
+
 #include <stdint.h>
 #include <stddef.h>
 #include <optional>
 #include <string>
 #include <functional>
+#include <atomic>
 
 /**
  * A Poll object is used to allow EvenLoop to implement non-blocking logic. It can wait on multiple file descriptors
@@ -56,6 +59,17 @@ public:
 	virtual ~Poll() = default;
 
 	/**
+	 * Setup poll
+	 */
+	bool Setup();
+
+	/**
+	 * Signaling functions.
+	 */
+	void Signal();
+	void ClearSignal();
+	
+	/**
 	 * Add a file descriptor
 	 * 
 	 * @return Whether the file descriptor was added successfully
@@ -87,8 +101,10 @@ public:
 	 * Iterate through all the file descriptors
 	 * 
 	 * @param func The function would be called for each file descriptor.
+	 * 
+	 * @return If the optional is set, it is regarded the intention is to quit the loop and the value is the exit code.
 	 */
-	virtual void ForEachFd(std::function<void(PollFd)> func) = 0;
+	virtual void ForEachFd(PollFd::Category category, std::function<void(int)> func) = 0;
 	
 	/**
 	 * Set the event mask. The mask is a value OR-ed by multiple Event types.
@@ -100,16 +116,16 @@ public:
 	/**
 	 * Get the waited events of a file descriptor
 	 * 
-	 * @return The waited events. It is value OR-ed by multiple Event types.
+	 * @return The waited events and error code. The events is value OR-ed by multiple Event types. The error code is a non-zero
+	 *         value in case of an error. Zero means no error.
 	 */
-	virtual uint16_t GetEvents(PollFd pfd) const = 0;
+	virtual std::pair<uint16_t, int> GetEvents(PollFd::Category category, int fd) const = 0;
 	
-	/**
-	 * Get error message of a file descriptor
-	 * 
-	 * @return A optional containing the error message in case of error, std::nullopt otherwise.
-	 */
-	virtual std::optional<std::string> GetError(PollFd pfd) const = 0;
+private:
+	// For signalling
+	FileDescriptor	pipeFds[2];
+	
+	std::atomic_flag signaled	= ATOMIC_FLAG_INIT;
 };
 
 /**

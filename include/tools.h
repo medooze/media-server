@@ -553,4 +553,10 @@ inline std::string FormatString(const char* fmt, ...)
 	return std::string(tmp.data(), sz);
 }
 
+template<typename E> 
+constexpr auto ToUType(E enumerator) noexcept
+{ 
+	return static_cast<std::underlying_type_t<E>>(enumerator);
+}
+
 #endif
