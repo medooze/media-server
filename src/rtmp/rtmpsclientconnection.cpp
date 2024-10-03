@@ -24,9 +24,9 @@ RTMPClientConnection::ErrorCode RTMPSClientConnection::Connect(const char* serve
 	return RTMPClientConnection::Connect(server, port, app, listener);
 }
 
-void RTMPSClientConnection::OnLoopExit()
+void RTMPSClientConnection::OnLoopExit(int exitCode)
 {
-	RTMPClientConnection::OnLoopExit();
+	RTMPClientConnection::OnLoopExit(exitCode);
 	
 	tls.Shutdown();
 }

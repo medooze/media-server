@@ -9,13 +9,12 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-bool SystemPoll::AddFd(PollFd pfd)
+bool SystemPoll::AddFd(PollFd::Category category, int fd)
 {
-	assert(pfd.fd != FD_INVALID);
-	if (pfd.fd == FD_INVALID) return false;
+	if (fd == FD_INVALID) return false;
 	
 	pollfd syspfd;
-	syspfd.fd = pfd.fd;
+	syspfd.fd = fd;
 	
 	//Set non blocking so we can get an error when we are closed by end
 	int fsflags = fcntl(syspfd.fd,F_GETFL,0);
@@ -24,7 +23,7 @@ bool SystemPoll::AddFd(PollFd pfd)
 	if (fcntl(syspfd.fd,F_SETFL,fsflags) < 0)
 		return false;
 	
-	pfds.emplace(pfd, syspfd);
+	pfds.emplace(PollFd{category, fd}, syspfd);
 	
 	tempfdsDirty = true;
 	sysfdsDirty = true;
@@ -32,9 +31,9 @@ bool SystemPoll::AddFd(PollFd pfd)
 	return true;
 }
 
-bool SystemPoll::RemoveFd(PollFd pfd)
+bool SystemPoll::RemoveFd(PollFd::Category category, int fd)
 {
-	bool removed = pfds.erase(pfd) > 0;
+	bool removed = pfds.erase({category, fd}) > 0;
 	if (removed)
 	{
 		tempfdsDirty = true;
@@ -56,7 +55,7 @@ void SystemPoll::Clear()
 }
 
 
-void SystemPoll::ForEachFd(std::function<void(PollFd)> func)
+void SystemPoll::ForEachFd(PollFd::Category category, std::function<void(int)> func)
 {
 	if (tempfdsDirty)
 	{
@@ -71,12 +70,16 @@ void SystemPoll::ForEachFd(std::function<void(PollFd)> func)
 	
 	for (auto& fd : tempfds)
 	{
-		func(fd);
+		if (fd.category == category)
+		{
+			func(fd.fd);
+		}
 	}
 }
 
-bool SystemPoll::SetEventMask(PollFd pfd, uint16_t eventMask)
+bool SystemPoll::SetEventMask(PollFd::Category category, int fd, uint16_t eventMask)
 {
+	PollFd pfd = {category, fd};
 	if (pfds.find(pfd) == pfds.end()) return false;
 	
 	auto& syspfd = pfds[pfd];
@@ -97,12 +100,18 @@ bool SystemPoll::SetEventMask(PollFd pfd, uint16_t eventMask)
 	return true;
 }
 
-uint16_t SystemPoll::GetEvents(PollFd pfd) const
+std::pair<uint16_t, int> SystemPoll::GetEvents(PollFd::Category category, int fd) const
 {
-	if (pfds.find(pfd) == pfds.end()) return 0;
+	PollFd pfd = {category, fd};
+	if (pfds.find(pfd) == pfds.end()) return std::make_pair<>(0, 0);
 	
 	uint events = 0;
 	uint16_t revents = pfds.at(pfd).revents;
+	
+	if ((revents & POLLHUP) || (revents & POLLERR))
+	{
+		return std::make_pair<>(0, errno);
+	}
 	
 	if (revents & POLLIN)
 	{
@@ -114,7 +123,7 @@ uint16_t SystemPoll::GetEvents(PollFd pfd) const
 		events |= Event::Out;
 	}
 	
-	return events;
+	return std::make_pair<>(events, 0);
 }
 
 bool SystemPoll::Wait(uint32_t timeOutMs)
@@ -151,19 +160,5 @@ bool SystemPoll::Wait(uint32_t timeOutMs)
 	}
 
 	return true;
-}
-
-std::optional<std::string> SystemPoll::GetError(PollFd pfd) const
-{
-	if (pfds.find(pfd) == pfds.end()) return std::nullopt;
-	
-	std::optional<std::string> error;
-	auto syspfd = pfds.at(pfd);
-	if ((syspfd.revents & POLLHUP) || (syspfd.revents & POLLERR))
-	{
-		error = FormatString("revents:0x%x,errno:%d", syspfd.revents, errno);
-	}
-	
-	return error;
 }
 

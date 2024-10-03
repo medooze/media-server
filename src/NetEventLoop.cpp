@@ -237,7 +237,8 @@ void NetEventLoop::OnPollOut(int fd)
 	std::move(retry.begin(), retry.end(), std::back_inserter(items));
 }
 
-void NetEventLoop::OnPollError(int fd, const std::string& errorMsg)
+void NetEventLoop::OnPollError(int fd, int errorCode)
 {
-	throw std::runtime_error("Error occurred on network fd: " + errorMsg);
+	Error("Error occurred on network fd: %d\n", errorCode);
+	SetStopping(errorCode);
 }

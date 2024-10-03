@@ -569,4 +569,11 @@ static constexpr T ConvertTimestampClockRate(T ts, uint64_t originalRate, uint64
 	return originalRate == targetRate ? ts : (ts * T(targetRate) / T(originalRate));
 }
 
+
+template<typename E> 
+constexpr auto ToUType(E enumerator) noexcept
+{ 
+	return static_cast<std::underlying_type_t<E>>(enumerator);
+}
+
 #endif

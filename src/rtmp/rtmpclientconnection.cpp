@@ -136,7 +136,7 @@ RTMPClientConnection::ErrorCode RTMPClientConnection::Connect(const char* server
 	return EventLoop::StartWithFd(fileDescriptor) ? RTMPClientConnection::ErrorCode::NoError : RTMPClientConnection::ErrorCode::Generic;
 }
 
-void RTMPClientConnection::OnLoopExit()
+void RTMPClientConnection::OnLoopExit(int exitCode)
 {
 	//If got socket
 	if (fileDescriptor != FD_INVALID)
@@ -148,6 +148,20 @@ void RTMPClientConnection::OnLoopExit()
 		//No socket
 		fileDescriptor = FD_INVALID;
 	}
+	
+	RTMPClientConnection::ErrorCode errorCode = RTMPClientConnection::ErrorCode::NoError;
+	switch (exitCode)
+	{
+	case ToUType(PredefinedExitCode::WaitError):
+	case ToUType(PredefinedExitCode::SignalingError):
+		errorCode = RTMPClientConnection::ErrorCode::Generic;
+		break;
+	default:
+		errorCode = RTMPClientConnection::ErrorCode(exitCode);
+		break;
+	}
+	
+	if (listener) listener->onDisconnected(this, errorCode);
 }
 
 int RTMPClientConnection::Disconnect()
@@ -192,14 +206,14 @@ void RTMPClientConnection::OnPollIn(int fd)
 	int len = read(fd, buffer, BufferSize);
 	if (len == 0)
 	{
-		if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::PeerClosed);
-		throw std::runtime_error("-RTMPClientConnection::OnPollIn() Peer closed");
+		Error("-RTMPClientConnection::OnPollIn() Peer closed");
+		SetStopping(ToUType(RTMPClientConnection::ErrorCode::PeerClosed));
 	}
 	
 	if (len < 0)
 	{
-		if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::ReadError);
-		throw std::runtime_error(FormatString("-RTMPClientConnection::OnPollIn() Readed [%d,%d]\n", len, errno));
+		Error("-RTMPClientConnection::OnPollIn() Readed [%d,%d]\n", len, errno);
+		SetStopping(ToUType(RTMPClientConnection::ErrorCode::ReadError));
 	}
 	//Increase in bytes
 	inBytes += len;
@@ -211,8 +225,9 @@ void RTMPClientConnection::OnPollIn(int fd)
 		//Dump it
 		Dump(buffer, len);
 		
-		if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::FailedToParseData);
-		throw std::runtime_error(FormatString("-RTMPClientConnection::Run() Exception parsing data: %s\n", e.what()));
+		Error("-RTMPClientConnection::Run() Exception parsing data: %s\n", e.what());
+		SetStopping(ToUType(RTMPClientConnection::ErrorCode::FailedToParseData));
+		return;
 	}
 }
 
@@ -228,15 +243,17 @@ void RTMPClientConnection::OnPollOut(int fd)
 			socklen_t len = sizeof(err);
 			if (getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &len) == -1)
 			{
-				if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::GetSockOptError);
-				throw std::runtime_error(FormatString("-RTMPClientConnection::OnPollOut() getsockopt failed [%p]\n", this));
+				Error("-RTMPClientConnection::OnPollOut() getsockopt failed [%p]\n", this);
+				SetStopping(ToUType(RTMPClientConnection::ErrorCode::GetSockOptError));
+				return;
 			}
 
 			//Check status
 			if (err != 0)
 			{
-				if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::GetSockOptError);
-				throw std::runtime_error(FormatString("-RTMPClientConnection::OnPollOut() getsockopt error [%p, errno:%d]\n", this, err));
+				Error("-RTMPClientConnection::OnPollOut() getsockopt error [%p, errno:%d]\n", this, err);
+				SetStopping(ToUType(RTMPClientConnection::ErrorCode::GetSockOptError));
+				return;
 			}
 
 			//Connected
@@ -266,16 +283,9 @@ void RTMPClientConnection::OnPollOut(int fd)
 	OnReadyToTransfer();
 }
 
-void RTMPClientConnection::OnPollError(int fd, const std::string& errorMsg)
+void RTMPClientConnection::OnPollError(int fd, int errorCode)
 {	
-	if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::PollError);
-	throw std::runtime_error("-RTMPClientConnection::OnPollError() Error occurred: " + errorMsg);
-}
-
-void RTMPClientConnection::OnSignallingError(const std::string& errorMsg)
-{	
-	if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::PollError);
-	throw std::runtime_error("-RTMPClientConnection::OnSignallingError() Error occurred: " + errorMsg);
+	SetStopping(ToUType(RTMPClientConnection::ErrorCode::PollError));
 }
 	
 void RTMPClientConnection::SignalWriteNeeded()

@@ -19,7 +19,7 @@ protected:
 	virtual void ProcessReceivedData(const uint8_t* data, size_t size) override;
 	virtual void AddPendingRtmpData(const uint8_t* data, size_t size) override;
 
-	virtual void OnLoopExit() override;
+	virtual void OnLoopExit(int exitCode) override;
 private:
 	TlsClient tls;
 };

@@ -85,7 +85,7 @@ protected:
 	virtual void ProcessReceivedData(const uint8_t* data, size_t size);
 	virtual void AddPendingRtmpData(const uint8_t* data, size_t size);
 	
-	void OnLoopExit() override;
+	void OnLoopExit(int exitCode) override;
 	
 	inline Listener* GetListener() { return listener; }
 	int WriteData(const BYTE* data, const DWORD size);
@@ -94,8 +94,7 @@ protected:
 	std::optional<uint16_t> GetPollEventMask(int fd) const override;
 	void OnPollIn(int fd) override;
 	void OnPollOut(int fd) override;
-	void OnPollError(int fd, const std::string& errorMsg) override;
-	void OnSignallingError(const std::string& errorMsg) override;
+	void OnPollError(int fd, int errorCode) override;
 	
 private:
 	DWORD SerializeChunkData(BYTE* data, const DWORD size);
