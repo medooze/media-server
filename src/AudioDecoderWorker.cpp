@@ -1,6 +1,7 @@
 #include "AudioDecoderWorker.h"
 #include "media.h"
 #include "aac/AACDecoder.h"
+#include "mp3/MP3Decoder.h"
 #include "AudioCodecFactory.h"
 
 AudioDecoderWorker::~AudioDecoderWorker()
@@ -164,13 +165,25 @@ int AudioDecoderWorker::Decode()
 					//Skip
 					continue;
 
-				// If it is aac and we have config
-				if (audioDecoder->type==AudioCodec::AAC && frame->HasCodecConfig())
+				if (frame->HasCodecConfig())
 				{
-					//Convert it to AAC encoder
-					auto aac = static_cast<AACDecoder*>(audioDecoder.get());
-					//Set config there
-					aac->SetConfig(frame->GetCodecConfigData(), frame->GetCodecConfigSize());
+					// If it is aac and we have config
+					if (audioDecoder->type==AudioCodec::AAC)
+					{
+						//Convert it to AAC encoder
+						auto aac = static_cast<AACDecoder*>(audioDecoder.get());
+						//Set config there
+						aac->SetConfig(frame->GetCodecConfigData(), frame->GetCodecConfigSize());
+					}
+					// If it is mp3 and we have config
+					if (audioDecoder->type==AudioCodec::MP3)
+					{
+						//Convert it to MP3 encoder
+						auto mp3 = static_cast<MP3Decoder*>(audioDecoder.get());
+						::Dump(frame->GetCodecConfigData(), frame->GetCodecConfigSize());
+						//Set config there
+						mp3->SetConfig(frame->GetCodecConfigData(), frame->GetCodecConfigSize());
+					}
 				}
 
 				//Update rate
