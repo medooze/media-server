@@ -235,83 +235,47 @@ AudioBuffer::shared AudioPipe::RecBuffer(DWORD frameSize)
 			return {};
 		}
 	}
-	// since number of samples in decoded audio buffer and encoder frame size may differ,
-	// rateBlockBuffer is used to store the leftover. So always read number of samples
-	// from rateBlockBuffer first, and if more samples are needed, then read from queue.
-	AudioBuffer::const_shared frontAudioBuffer;
-	// readSamples: total num samples to read from rateBlockBuffer
-	auto readSamples = std::min(rateBlockBuffer.length(), requiredNumSamples);
-	// needSamples: num samples needed from queue after consuming rateBlockBuffer
-	auto needSamples = requiredNumSamples - readSamples;
-	// numSamples: used to check pts discontinuity/wraparound
-	auto numSamples = static_cast<int16_t>(rateBlockBuffer.length() / numChannels);
+	
+	// Set audio buffer timestamp based on the timestamp of the pending samples or next audio buffer in queue 
+        audioBuffer->SetTimestamp(rateBlockBuffer.length() > 0
+		? rateBlockBufferPTS
+		: queue.front()->GetTimestamp());
 
-	// if rateBlockBuffer has data, recPTS is rateBlockBufferPTS
-	// otherwise, recPTS is timestamp of first audio buffer from the queue
-	auto recPTS = rateBlockBuffer.length() > 0 ? rateBlockBufferPTS : queue.front()->GetTimestamp();
-	// store prevPTS for pts wraparound/discontinuity detection
-	auto prevPTS = recPTS;
+	// Read from rateBlockBuffer
+	auto readedSamples = std::min(rateBlockBuffer.length(), requiredNumSamples);
+	rateBlockBuffer.pop(const_cast<int16_t*>(audioBuffer->GetData()));
 
-	// read whatever in rateBlockBuffer first
-	rateBlockBuffer.pop(const_cast<int16_t*>(audioBuffer->GetData()), readSamples);
-	// update write offset since readSamples already written into the buffer
-	auto offset = readSamples;
-
-	while (queue.length()>0 && needSamples>0)
+	while (queue.length()>0 && readedSamples<=requiredNumSamples)
 	{
-		frontAudioBuffer = queue.front();
-		auto currPlayPTS = frontAudioBuffer->GetTimestamp();
-		auto currPlaySamples = static_cast<int>(frontAudioBuffer->GetNumSamples());
-		// timestamp wraparound
-		if (currPlayPTS < prevPTS)
-		{
-			int diff = currPlayPTS-numSamples;
-			// only need to update rateBlockBufferPTS if ts wraparound happened between rateBlockBuffer and audioBuffers.
-			if(diff>0 && prevPTS == rateBlockBufferPTS && numSamples) 
-			{
-				rateBlockBufferPTS = diff;
-				recPTS = rateBlockBufferPTS;
-			}
-		}
-		// in case of pts discontinuity
-		else if (currPlayPTS > prevPTS + 2*numSamples) 
-			break;
+		//Get reference to first buffer in queue 
+		auto& frontAudioBuffer = queue.front();
+
+		// Update base timestamp
+		rateBlockBufferPTS = frontAudioBuffer->GetTimestamp();
+
+		//The number of samples to read
+		auto samples = std::min(frontAudioBuffer->GetNumSamples(), requiredNumSamples - readedSamples);
 		
-		prevPTS = currPlayPTS;
-		numSamples = currPlaySamples;
-		// num samples to be consumed 
-		auto consumedSamples = std::min(needSamples, static_cast<int>(currPlaySamples*numChannels));
-		audioBuffer->SetSamples((SWORD*)frontAudioBuffer->GetData(), consumedSamples, offset);
-		offset += consumedSamples;
-		needSamples -= frontAudioBuffer->GetNumSamples()*numChannels;
+		// Read from queued buffer
+	        audioBuffer->SetSamples(const_cast<int16_t*>(frontAudioBuffer->GetData()), samples ,readedSamples);
+
+		// If we have not readed all the available samples
+		if (samples<frontAudioBuffer->GetNumSamples()) 
+		{
+			// push leftover to rateBlockBuffer
+			rateBlockBuffer.push((SWORD*)frontAudioBuffer->GetData()+samples, frontAudioBuffer->GetSize()-samples);
+			// update rateBlockBufferPTS
+			rateBlockBufferPTS += samples/numChannels;
+		}
+		// Remove consumed audio buffer from the queue
 		queue.pop_front();
 	}
 
-	audioBuffer->SetTimestamp(recPTS);
-	// pts discontinuity detected
-	if (needSamples > 0)
-	{
-		availableNumSamples -= requiredNumSamples-needSamples;
-		pthread_mutex_unlock(&mutex);
-		// in case of discontinuity, the audio buffer may contain some amount of silence.
-		return audioBuffer;
-	}
-	else
-	{
-		if (frontAudioBuffer)
-		{
-			// used: number of samples that's already written to audio buffer in while loop
-			int used = frontAudioBuffer->GetNumSamples()*numChannels + needSamples;
-			// push leftover to rateBlockBuffer
-			rateBlockBuffer.push((SWORD*)frontAudioBuffer->GetData()+used, -needSamples);
-			// update rateBlockBufferPTS
-			rateBlockBufferPTS = frontAudioBuffer->GetTimestamp() + used/numChannels;
-		}
-		else
-			rateBlockBufferPTS += frameSize;
-	}
-	availableNumSamples -= requiredNumSamples;
+	// Remove readed samples from the total available
+	availableNumSamples -= readedSamples;
+
 	pthread_mutex_unlock(&mutex);
+	
 	return audioBuffer;
 }
 
