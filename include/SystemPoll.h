@@ -16,11 +16,11 @@
 class SystemPoll : public Poll
 {
 public:
-	bool AddFd(PollFd pfd) override;
-	bool RemoveFd(PollFd pfd) override;
+	bool AddFd(PollFd::Category category, int fd) override;
+	bool RemoveFd(PollFd::Category category, int fd) override;
 	void Clear() override;
 	bool Wait(uint32_t timeOutMs) override;
-	bool SetEventMask(PollFd pfd, uint16_t eventMask) override;
+	bool SetEventMask(PollFd::Category category, int fd, uint16_t eventMask) override;
 
 	void ForEachFd(PollFd::Category category, std::function<void(int)> func) override;
 	std::pair<uint16_t, int> GetEvents(PollFd::Category category, int fd) const override;

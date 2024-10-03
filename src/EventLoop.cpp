@@ -466,12 +466,11 @@ const std::chrono::milliseconds EventLoop::Now()
 
 bool EventLoop::AddIOFd(int fd, std::optional<uint16_t> eventMask)
 {
-	Poll::PollFd pfd = {Poll::PollFd::Category::IO, fd};
-	if (!poll->AddFd(pfd)) return false;
+	if (!poll->AddFd(Poll::PollFd::Category::IO, fd)) return false;
 	
 	if (eventMask.has_value())
 	{
-		return poll->SetEventMask(pfd, *eventMask);
+		return poll->SetEventMask(Poll::PollFd::Category::IO, fd, *eventMask);
 	}
 	
 	return true;
@@ -479,7 +478,7 @@ bool EventLoop::AddIOFd(int fd, std::optional<uint16_t> eventMask)
 
 bool EventLoop::RemoveIOFd(int fd)
 {
-	return poll->RemoveFd({Poll::PollFd::Category::IO, fd});
+	return poll->RemoveFd(Poll::PollFd::Category::IO, fd);
 }
 
 void EventLoop::ForEachIOFd(const std::function<void(int)>& func)
@@ -524,7 +523,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 			
 			auto events = GetPollEventMask(fd);
 			if (events)
-				poll->SetEventMask({Poll::PollFd::Category::IO, fd}, *events);
+				poll->SetEventMask(Poll::PollFd::Category::IO, fd, *events);
 		});
 		
 		//Until signaled or one each 10 seconds to prevent deadlocks

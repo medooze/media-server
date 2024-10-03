@@ -34,12 +34,12 @@ bool Poll::Setup()
 		return Error("-EventLoop::Start() | could not start pipe [errno:%d]\n",errno);
 	}
 	
-	if (!AddFd({Poll::PollFd::Category::Signaling, pipe[0]}))
+	if (!AddFd(Poll::PollFd::Category::Signaling, pipe[0]))
 	{
 		return Error("Failed to add signaling fd to event poll\n");
 	}
 	
-	if (!SetEventMask({Poll::PollFd::Category::Signaling, pipe[0]}, Poll::Event::In))
+	if (!SetEventMask(Poll::PollFd::Category::Signaling, pipe[0], Poll::Event::In))
 	{
 		return Error("Failed to set event mask\n");
 	}

@@ -74,14 +74,14 @@ public:
 	 * 
 	 * @return Whether the file descriptor was added successfully
 	 */
-	virtual bool AddFd(PollFd pfd) = 0;
+	virtual bool AddFd(PollFd::Category category, int fd) = 0;
 	
 	/**
 	 * Remove a file descriptor
 	 * 
 	 * @return Whether the file descriptor was removed successfully
 	 */
-	virtual bool RemoveFd(PollFd pfd) = 0;
+	virtual bool RemoveFd(PollFd::Category category, int fd) = 0;
 	
 	/**
 	 * Clear all the file descriptors
@@ -111,7 +111,7 @@ public:
 	 * 
 	 * @return Whether the event mask was set successfully 
 	 */
-	virtual bool SetEventMask(PollFd pfd, uint16_t eventMask) = 0;
+	virtual bool SetEventMask(PollFd::Category category, int fd, uint16_t eventMask) = 0;
 	
 	/**
 	 * Get the waited events of a file descriptor

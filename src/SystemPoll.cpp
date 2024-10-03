@@ -9,13 +9,12 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-bool SystemPoll::AddFd(PollFd pfd)
+bool SystemPoll::AddFd(PollFd::Category category, int fd)
 {
-	assert(pfd.fd != FD_INVALID);
-	if (pfd.fd == FD_INVALID) return false;
+	if (fd == FD_INVALID) return false;
 	
 	pollfd syspfd;
-	syspfd.fd = pfd.fd;
+	syspfd.fd = fd;
 	
 	//Set non blocking so we can get an error when we are closed by end
 	int fsflags = fcntl(syspfd.fd,F_GETFL,0);
@@ -24,7 +23,7 @@ bool SystemPoll::AddFd(PollFd pfd)
 	if (fcntl(syspfd.fd,F_SETFL,fsflags) < 0)
 		return false;
 	
-	pfds.emplace(pfd, syspfd);
+	pfds.emplace(PollFd{category, fd}, syspfd);
 	
 	tempfdsDirty = true;
 	sysfdsDirty = true;
@@ -32,9 +31,9 @@ bool SystemPoll::AddFd(PollFd pfd)
 	return true;
 }
 
-bool SystemPoll::RemoveFd(PollFd pfd)
+bool SystemPoll::RemoveFd(PollFd::Category category, int fd)
 {
-	bool removed = pfds.erase(pfd) > 0;
+	bool removed = pfds.erase({category, fd}) > 0;
 	if (removed)
 	{
 		tempfdsDirty = true;
@@ -78,8 +77,9 @@ void SystemPoll::ForEachFd(PollFd::Category category, std::function<void(int)> f
 	}
 }
 
-bool SystemPoll::SetEventMask(PollFd pfd, uint16_t eventMask)
+bool SystemPoll::SetEventMask(PollFd::Category category, int fd, uint16_t eventMask)
 {
+	PollFd pfd = {category, fd};
 	if (pfds.find(pfd) == pfds.end()) return false;
 	
 	auto& syspfd = pfds[pfd];
