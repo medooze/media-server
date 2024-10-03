@@ -171,10 +171,7 @@ bool EventLoop::StartWithLoop(std::function<void(void)> loop)
 	TRACE_EVENT("eventloop", "EventLoop::Start(loop)");
 	Debug("-EventLoop::Start()\n");
 	
-	if (!poll->Setup())
-	{
-		return Error("Error to setup poll\n");
-	}
+	poll->ClearSignal();
 	
 	//Block signals to avoid exiting on SIGUSR1
 	blocksignals();
@@ -197,7 +194,7 @@ bool EventLoop::StartWithFd(int fd)
 {
 	poll->Clear();
 	
-	return AddIOFd(fd) && Start();
+	return AddFd(fd) && Start();
 }
 
 bool EventLoop::Start()
@@ -210,11 +207,8 @@ bool EventLoop::Start()
 	//Log
 	TRACE_EVENT("eventloop", "EventLoop::Start()");
 	Debug("-EventLoop::Start() [this:%p]\n", this);
-		
-	if (!poll->Setup())
-	{
-		return Error("Error to setup poll\n");
-	}
+	
+	poll->ClearSignal();
 	
 	//Block signals to avoid exiting on SIGUSR1
 	blocksignals();
@@ -464,26 +458,26 @@ const std::chrono::milliseconds EventLoop::Now()
 	return now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
 }
 
-bool EventLoop::AddIOFd(int fd, std::optional<uint16_t> eventMask)
+bool EventLoop::AddFd(int fd, std::optional<uint16_t> eventMask)
 {
-	if (!poll->AddFd(Poll::PollFd::Category::IO, fd)) return false;
+	if (!poll->AddFd(fd)) return false;
 	
 	if (eventMask.has_value())
 	{
-		return poll->SetEventMask(Poll::PollFd::Category::IO, fd, *eventMask);
+		return poll->SetEventMask(fd, *eventMask);
 	}
 	
 	return true;
 }
 
-bool EventLoop::RemoveIOFd(int fd)
+bool EventLoop::RemoveFd(int fd)
 {
-	return poll->RemoveFd(Poll::PollFd::Category::IO, fd);
+	return poll->RemoveFd(fd);
 }
 
-void EventLoop::ForEachIOFd(const std::function<void(int)>& func)
+void EventLoop::ForEachFd(const std::function<void(int)>& func)
 {
-	poll->ForEachFd(Poll::PollFd::Category::IO, [&func](int fd) {
+	poll->ForEachFd([&func](int fd) {
 		func(fd);
 		return std::nullopt;
 	});
@@ -519,11 +513,11 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 	{
 		//TRACE_EVENT("eventloop", "EventLoop::Run::Iteration");
 		
-		poll->ForEachFd(Poll::PollFd::Category::IO, [this](int fd) {
+		poll->ForEachFd([this](int fd) {
 			
 			auto events = GetPollEventMask(fd);
 			if (events)
-				poll->SetEventMask(Poll::PollFd::Category::IO, fd, *events);
+				poll->SetEventMask(fd, *events);
 		});
 		
 		//Until signaled or one each 10 seconds to prevent deadlocks
@@ -544,21 +538,21 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		
 		//UltraDebug("<EventLoop::Run() | poll timeout:%d timers:%d tasks:%d\n",timeout,timers.size(),tasks.size_approx());
 		
-		poll->ForEachFd(Poll::PollFd::Category::Signaling, [this](int fd) {
-			auto [events, error] = poll->GetEvents(Poll::PollFd::Category::Signaling, fd);
-			// Always clear signal
+		auto [events, error] = poll->GetSignallingEvents();
+		
+		if (events != 0 || error != 0)
 			poll->ClearSignal();
-			if (error)
-			{
-				Error("-EventLoop::Run() Error occured on signaling fd: %d\n", error);
-				SetStopping(ToUType(PredefinedExitCode::SignalingError));
-			}
-		});
+			
+		if (error != 0)
+		{
+			Error("-EventLoop::Run() Error occured on signaling fd: %d\n", error);
+			SetStopping(ToUType(PredefinedExitCode::SignalingError));
+		}
 		
 		if (!running) break;
 		
-		poll->ForEachFd(Poll::PollFd::Category::IO, [this](int fd) {
-			auto [events, error] = poll->GetEvents(Poll::PollFd::Category::IO, fd);
+		poll->ForEachFd([this](int fd) {
+			auto [events, error] = poll->GetEvents(fd);
 			if (error)
 			{
 				OnPollError(fd, error);

@@ -45,14 +45,14 @@ public:
 		return *this;
 	}
 
-	bool isValid()
+	bool isValid() const
 	{
 		return (fd!=-1);
 	}
 	/**
 	 * @brief Return stored FD (not checked valid)
 	 */
-	operator int()
+	operator int() const
 	{
 		return fd;
 	}

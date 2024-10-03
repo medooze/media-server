@@ -101,9 +101,9 @@ protected:
 	
 	// Functions to add/remove/iterate file descriptors
 	
-	bool AddIOFd(int fd, std::optional<uint16_t> eventMask = std::nullopt);
-	bool RemoveIOFd(int fd);
-	void ForEachIOFd(const std::function<void(int)>& func);
+	bool AddFd(int fd, std::optional<uint16_t> eventMask = std::nullopt);
+	bool RemoveFd(int fd);
+	void ForEachFd(const std::function<void(int)>& func);
 	
 	/**
 	 * Set stopping. This will trigger the current loop to exit.

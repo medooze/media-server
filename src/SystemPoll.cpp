@@ -9,7 +9,30 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-bool SystemPoll::AddFd(PollFd::Category category, int fd)
+SystemPoll::SystemPoll()
+{
+	if (!AddFd(signalling.GetFd()))
+	{
+		throw std::runtime_error("Failed to add signaling fd to event poll\n");
+	}
+	
+	if (!SetEventMask(signalling.GetFd(), Poll::Event::In))
+	{
+		throw std::runtime_error("Failed to set event mask\n");
+	}
+}
+
+void SystemPoll::Signal()
+{
+	signalling.Signal();
+}
+
+void SystemPoll::ClearSignal()
+{
+	signalling.ClearSignal();
+}
+
+bool SystemPoll::AddFd(int fd)
 {
 	if (fd == FD_INVALID) return false;
 	
@@ -23,7 +46,7 @@ bool SystemPoll::AddFd(PollFd::Category category, int fd)
 	if (fcntl(syspfd.fd,F_SETFL,fsflags) < 0)
 		return false;
 	
-	pfds.emplace(PollFd{category, fd}, syspfd);
+	pfds.emplace(fd, syspfd);
 	
 	tempfdsDirty = true;
 	sysfdsDirty = true;
@@ -31,9 +54,9 @@ bool SystemPoll::AddFd(PollFd::Category category, int fd)
 	return true;
 }
 
-bool SystemPoll::RemoveFd(PollFd::Category category, int fd)
+bool SystemPoll::RemoveFd(int fd)
 {
-	bool removed = pfds.erase({category, fd}) > 0;
+	bool removed = pfds.erase(fd) > 0;
 	if (removed)
 	{
 		tempfdsDirty = true;
@@ -55,7 +78,7 @@ void SystemPoll::Clear()
 }
 
 
-void SystemPoll::ForEachFd(PollFd::Category category, std::function<void(int)> func)
+void SystemPoll::ForEachFd(std::function<void(int)> func)
 {
 	if (tempfdsDirty)
 	{
@@ -70,19 +93,18 @@ void SystemPoll::ForEachFd(PollFd::Category category, std::function<void(int)> f
 	
 	for (auto& fd : tempfds)
 	{
-		if (fd.category == category)
+		if (fd != signalling.GetFd())
 		{
-			func(fd.fd);
+			func(fd);
 		}
 	}
 }
 
-bool SystemPoll::SetEventMask(PollFd::Category category, int fd, uint16_t eventMask)
+bool SystemPoll::SetEventMask(int fd, uint16_t eventMask)
 {
-	PollFd pfd = {category, fd};
-	if (pfds.find(pfd) == pfds.end()) return false;
+	if (pfds.find(fd) == pfds.end()) return false;
 	
-	auto& syspfd = pfds[pfd];
+	auto& syspfd = pfds[fd];
 	syspfd.events = 0;
 	
 	if (eventMask & Event::In)
@@ -100,13 +122,12 @@ bool SystemPoll::SetEventMask(PollFd::Category category, int fd, uint16_t eventM
 	return true;
 }
 
-std::pair<uint16_t, int> SystemPoll::GetEvents(PollFd::Category category, int fd) const
+std::pair<uint16_t, int> SystemPoll::GetEvents(int fd) const
 {
-	PollFd pfd = {category, fd};
-	if (pfds.find(pfd) == pfds.end()) return std::make_pair<>(0, 0);
+	if (pfds.find(fd) == pfds.end()) return std::make_pair<>(0, 0);
 	
 	uint events = 0;
-	uint16_t revents = pfds.at(pfd).revents;
+	uint16_t revents = pfds.at(fd).revents;
 	
 	if ((revents & POLLHUP) || (revents & POLLERR))
 	{
@@ -124,6 +145,11 @@ std::pair<uint16_t, int> SystemPoll::GetEvents(PollFd::Category category, int fd
 	}
 	
 	return std::make_pair<>(events, 0);
+}
+
+std::pair<uint16_t, int> SystemPoll::GetSignallingEvents() const
+{
+	return GetEvents(signalling.GetFd());
 }
 
 bool SystemPoll::Wait(uint32_t timeOutMs)
@@ -155,7 +181,7 @@ bool SystemPoll::Wait(uint32_t timeOutMs)
 	// Copy back
 	for (size_t i = 0; i < syspfds.size(); i++)
 	{
-		assert(indices[i].fd == syspfds[i].fd);
+		assert(indices[i] == syspfds[i].fd);
 		pfds[indices[i]] = syspfds[i];
 	}
 

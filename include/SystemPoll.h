@@ -2,6 +2,7 @@
 #define SYSTEMPOLL_H
 
 #include "Poll.h"
+#include "PollSignalling.h"
 
 #include <sys/poll.h>
 #include <unordered_map>
@@ -16,26 +17,34 @@
 class SystemPoll : public Poll
 {
 public:
-	bool AddFd(PollFd::Category category, int fd) override;
-	bool RemoveFd(PollFd::Category category, int fd) override;
+	SystemPoll();
+
+	void Signal() override;
+	void ClearSignal() override;
+	
+	bool AddFd(int fd) override;
+	bool RemoveFd(int fd) override;
 	void Clear() override;
 	bool Wait(uint32_t timeOutMs) override;
-	bool SetEventMask(PollFd::Category category, int fd, uint16_t eventMask) override;
+	bool SetEventMask(int fd, uint16_t eventMask) override;
 
-	void ForEachFd(PollFd::Category category, std::function<void(int)> func) override;
-	std::pair<uint16_t, int> GetEvents(PollFd::Category category, int fd) const override;
+	void ForEachFd(std::function<void(int)> func) override;
+	std::pair<uint16_t, int> GetEvents(int fd) const override;
+	std::pair<uint16_t, int> GetSignallingEvents() const override;
 	
 private:
-	std::unordered_map<PollFd, pollfd> pfds;
+	std::unordered_map<int, pollfd> pfds;
 	
 	// Cache for constant time complexity
-	bool tempfdsDirty = false;
-	std::vector<PollFd> tempfds;
+	bool tempfdsDirty = true;
+	std::vector<int> tempfds;
 	
 	// Cache for constant time complexity
-	bool sysfdsDirty = false;
+	bool sysfdsDirty = true;
 	std::vector<pollfd> syspfds;
-	std::unordered_map<size_t, PollFd> indices;
+	std::unordered_map<size_t, int> indices;
+	
+	PollSignalling signalling;
 };
 
 #endif
