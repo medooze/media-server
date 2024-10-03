@@ -29,6 +29,9 @@ struct ProgramAssociation : public Serializable
 	
 	/** parse a single PAT entry */
 	static ProgramAssociation Parse(BufferReader& reader);
+
+	/** convenience method: parse a full PSI payload unit containing a PAT (PID = 0) */
+	static std::vector<ProgramAssociation> ParsePayloadUnit(BufferReader& reader);
 };
 
 /** PSI table data for a Program Map Table */

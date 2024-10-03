@@ -267,6 +267,36 @@ ProgramAssociation ProgramAssociation::Parse(BufferReader& reader)
 	return programAssociation;
 }
 
+std::vector<ProgramAssociation> ProgramAssociation::ParsePayloadUnit(BufferReader& reader)
+{
+	auto tables = mpegts::psi::ParsePayloadUnit(reader);
+
+	// FIXME: this is probably too strict
+	// FIXME: maybe check CRCs
+
+	if (tables.size() != 1)
+		throw std::runtime_error("PAT did not contain exactly one table");
+	auto syntax = std::get_if<SyntaxData>(&tables[0].data);
+	if (!(
+		tables[0].tableId == ProgramAssociation::TABLE_ID &&
+		tables[0].privateBit == false &&
+		syntax &&
+		syntax->isCurrent
+	))
+		throw std::runtime_error("malformed PAT table section");
+
+	BufferReader* dataReader = std::get_if<BufferReader>(&syntax->data);
+	if (dataReader == nullptr)
+		throw std::runtime_error("syntax data is not available");
+		
+	std::vector<ProgramAssociation> entries;
+	while (dataReader->GetLeft() > 0)
+		entries.push_back(ProgramAssociation::Parse(*dataReader));
+
+	return entries;
+}
+
+
 void ProgramMap::ElementaryStream::Serialize(BufferWritter& writer) const
 {
 	BitWriter bitwriter(writer, 5);
