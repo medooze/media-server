@@ -33,7 +33,7 @@ void helperTestAudioPipe(const AudioPipeParam& playParam, const AudioPipeParam& 
         for (int i=0;i<numPlayBuffers;i++)
         {
             auto audioBuffer = std::make_shared<AudioBuffer>(playFrameSize, numChannels);
-            audioBuffer->SetSamples(inLoc, playFrameSize);
+            audioBuffer->SetSamples(inLoc, playFrameSize*numChannels);
             audioBuffer->SetTimestamp(playPTS[i]);
             audPipe.PlayBuffer(audioBuffer);
             inLoc += playFrameSize*numChannels;

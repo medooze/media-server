@@ -39,7 +39,7 @@ private:
 	pthread_mutex_t mutex;
 	pthread_cond_t  cond;
 	// track available num samples
-	QWORD availableNumSamples = 0;
+	int availableNumSamples = 0;
 
 	CircularQueue<AudioBuffer::const_shared> queue;
 	//Members

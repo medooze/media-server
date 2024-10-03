@@ -53,7 +53,7 @@ public:
 				interleaved[(i-offset)*numChannels+ch] = (int16_t)(sample * (1 << 15));
 			
 		}
-		audioBuffer->SetSamples(interleaved.data(), numSamples);
+		audioBuffer->SetSamples(interleaved.data(), numSamples*numChannels);
 		return audioBuffer;
 	}
 private:

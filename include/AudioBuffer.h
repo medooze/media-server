@@ -30,10 +30,9 @@ public:
 		if (!in)
 			return Error("AudioBuffer::SetSamples() empty input buffer\n");
 
-		uint16_t totalSamples = numSamples * numChannels;
-		if (offset + totalSamples > pcmBuffer.size())
+		if (numSamples > pcmBuffer.size())
 			return Error("AudioBuffer::SetSamples() not enough buffer size\n");
-		memcpy((int16_t*)pcmBuffer.data()+offset, in, sizeof(int16_t) * totalSamples);
+		memcpy((int16_t*)pcmBuffer.data()+offset, in, sizeof(int16_t) * numSamples);
 		return numSamples;
 	}
 
