@@ -32,9 +32,7 @@
  * The Packetizer uses a cicular queue to store added messages. The limit of the queue size is set during
  * construction. If the queue is full, the earlest message would be dropped.
  * 
- * @tparam T The message type. It must be derived from Serializable.
  */
-template<typename T>
 class Packetizer
 {
 public:
@@ -46,7 +44,6 @@ public:
 	 */
 	Packetizer(size_t maxMessageQueueSize) : messages(maxMessageQueueSize, false), buffer(0)
 	{
-		static_assert(std::is_base_of_v<Serializable, T>);
 	}
 	
 	/**
@@ -60,7 +57,7 @@ public:
 	 * @param message The message to be packetized. Note is is a shared pointer.
 	 * @param forceSeparatePacket Whether the begining of the message must be at begining of a new packet.
 	 */
-	void AddMessage(const std::shared_ptr<T>& message, bool forceSeparatePacket = true)
+	void AddMessage(const std::shared_ptr<Serializable>& message, bool forceSeparatePacket = true)
 	{
 		if (messages.full())
 		{
@@ -91,7 +88,7 @@ public:
 	/**
 	 * Get current message.
 	 */
-	std::shared_ptr<T> GetCurrentMessage() const
+	std::shared_ptr<Serializable> GetCurrentMessage() const
 	{
 		if (!current && !messages.empty())
 			return messages.front().first;
@@ -100,13 +97,13 @@ public:
 	}
 	
 	/**
-	 * Get the next packet and write into the BufferWriter. The Packetizer will try to 
+	 * Write the next packet into the BufferWriter. The Packetizer will try to 
 	 * fill all the availabe space in the writer unless the left bytes of the message is
 	 * less.
 	 * 
 	 * @return size_t The size of written bytes.
 	 */
-	virtual size_t GetNextPacket(BufferWritter& writer)
+	virtual size_t WriteNextPacket(BufferWritter& writer)
 	{
 		size_t bytes = 0;
 		
@@ -161,14 +158,14 @@ public:
 	}
 	
 private:
-	CircularQueue<std::pair<std::shared_ptr<T>, bool>> messages;
+	CircularQueue<std::pair<std::shared_ptr<Serializable>, bool>> messages;
 	
 	Buffer buffer;
 	size_t pos = 0;
 	
 	bool hasData = false;
 	
-	std::shared_ptr<T> current;
+	std::shared_ptr<Serializable> current;
 };
 
 #endif

@@ -26,12 +26,12 @@ struct TestMessage : public Serializable
 	std::array<uint8_t, N> data;
 };
 
-void CheckNextPacketSize(size_t maxPacketSize, size_t expectedNextPacketSize, Packetizer<Serializable>& packetizer, 
+void CheckNextPacketSize(size_t maxPacketSize, size_t expectedNextPacketSize, Packetizer& packetizer, 
 			std::optional<std::vector<uint8_t>> expectedPacketContent = std::nullopt)
 {
 	std::vector<uint8_t> packet(maxPacketSize);
 	BufferWritter writer(packet.data(), maxPacketSize);
-	ASSERT_EQ(expectedNextPacketSize, packetizer.GetNextPacket(writer));
+	ASSERT_EQ(expectedNextPacketSize, packetizer.WriteNextPacket(writer));
 	
 	if (expectedPacketContent)
 	{
@@ -43,7 +43,7 @@ void CheckNextPacketSize(size_t maxPacketSize, size_t expectedNextPacketSize, Pa
 
 TEST(TestPacketizer, TestForceSeparate)
 {
-	Packetizer<Serializable> packetizer(100);
+	Packetizer packetizer(100);
 	
 	packetizer.AddMessage(std::make_shared<TestMessage<12>>());
 	packetizer.AddMessage(std::make_shared<TestMessage<16>>());
@@ -75,7 +75,7 @@ TEST(TestPacketizer, TestForceSeparate)
 
 TEST(TestPacketizer, TestNoForceSeparate)
 {
-	Packetizer<Serializable> packetizer(100);
+	Packetizer packetizer(100);
 	
 	packetizer.AddMessage(std::make_shared<TestMessage<12>>(), false);
 	packetizer.AddMessage(std::make_shared<TestMessage<16>>(), false);
@@ -104,7 +104,7 @@ TEST(TestPacketizer, TestNoForceSeparate)
 
 TEST(TestPacketizer, TestMixed)
 {
-	Packetizer<Serializable> packetizer(100);
+	Packetizer packetizer(100);
 	
 	packetizer.AddMessage(std::make_shared<TestMessage<12>>(), false);
 	packetizer.AddMessage(std::make_shared<TestMessage<16>>(), true);
@@ -122,7 +122,7 @@ TEST(TestPacketizer, TestMixed)
 
 TEST(TestPacketizer, TestMessageEdgeMatchPacket)
 {
-	Packetizer<Serializable> packetizer(100);
+	Packetizer packetizer(100);
 	
 	packetizer.AddMessage(std::make_shared<TestMessage<10>>());
 	packetizer.AddMessage(std::make_shared<TestMessage<20>>());
@@ -143,7 +143,7 @@ TEST(TestPacketizer, TestMessageEdgeMatchPacket)
 
 TEST(TestPacketizer, TestDropMessage)
 {
-	Packetizer<Serializable> packetizer(2);
+	Packetizer packetizer(2);
 	
 	packetizer.AddMessage(std::make_shared<TestMessage<12>>(), false);
 	packetizer.AddMessage(std::make_shared<TestMessage<16>>(), true);
@@ -159,7 +159,7 @@ TEST(TestPacketizer, TestDropMessage)
 
 TEST(TestPacketizer, TestZeroSizeMessage)
 {
-	Packetizer<Serializable> packetizer(2);
+	Packetizer packetizer(2);
 	
 	packetizer.AddMessage(std::make_shared<TestMessage<0>>(), false);
 	
