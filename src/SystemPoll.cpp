@@ -11,12 +11,12 @@
 
 SystemPoll::SystemPoll()
 {
-	if (!AddFd(signalling.GetFd()))
+	if (!SystemPoll::AddFd(signalling.GetFd()))
 	{
 		throw std::runtime_error("Failed to add signaling fd to event poll\n");
 	}
 	
-	if (!SetEventMask(signalling.GetFd(), Poll::Event::In))
+	if (!SystemPoll::SetEventMask(signalling.GetFd(), Poll::Event::In))
 	{
 		throw std::runtime_error("Failed to set event mask\n");
 	}
@@ -72,7 +72,19 @@ void SystemPoll::Clear()
 {
 	if (pfds.empty()) return;
 	
-	pfds.clear();
+	// Clear except the signalling fd
+	for (auto it = pfds.begin(); it != pfds.end();)
+	{
+		if (it->first == signalling.GetFd())
+		{
+			++it;
+		}
+		else
+		{
+			it = pfds.erase(it);
+		}
+	}
+	
 	tempfdsDirty = true;
 	sysfdsDirty = true;
 }
@@ -147,9 +159,17 @@ std::pair<uint16_t, int> SystemPoll::GetEvents(int fd) const
 	return std::make_pair<>(events, 0);
 }
 
-std::pair<uint16_t, int> SystemPoll::GetSignallingEvents() const
+int SystemPoll::GetSignallingError() const
 {
-	return GetEvents(signalling.GetFd());
+	if (pfds.find(signalling.GetFd()) == pfds.end()) return 0;
+	uint16_t revents = pfds.at(signalling.GetFd()).revents;
+	
+	if ((revents & POLLHUP) || (revents & POLLERR))
+	{
+		return errno;
+	}
+	
+	return 0;
 }
 
 bool SystemPoll::Wait(uint32_t timeOutMs)

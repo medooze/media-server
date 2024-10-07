@@ -30,7 +30,7 @@ public:
 
 	void ForEachFd(std::function<void(int)> func) override;
 	std::pair<uint16_t, int> GetEvents(int fd) const override;
-	std::pair<uint16_t, int> GetSignallingEvents() const override;
+	int GetSignallingError() const override;
 	
 private:
 	std::unordered_map<int, pollfd> pfds;

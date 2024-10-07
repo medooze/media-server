@@ -95,12 +95,11 @@ public:
 	virtual std::pair<uint16_t, int> GetEvents(int fd) const = 0;
 	
 	/**
-	 * Get the waited events of the signalling file descriptor
+	 * Get the error code of the signalling file descriptor
 	 * 
-	 * @return The waited events and error code. The events is value OR-ed by multiple Event types. The error code is a non-zero
-	 *         value in case of an error. Zero means no error.
+	 * @return The error code is a non-zero value in case of an error. Zero means no error.
 	 */
-	virtual std::pair<uint16_t, int> GetSignallingEvents() const = 0;
+	virtual int GetSignallingError() const = 0;
 	
 	
 };

@@ -538,15 +538,12 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		
 		//UltraDebug("<EventLoop::Run() | poll timeout:%d timers:%d tasks:%d\n",timeout,timers.size(),tasks.size_approx());
 		
-		auto [events, error] = poll->GetSignallingEvents();
-		
-		if (events != 0 || error != 0)
-			poll->ClearSignal();
-			
+		auto error = poll->GetSignallingError();
 		if (error != 0)
 		{
 			Error("-EventLoop::Run() Error occured on signaling fd: %d\n", error);
 			SetStopping(ToUType(PredefinedExitCode::SignalingError));
+			poll->ClearSignal();
 		}
 		
 		if (!running) break;
