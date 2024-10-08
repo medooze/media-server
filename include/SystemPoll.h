@@ -20,17 +20,15 @@ public:
 	SystemPoll();
 
 	void Signal() override;
-	void ClearSignal() override;
 	
 	bool AddFd(int fd) override;
 	bool RemoveFd(int fd) override;
 	void Clear() override;
-	bool Wait(uint32_t timeOutMs) override;
+	int Wait(uint32_t timeOutMs) override;
 	bool SetEventMask(int fd, uint16_t eventMask) override;
 
 	void ForEachFd(std::function<void(int)> func) override;
 	std::pair<uint16_t, int> GetEvents(int fd) const override;
-	int GetSignallingError() const override;
 	
 private:
 	std::unordered_map<int, pollfd> pfds;

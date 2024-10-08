@@ -27,11 +27,6 @@ void SystemPoll::Signal()
 	signalling.Signal();
 }
 
-void SystemPoll::ClearSignal()
-{
-	signalling.ClearSignal();
-}
-
 bool SystemPoll::AddFd(int fd)
 {
 	if (fd == FD_INVALID) return false;
@@ -159,20 +154,7 @@ std::pair<uint16_t, int> SystemPoll::GetEvents(int fd) const
 	return std::make_pair<>(events, 0);
 }
 
-int SystemPoll::GetSignallingError() const
-{
-	if (pfds.find(signalling.GetFd()) == pfds.end()) return 0;
-	uint16_t revents = pfds.at(signalling.GetFd()).revents;
-	
-	if ((revents & POLLHUP) || (revents & POLLERR))
-	{
-		return errno;
-	}
-	
-	return 0;
-}
-
-bool SystemPoll::Wait(uint32_t timeOutMs)
+int SystemPoll::Wait(uint32_t timeOutMs)
 {
 	if (sysfdsDirty)
 	{
@@ -196,15 +178,29 @@ bool SystemPoll::Wait(uint32_t timeOutMs)
 	
 	// Wait for events
 	if (poll(syspfds.data(), syspfds.size(),timeOutMs) < 0)
-		return false;
+		return errno;
 	
 	// Copy back
 	for (size_t i = 0; i < syspfds.size(); i++)
 	{
+		if (syspfds[i].fd == signalling.GetFd())
+		{
+			auto revents = syspfds[i].revents;
+			if ((revents & POLLHUP) || (revents & POLLERR))
+			{
+				signalling.ClearSignal();
+				return errno;
+			}
+			else if (revents & POLLIN)
+			{
+				signalling.ClearSignal();
+			}
+		}
+		
 		assert(indices[i] == syspfds[i].fd);
 		pfds[indices[i]] = syspfds[i];
 	}
 
-	return true;
+	return 0;
 }
 

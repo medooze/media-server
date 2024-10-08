@@ -40,7 +40,6 @@ public:
 	 * Signaling functions.
 	 */
 	virtual void Signal() = 0;
-	virtual void ClearSignal() = 0;
 	
 	/**
 	 * Add a file descriptor
@@ -66,9 +65,9 @@ public:
 	 * 
 	 * @param timeOutMs The time out, in milliseconds
 	 * 
-	 * @return Whether the polling is failed.
+	 * @return The error code is a non-zero value in case of an error. Zero means no error.
 	 */
-	virtual bool Wait(uint32_t timeOutMs) = 0;
+	virtual int Wait(uint32_t timeOutMs) = 0;
 	
 	/**
 	 * Iterate through all the file descriptors
@@ -93,15 +92,6 @@ public:
 	 *         value in case of an error. Zero means no error.
 	 */
 	virtual std::pair<uint16_t, int> GetEvents(int fd) const = 0;
-	
-	/**
-	 * Get the error code of the signalling file descriptor
-	 * 
-	 * @return The error code is a non-zero value in case of an error. Zero means no error.
-	 */
-	virtual int GetSignallingError() const = 0;
-	
-	
 };
 
 #endif

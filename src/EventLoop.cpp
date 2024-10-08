@@ -171,8 +171,6 @@ bool EventLoop::StartWithLoop(std::function<void(void)> loop)
 	TRACE_EVENT("eventloop", "EventLoop::Start(loop)");
 	Debug("-EventLoop::Start()\n");
 	
-	poll->ClearSignal();
-	
 	//Block signals to avoid exiting on SIGUSR1
 	blocksignals();
 	
@@ -207,8 +205,6 @@ bool EventLoop::Start()
 	//Log
 	TRACE_EVENT("eventloop", "EventLoop::Start()");
 	Debug("-EventLoop::Start() [this:%p]\n", this);
-	
-	poll->ClearSignal();
 	
 	//Block signals to avoid exiting on SIGUSR1
 	blocksignals();
@@ -526,27 +522,17 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		//UltraDebug(">EventLoop::Run() | poll timeout:%d timers:%d tasks:%d size:%d\n",timeout,timers.size(),tasks.size_approx(), sizeof(ufds) / sizeof(pollfd));
 
 		//Wait for events
-		if (!poll->Wait(timeout))
+		if (auto error = poll->Wait(timeout) != 0)
 		{
-			Error("Event poll wait failed.\n");
+			Error("Event poll wait failed. code: %d\n", error);
 			SetStopping(ToUType(PredefinedExitCode::WaitError));
 			break;
 		}
 		
+		if (!running) break;
+		
 		//Update now
 		now = Now();
-		
-		//UltraDebug("<EventLoop::Run() | poll timeout:%d timers:%d tasks:%d\n",timeout,timers.size(),tasks.size_approx());
-		
-		auto error = poll->GetSignallingError();
-		if (error != 0)
-		{
-			Error("-EventLoop::Run() Error occured on signaling fd: %d\n", error);
-			SetStopping(ToUType(PredefinedExitCode::SignalingError));
-			poll->ClearSignal();
-		}
-		
-		if (!running) break;
 		
 		poll->ForEachFd([this](int fd) {
 			auto [events, error] = poll->GetEvents(fd);
