@@ -4,7 +4,6 @@
 #include "Buffer.h"
 #include "BufferWritter.h"
 #include "CircularQueue.h"
-#include "Serializable.h"
 #include "log.h"
 
 #include <stdint.h>
@@ -14,7 +13,7 @@
 #include <cassert>
 
 /**
- * The Packetizer is a generic class to create packets for Serializable messages. It accepts Serializable
+ * The Packetizer is a generic class to create packets for messages. It accepts T
  * messages as input and generate packets as requested. The early added message will be packetized
  * early.
  * 
@@ -33,6 +32,7 @@
  * construction. If the queue is full, the earlest message would be dropped.
  * 
  */
+template<typename T>
 class Packetizer
 {
 public:
@@ -57,7 +57,7 @@ public:
 	 * @param message The message to be packetized. Note is is a shared pointer.
 	 * @param forceSeparatePacket Whether the begining of the message must be at begining of a new packet.
 	 */
-	void AddMessage(const std::shared_ptr<Serializable>& message, bool forceSeparatePacket = true)
+	void AddMessage(const std::shared_ptr<T>& message, bool forceSeparatePacket = true)
 	{
 		if (messages.full())
 		{
@@ -88,7 +88,7 @@ public:
 	/**
 	 * Get current message.
 	 */
-	std::shared_ptr<Serializable> GetCurrentMessage() const
+	std::shared_ptr<T> GetCurrentMessage() const
 	{
 		if (!current && !messages.empty())
 			return messages.front().first;
@@ -122,18 +122,18 @@ public:
 				}
 				
 				// Grap the front message
-				auto [serializable, forceSeparate] = messages.front();
-				current = serializable;
+				auto [msg, forceSeparate] = messages.front();
+				current = msg;
 				
 				// Remove the message
 				(void)messages.pop_front();
 				
 				// Create a new buffer for the message
-				auto sz = serializable->GetSize();
+				auto sz = msg->GetSize();
 				buffer.SetSize(sz);
 				
 				BufferWritter awriter(buffer.GetData(), sz);
-				serializable->Serialize(awriter);
+				msg->Serialize(awriter);
 				assert(sz == awriter.GetLength());
 				
 				pos = 0;
@@ -158,14 +158,14 @@ public:
 	}
 	
 private:
-	CircularQueue<std::pair<std::shared_ptr<Serializable>, bool>> messages;
+	CircularQueue<std::pair<std::shared_ptr<T>, bool>> messages;
 	
 	Buffer buffer;
 	size_t pos = 0;
 	
 	bool hasData = false;
 	
-	std::shared_ptr<Serializable> current;
+	std::shared_ptr<T> current;
 };
 
 #endif
