@@ -6,7 +6,6 @@
 #include <vector>
 #include "BufferReader.h"
 #include "BufferWritter.h"
-#include "mpegts.h"
 
 namespace mpegts
 {

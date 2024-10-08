@@ -1,5 +1,5 @@
-#ifndef PACKETIZER_H
-#define PACKETIZER_H
+#ifndef MESSAGEPACKETIZER_H
+#define MESSAGEPACKETIZER_H
 
 #include "Buffer.h"
 #include "BufferWritter.h"

@@ -1,6 +1,6 @@
 #include "TestCommon.h"
 
-#include "mpegts/Packetizer.h"
+#include "mpegts/MessagePacketizer.h"
 #include "mpegts/Serializable.h"
 
 template<size_t N>
@@ -42,7 +42,7 @@ void CheckNextPacketSize(size_t maxPacketSize, size_t expectedNextPacketSize, Me
 	}
 }
 
-TEST(TestPacketizer, TestForceSeparate)
+TEST(TestMessagePacketizer, TestForceSeparate)
 {
 	MessagePacketizer<Serializable> packetizer(100);
 	
@@ -74,7 +74,7 @@ TEST(TestPacketizer, TestForceSeparate)
 	ASSERT_FALSE(packetizer.HasData());
 }
 
-TEST(TestPacketizer, TestNoForceSeparate)
+TEST(TestMessagePacketizer, TestNoForceSeparate)
 {
 	MessagePacketizer<Serializable> packetizer(100);
 	
@@ -103,7 +103,7 @@ TEST(TestPacketizer, TestNoForceSeparate)
 	ASSERT_FALSE(packetizer.HasData());
 }
 
-TEST(TestPacketizer, TestMixed)
+TEST(TestMessagePacketizer, TestMixed)
 {
 	MessagePacketizer<Serializable> packetizer(100);
 	
@@ -121,7 +121,7 @@ TEST(TestPacketizer, TestMixed)
 	ASSERT_NO_FATAL_FAILURE(CheckNextPacketSize(10, 0, packetizer));
 }
 
-TEST(TestPacketizer, TestMessageEdgeMatchPacket)
+TEST(TestMessagePacketizer, TestMessageEdgeMatchPacket)
 {
 	MessagePacketizer<Serializable> packetizer(100);
 	
@@ -142,7 +142,7 @@ TEST(TestPacketizer, TestMessageEdgeMatchPacket)
 	ASSERT_FALSE(packetizer.HasData());
 }
 
-TEST(TestPacketizer, TestDropMessage)
+TEST(TestMessagePacketizer, TestDropMessage)
 {
 	MessagePacketizer<Serializable> packetizer(2);
 	
@@ -158,7 +158,7 @@ TEST(TestPacketizer, TestDropMessage)
 	ASSERT_NO_FATAL_FAILURE(CheckNextPacketSize(10, 0, packetizer));
 }
 
-TEST(TestPacketizer, TestZeroSizeMessage)
+TEST(TestMessagePacketizer, TestZeroSizeMessage)
 {
 	MessagePacketizer<Serializable> packetizer(2);
 	
