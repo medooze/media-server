@@ -4,7 +4,6 @@
 #include <optional>
 #include "BufferReader.h"
 #include "BufferWritter.h"
-#include "Serializable.h"
 
 namespace mpegts
 {
@@ -19,7 +18,7 @@ enum AdaptationFieldControl
 	AdaptationFiedlAndPayload = 3
 };
 
-struct Header : public Serializable
+struct Header
  {
 	uint8_t  syncByte = 0;
 	bool	 transportErrorIndication = false;
@@ -31,15 +30,15 @@ struct Header : public Serializable
 	uint8_t  continuityCounter = 0;
 
 	// Serializable overrides
-	void Serialize(BufferWritter& writer) const override;
-	size_t GetSize() const override;
+	void Serialize(BufferWritter& writer) const;
+	size_t GetSize() const;
 	
 	static Header Parse(BufferReader& reader);
 	
 	void Dump() const;
 };
 
-struct AdaptationField : public Serializable
+struct AdaptationField
 {
 	bool discontinuityIndicator = false;
 	bool randomAccessIndicator = false;
@@ -53,8 +52,8 @@ struct AdaptationField : public Serializable
 	std::optional<uint64_t> pcr;
 	
 	// Serializable overrides
-	void Serialize(BufferWritter& writer) const override;
-	size_t GetSize() const override;
+	void Serialize(BufferWritter& writer) const;
+	size_t GetSize() const;
 	
 	static AdaptationField Parse(BufferReader& reader);
 };
@@ -95,20 +94,20 @@ enum PTSDTSIndicator
 	Both = 3
 };
 
-struct Header : public Serializable
+struct Header
 {
 	uint32_t packetStartCodePrefix = 0x000001;
 	uint8_t  streamId = 0;
 	uint16_t packetLength = 0;
 
 	// Serializable overrides
-	void Serialize(BufferWritter& writer) const override;
-	size_t GetSize() const override;
+	void Serialize(BufferWritter& writer) const;
+	size_t GetSize() const;
 	
 	static Header Parse(BufferReader& reader);
 };
 
-struct HeaderExtension : public Serializable
+struct HeaderExtension
 {
 	uint8_t markerBits = 0x2;
 	uint8_t scramblingControl = 0;
@@ -130,8 +129,8 @@ struct HeaderExtension : public Serializable
 	size_t	stuffingCount = 0;
 
 	// Serializable overrides
-	void Serialize(BufferWritter& writer) const override;
-	size_t GetSize() const override;
+	void Serialize(BufferWritter& writer) const;
+	size_t GetSize() const;
 	
 	static HeaderExtension Parse(BufferReader& reader);
 };
@@ -155,7 +154,7 @@ enum AudioObjectType
 	AACLC		= 2
 };
 
-struct Header : public Serializable
+struct Header
 {
 	uint16_t syncWord = 0xfff;
 	bool     version = false;
@@ -175,8 +174,8 @@ struct Header : public Serializable
 	uint16_t crc = 0;
 
 	// Serializable overrides
-	void Serialize(BufferWritter& writer) const override;
-	size_t GetSize() const override;
+	void Serialize(BufferWritter& writer) const;
+	size_t GetSize() const;
 	
 	static Header Parse(BufferReader& reader);
 };
