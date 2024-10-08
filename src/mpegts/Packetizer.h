@@ -13,7 +13,7 @@
 #include <cassert>
 
 /**
- * The Packetizer is a generic class to create packets for messages. It accepts T
+ * The MessagePacketizer is a generic class to create packets for messages. It accepts T
  * messages as input and generate packets as requested. The early added message will be packetized
  * early.
  * 
@@ -28,12 +28,12 @@
  * next packet. Otherwise, the bytes would be appended to current packet if current packet is partly
  * filled.
  * 
- * The Packetizer uses a cicular queue to store added messages. The limit of the queue size is set during
+ * The MessagePacketizer uses a cicular queue to store added messages. The limit of the queue size is set during
  * construction. If the queue is full, the earlest message would be dropped.
  * 
  */
 template<typename T>
-class Packetizer
+class MessagePacketizer
 {
 public:
 	
@@ -42,14 +42,14 @@ public:
 	 * 
 	 * @param maxMessageQueueSize The max number of messages the packetizer can keep before they are packetized.
 	 */
-	Packetizer(size_t maxMessageQueueSize) : messages(maxMessageQueueSize, false), buffer(0)
+	MessagePacketizer(size_t maxMessageQueueSize) : messages(maxMessageQueueSize, false), buffer(0)
 	{
 	}
 	
 	/**
 	 * Destructor
 	 */
-	virtual ~Packetizer() = default;
+	virtual ~MessagePacketizer() = default;
 	
 	/**
 	 * Add message for packetization.
@@ -61,7 +61,7 @@ public:
 	{
 		if (messages.full())
 		{
-			Warning("-Packetizer::AddMessage Message queue full. Dropping oldest message.");
+			Warning("-MessagePacketizer::AddMessage Message queue full. Dropping oldest message.");
 		}
 		
 		messages.emplace_back(message, forceSeparatePacket);
@@ -97,7 +97,7 @@ public:
 	}
 	
 	/**
-	 * Write the next packet into the BufferWriter. The Packetizer will try to 
+	 * Write the next packet into the BufferWriter. The MessagePacketizer will try to 
 	 * fill all the availabe space in the writer unless the left bytes of the message is
 	 * less.
 	 * 
