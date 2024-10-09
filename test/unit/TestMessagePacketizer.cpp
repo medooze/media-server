@@ -1,7 +1,25 @@
 #include "TestCommon.h"
 
 #include "mpegts/MessagePacketizer.h"
-#include "mpegts/Serializable.h"
+
+namespace {
+	
+class Serializable
+{
+public:
+	virtual ~Serializable() = default;
+	
+	/**
+	 * Serialize the content
+	 */
+	virtual void Serialize(BufferWritter& writer) const = 0;
+	
+	/**
+	 * The memory size needed for encoding. It must match
+	 * the exact buffer used after encoding the content.
+	 */
+	virtual size_t GetSize() const = 0;
+};
 
 template<size_t N>
 struct TestMessage : public Serializable
@@ -26,6 +44,8 @@ struct TestMessage : public Serializable
 	
 	std::array<uint8_t, N> data;
 };
+
+}
 
 void CheckNextPacketSize(size_t maxPacketSize, size_t expectedNextPacketSize, MessagePacketizer<Serializable>& packetizer, 
 			std::optional<std::vector<uint8_t>> expectedPacketContent = std::nullopt)

@@ -29,7 +29,6 @@ struct Header
 	AdaptationFieldControl adaptationFieldControl = AdaptationFieldControl::Reserved;
 	uint8_t  continuityCounter = 0;
 
-	// Serializable overrides
 	void Serialize(BufferWritter& writer) const;
 	size_t GetSize() const;
 	
@@ -51,7 +50,6 @@ struct AdaptationField
 	
 	std::optional<uint64_t> pcr;
 	
-	// Serializable overrides
 	void Serialize(BufferWritter& writer) const;
 	size_t GetSize() const;
 	
@@ -99,8 +97,7 @@ struct Header
 	uint32_t packetStartCodePrefix = 0x000001;
 	uint8_t  streamId = 0;
 	uint16_t packetLength = 0;
-
-	// Serializable overrides
+	
 	void Serialize(BufferWritter& writer) const;
 	size_t GetSize() const;
 	
@@ -128,7 +125,6 @@ struct HeaderExtension
 	
 	size_t	stuffingCount = 0;
 
-	// Serializable overrides
 	void Serialize(BufferWritter& writer) const;
 	size_t GetSize() const;
 	
@@ -173,7 +169,6 @@ struct Header
 	uint8_t  numberOfFramesMinus1 = 0;
 	uint16_t crc = 0;
 
-	// Serializable overrides
 	void Serialize(BufferWritter& writer) const;
 	size_t GetSize() const;
 	
