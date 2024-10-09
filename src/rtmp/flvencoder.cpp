@@ -8,7 +8,7 @@
 #include "rtmp/flvencoder.h"
 #include "rtmp/flv.h"
 #include "flv1/flv1codec.h"
-#include "audioencoder.h"
+#include "AudioEncoderWorker.h"
 #include "aac/aacconfig.h"
 #include "AudioCodecFactory.h"
 #include "VideoCodecFactory.h"

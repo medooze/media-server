@@ -10,9 +10,9 @@
 #include "log.h"
 #include "tools.h"
 #include "audio.h"
-#include "audioencoder.h"
+#include "AudioEncoderWorker.h"
 #include "AudioCodecFactory.h"
-#include "opus/opusconfig.h"
+#include "opus/OpusEncoder.h"
 
 
 /**********************************
@@ -159,9 +159,8 @@ int AudioEncoderWorker::StopEncoding()
 *******************************************/
 int AudioEncoderWorker::Encode()
 {
-	SWORD 		recBuffer[2048];
 	AudioEncoder* 	codec;
-	QWORD		frameTime=0;
+	QWORD		presentationTimestamp = 0;
 
 	Log(">AudioEncoderWorker::Encode()\n");
 
@@ -175,41 +174,16 @@ int AudioEncoderWorker::Encode()
 	
 	//Update codec
 	rate = codec->TrySetRate(rate, numChannels);
-	
-	//Create audio frame
-	AudioFrame frame(audioCodec);
-
-	//If it is opus
-	if (audioCodec == AudioCodec::OPUS)
-	{
-		//Create opus config
-		OpusConfig config(numChannels, rate);
-
-		//Serialize config and add it to frame
-		frame.AllocateCodecConfig(config.GetSize());
-		config.Serialize(frame.GetCodecConfigData(), frame.GetCodecConfigSize());
-	}
-	
-	//Disable shared buffer on clone
-	frame.DisableSharedBuffer();
-
-	//Set rate
-	frame.SetClockRate(rate);
-
 	//Empezamos a grabar
 	audioInput->StartRecording(rate);
 
 	//Mientras tengamos que capturar
 	while(encodingAudio)
 	{
-		//Capturamos 20ms
-		if (audioInput->RecBuffer(recBuffer,codec->numFrameSamples)==0)
-			//Skip and probably exit
+		auto audioBuffer = audioInput->RecBuffer(codec->numFrameSamples);
+		if(!audioBuffer)
 			continue;
-
-		//Incrementamos el tiempo de envio
-		frameTime += codec->numFrameSamples;
-
+		
 		//If we have a different channel count
 		if (numChannels != audioInput->GetNumChannels())
 		{
@@ -217,49 +191,39 @@ int AudioEncoderWorker::Encode()
 			numChannels = audioInput->GetNumChannels();
 			//Set new channel count on codec
 			codec->TrySetRate(rate, numChannels);
-
-			//If it is opus
+			
 			if (audioCodec == AudioCodec::OPUS)
 			{
-				//Create opus config
-				OpusConfig config(numChannels,rate);
-
-				//Serialize config and add it to frame
-				frame.AllocateCodecConfig(config.GetSize());
-				config.Serialize(frame.GetCodecConfigData(), frame.GetCodecConfigSize());
+				//Convert it to Opus encoder
+				auto opusEnc = static_cast<OpusEncoder*>(codec);
+				//Set config there
+				opusEnc->SetConfig(rate, numChannels);
 			}
 		}
-
 		//Lo codificamos
-		int len = codec->Encode(recBuffer,codec->numFrameSamples,frame.GetData(),frame.GetMaxMediaLength());
-
+		AudioFrame::shared frame = codec->Encode(audioBuffer);
 		//Comprobamos que ha sido correcto
-		if(len<=0)
+		if(!frame)
 		{
 			Log("-AudioEncoderWorker::Encode() | Error encoding audio\n");
 			continue;
 		}
-
-		//Set frame length
-		frame.SetLength(len);
 		
+		frame->SetClockRate(rate);
 		//Set frame timestamp
-		frame.SetTimestamp(frameTime);
-		//Set frame timestamp
-		frame.SetSenderTime(frameTime * 1000 / codec->GetClockRate());
+		frame->SetTimestamp(presentationTimestamp);
+		frame->SetSenderTime(presentationTimestamp * 1000 / codec->GetClockRate());
 		//Set encoded time
-		frame.SetTime(getTime()/1000);
+		frame->SetTime(getTime()/1000);
 		//Set frame duration
-		frame.SetDuration(codec->numFrameSamples);
+		frame->SetDuration(codec->numFrameSamples);
 		//Set number of channels
-		frame.SetNumChannels(numChannels);
-
+		frame->SetNumChannels(numChannels);
 		//Clear rtp
-		frame.ClearRTPPacketizationInfo();
-			
+		frame->ClearRTPPacketizationInfo();
 		//Add rtp packet
-		frame.AddRtpPacket(0,len,NULL,0);
-		 
+		frame->AddRtpPacket(0,frame->GetLength(),NULL,0);
+		presentationTimestamp+=codec->numFrameSamples;
 		//Lock
 		pthread_mutex_lock(&mutex);
 
@@ -269,7 +233,7 @@ int AudioEncoderWorker::Encode()
 			//If was not null
 			if (listener)
 				//Call listener
-				listener->onMediaFrame(frame);
+				listener->onMediaFrame(*frame);
 		}
 
 		//unlock
@@ -286,7 +250,7 @@ int AudioEncoderWorker::Encode()
 	delete codec;
 
 	//Salimos
-        Log("<AudioEncoderWorker::Encode()\n");
+    Log("<AudioEncoderWorker::Encode()\n");
 	
 	return 1;
 }

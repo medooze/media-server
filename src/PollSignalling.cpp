@@ -1,20 +1,21 @@
-#include "Poll.h"
+#include "PollSignalling.h"
+
 #include "log.h"
 
 #include <sys/eventfd.h>
-#include <thread>
 
-bool Poll::Setup()
+
+PollSignalling::PollSignalling()
 {
-	if (pipeFds[0].isValid() && pipeFds[1].isValid()) return true;
-	
 	int pipe[2] = {FD_INVALID, FD_INVALID};
 	
 #if __APPLE__
 	//Create pipe
 	if (::pipe(pipe)==-1)
+	{
 		//Error
-		return false;
+		throw std::runtime_error("Failed to create pipe");
+	}
 	
 	//Set non blocking
 	fcntl(pipe[0], F_SETFL , O_NONBLOCK);
@@ -31,28 +32,16 @@ bool Poll::Setup()
 	if (pipe[0]==FD_INVALID || pipe[1]==FD_INVALID)
 	{
 		//Error
-		return Error("-EventLoop::Start() | could not start pipe [errno:%d]\n",errno);
-	}
-	
-	if (!AddFd(Poll::PollFd::Category::Signaling, pipe[0]))
-	{
-		return Error("Failed to add signaling fd to event poll\n");
-	}
-	
-	if (!SetEventMask(Poll::PollFd::Category::Signaling, pipe[0], Poll::Event::In))
-	{
-		return Error("Failed to set event mask\n");
+		Error("-PollSignalling::PollSignalling | could not start pipe [errno:%d]\n",errno);
+		throw std::runtime_error("Failed to create pipe");
 	}
 	
 	//We are not signaled anymore
 	signaled.clear();
-	
-	return true;
 }
 
-void Poll::Signal()
-{
-	//UltraDebug("-EventLoop::Signal()\r\n");
+void PollSignalling::Signal()
+{	
 	uint64_t one = 1;
 
 	if (signaled.test_and_set() || !pipeFds[1].isValid())
@@ -62,13 +51,12 @@ void Poll::Signal()
 	//We have signaled it above
 	//worst case scenario is that race happens between this to points
 	//and that we signal it twice
-
 	
 	//Write to tbe pipe, and assign to one to avoid warning in compile time
 	one = write(pipeFds[1],(uint8_t*)&one,sizeof(one));
 }
 
-void Poll::ClearSignal()
+void PollSignalling::ClearSignal()
 {
 	if (pipeFds[0].isValid())
 	{
@@ -79,6 +67,7 @@ void Poll::ClearSignal()
 			//DO nothing
 		}
 	}
+	
 	//We are not signaled anymore
 	signaled.clear();
 }

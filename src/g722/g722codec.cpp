@@ -15,6 +15,7 @@
 #include "log.h"
 
 G722Encoder::G722Encoder(const Properties &properties)
+	: audioFrame(std::make_shared<AudioFrame>(AudioCodec::G722))
 {
 	///Set type
 	type = AudioCodec::G722;
@@ -22,11 +23,17 @@ G722Encoder::G722Encoder(const Properties &properties)
 	numFrameSamples = 20 * 16;
 	//Init encoder
 	g722_encode_init(&encoder,64000, 2);
+	audioFrame->DisableSharedBuffer();
 }
 
-int G722Encoder::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
+AudioFrame::shared G722Encoder::Encode(const AudioBuffer::const_shared& audioBuffer)
 {
-	return g722_encode(&encoder,out,in,inLen);
+	const SWORD *in = audioBuffer->GetData();
+	int inLen = audioBuffer->GetNumSamples() * audioBuffer->GetNumChannels();
+	if(!in || inLen<=0) return nullptr;
+	int len = g722_encode(&encoder,audioFrame->GetData(), in, inLen);
+	audioFrame->SetLength(len);
+	return audioFrame;
 }
 
 G722Decoder::G722Decoder()
@@ -39,11 +46,26 @@ G722Decoder::G722Decoder()
 	g722_decode_init(&decoder, 64000, 2);
 }
 
-
-int G722Decoder::Decode(const AudioFrame::const_shared& audioFrame, SWORD* out,int outLen)
+int G722Decoder::Decode(const AudioFrame::const_shared& audioFrame)
 {
-	int inLen = audioFrame->GetLength();
-	const uint8_t* in = audioFrame->GetData();
-	return g722_decode(&decoder,out,in,inLen);
+	auto inLen = audioFrame->GetLength();
+	uint8_t* in =  const_cast<uint8_t*>(audioFrame->GetData());
+	if(!in || !inLen) 
+		return 0;
+
+	auto audioBuffer = std::make_shared<AudioBuffer>(inLen, 1);
+
+	g722_decode(&decoder, (SWORD*)audioBuffer->GetData(), in, inLen);
+	audioBufferQueue.push(std::move(audioBuffer));
+	return 1;
 }
 
+AudioBuffer::shared G722Decoder::GetDecodedAudioFrame()
+{
+	if(audioBufferQueue.empty())
+		return {};
+
+	auto audioBuffer = audioBufferQueue.front();
+	audioBufferQueue.pop();
+	return audioBuffer;
+}

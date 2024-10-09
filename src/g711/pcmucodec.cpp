@@ -4,7 +4,8 @@
 
 #define NUMFRAMES 160
 
-PCMUEncoder::PCMUEncoder(const Properties &properties)
+PCMUEncoder::PCMUEncoder(const Properties &properties) 
+	: audioFrame(std::make_shared<AudioFrame>(AudioCodec::PCMU))
 {
 	type=AudioCodec::PCMU;
 	numFrameSamples=NUMFRAMES;
@@ -24,31 +25,47 @@ PCMUDecoder::~PCMUDecoder()
 {
 }
 
-int PCMUEncoder::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
+AudioFrame::shared PCMUEncoder::Encode(const AudioBuffer::const_shared& audioBuffer)
+{
+	const SWORD *in = audioBuffer->GetData();
+	int inLen = audioBuffer->GetNumSamples() * audioBuffer->GetNumChannels();
+	if(!in || inLen<=0) return nullptr;
+	for (int j = 0; j < inLen ;j++)
+	{
+		uint8_t ulaw = linear2ulaw(in[j]);
+		audioFrame->AppendMedia(&ulaw, 1); 
+	}
+	audioFrame->SetLength(inLen);
+	return audioFrame;
+}
+
+int PCMUDecoder::Decode(const AudioFrame::const_shared& audioFrame)
 {
 	//Comprobamos las longitudes
-	if (outLen<inLen)
-		return 0;
-
-	//Y codificamos
-	for (int j = 0; j< inLen ;j++)
-		out[j]=linear2ulaw(in[j]);
-
-	return inLen;
-}
-
-int PCMUDecoder::Decode(const AudioFrame::const_shared& audioFrame, SWORD* out,int outLen)
-{
-	// Comprobamos las longitudes
 	// inLen: compressed data length in bytes/samples one byte per sample for g711a, outLen: pcm data size in samples
-	int inLen = audioFrame->GetLength();
-	const uint8_t* in = audioFrame->GetData();
-	if (outLen<inLen || !in)
+	auto inLen = audioFrame->GetLength();
+	uint8_t* in = const_cast<uint8_t*>(audioFrame->GetData());
+	if (!in || !inLen)
 		return 0;
-
-	//Decodificamos
-	for (int j = 0; j< inLen ;j++)
-		out[j]=ulaw2linear(in[j]);
-
-	return inLen;	
+	auto audioBuffer = std::make_shared<AudioBuffer>(inLen, 1);
+	for (int j = 0; j< inLen;j++)
+	{
+		if(audioBuffer->SetSampleAt(j, ulaw2linear(*in)))
+			in++;
+		else	
+			return 0;
+	}
+	audioBufferQueue.push(std::move(audioBuffer));
+	return 1;	
 }
+
+AudioBuffer::shared PCMUDecoder::GetDecodedAudioFrame()
+{
+	if(audioBufferQueue.empty())
+		return {};
+
+	auto audioBuffer = audioBufferQueue.front();
+	audioBufferQueue.pop();
+	return audioBuffer;
+}
+

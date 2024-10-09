@@ -19,6 +19,7 @@
 #include "WrapExtender.h"
 
 class RTPStreamTransponder :
+	public TimeServiceWrapper<RTPStreamTransponder>,
 	public RTPIncomingMediaStream::Listener,
 	public RTPOutgoingSourceGroup::Listener
 {
@@ -26,8 +27,13 @@ public:
 	static constexpr uint64_t NoFrameNum = std::numeric_limits<uint64_t>::max();
 	static constexpr uint32_t NoSeqNum = std::numeric_limits<uint32_t>::max();
 	static constexpr uint64_t NoTimestamp = std::numeric_limits<uint64_t>::max();
-public:
+
+protected:
+	// Private constructor to prevent creating without TimeServiceWrapper::Create() factory
+	friend class TimeServiceWrapper<RTPStreamTransponder>;
 	RTPStreamTransponder(const RTPOutgoingSourceGroup::shared& outgoing,const RTPSender::shared& sender);
+
+public:
 	virtual ~RTPStreamTransponder();
 
 	void ResetIncoming();
@@ -55,9 +61,10 @@ public:
 protected:
 	void RequestPLI();
 
-private:
-	TimeService& timeService;
+	//Async
+	void onRTPAsync(std::chrono::milliseconds now, const RTPIncomingMediaStream* stream, const RTPPacket::shared& packet);
 
+private:
 	RTPOutgoingSourceGroup::shared  outgoing;
 	RTPSender::shared		sender;
 	RTPIncomingMediaStream::shared  incoming;
@@ -103,7 +110,6 @@ private:
 	uint64_t lastFrameNumber	= NoFrameNum;
 
 	RTPPacket::shared	h264Parameters;
-	
 };
 
 #endif /* RTPSTREAMTRANSPONDER_H */

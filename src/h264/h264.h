@@ -3,17 +3,14 @@
 #include "config.h"
 #include "math.h"
 #include "H26xNal.h"
-#include "bitstream/BitReader.h"
 
 class H264SeqParameterSet
 {
 public:
 	bool Decode(const BYTE* buffer,DWORD bufferSize)
 	{
-		//SHould be done otherway, like modifying the BitReader to escape the input NAL, but anyway.. duplicate memory
-		Buffer escaped = NalUnescapeRbsp(buffer, bufferSize);
-		BufferReader reader(escaped);
-		BitReader r(reader);
+		RbspReader reader(buffer, bufferSize);
+		RbspBitReader r(reader);
 
 		try {
 			//Read SPS
@@ -27,10 +24,10 @@ public:
 		
 			//Check profile
 			if(profile_idc==100 || profile_idc==110 || profile_idc==122 || profile_idc==244 || profile_idc==44 || 
-				profile_idc==83 || profile_idc==86 || profile_idc==118 || profile_idc==128 || profile_idc==138 || profile_idc==139 || 
-				profile_idc==134 || profile_idc==135)
+				profile_idc==83 || profile_idc==86 || profile_idc==118 || profile_idc==128 || profile_idc==138 || 
+				profile_idc==139 || profile_idc==134 || profile_idc==135)
 			{
-				auto chroma_format_idc = r.GetExpGolomb();
+				chroma_format_idc = r.GetExpGolomb();
 
 				if( chroma_format_idc == 3 )
 				{
@@ -113,6 +110,7 @@ public:
 		//OK
 		return true;
 	}
+
 public:
 	DWORD GetWidth()	{ return ((pic_width_in_mbs_minus1 +1)*16) - frame_crop_right_offset *2 - frame_crop_left_offset *2; }
 	DWORD GetHeight()	{ return ((2 - frame_mbs_only_flag)* (pic_height_in_map_units_minus1 +1) * 16) - frame_crop_bottom_offset*2 - frame_crop_top_offset*2; }
@@ -139,6 +137,7 @@ public:
 		Debug("\toffset_for_top_to_bottom_field=%d\n",		offset_for_top_to_bottom_field);
 		Debug("\tnum_ref_frames_in_pic_order_cnt_cycle=%u\n",	num_ref_frames_in_pic_order_cnt_cycle);
 		Debug("\tnum_ref_frames=%u\n",				num_ref_frames);
+		Debug("\tchroma_format_idc=%u\n",				chroma_format_idc);
 		Debug("\tgaps_in_frame_num_value_allowed_flag=%u\n",	gaps_in_frame_num_value_allowed_flag);
 		Debug("\tpic_width_in_mbs_minus1=%u\n",			pic_width_in_mbs_minus1);
 		Debug("\tpic_height_in_map_units_minus1=%u\n",		pic_height_in_map_units_minus1);
@@ -153,7 +152,6 @@ public:
 		Debug("\tseparate_colour_plane_flag=%u\n",		separate_colour_plane_flag);
 		Debug("/]\n");
 	}
-private:
 	BYTE			profile_idc = 0;
 	bool			constraint_set0_flag = false;
 	bool			constraint_set1_flag = false;
@@ -165,11 +163,12 @@ private:
 	BYTE			pic_order_cnt_type = 0;
 	BYTE			log2_max_pic_order_cnt_lsb_minus4 = 0;
 	bool			delta_pic_order_always_zero_flag = false;
-	int			offset_for_non_ref_pic = 0;
-	int			offset_for_top_to_bottom_field = 0;
+	int			    offset_for_non_ref_pic = 0;
+	int			    offset_for_top_to_bottom_field = 0;
 	BYTE			num_ref_frames_in_pic_order_cnt_cycle = 0;
 	std::vector<int>	offset_for_ref_frame;
 	DWORD			num_ref_frames = 0;
+	DWORD			chroma_format_idc = 0;
 	bool			gaps_in_frame_num_value_allowed_flag = false;
 	DWORD			pic_width_in_mbs_minus1 = 0;
 	DWORD			pic_height_in_map_units_minus1 = 0;
@@ -190,10 +189,8 @@ class H264PictureParameterSet
 public:
 	bool Decode(const BYTE* buffer,DWORD bufferSize)
 	{
-		//SHould be done otherway, like modifying the BitReader to escape the input NAL, but anyway.. duplicate memory
-		Buffer escaped = NalUnescapeRbsp(buffer, bufferSize);
-		BufferReader reader(escaped);
-		BitReader r(reader);
+		RbspReader reader(buffer, bufferSize);
+		RbspBitReader r(reader);
 
 		try
 		{
@@ -258,6 +255,7 @@ public:
 		//OK
 		return true;
 	}
+
 public:
 	void Dump() const
 	{
@@ -283,7 +281,6 @@ public:
 		Debug("\tredundant_pic_cnt_present_flag=%u\n",		redundant_pic_cnt_present_flag);
 		Debug("/]\n");
 	}
-private:
 	BYTE			pic_parameter_set_id = 0;
 	BYTE			seq_parameter_set_id = 0;
 	bool			entropy_coding_mode_flag = false;
@@ -306,7 +303,7 @@ private:
 	int			chroma_qp_index_offset = 0;
 	bool			deblocking_filter_control_present_flag = false;
 	bool			constrained_intra_pred_flag = false;
-	bool			redundant_pic_cnt_present_flag = false;
+	bool			redundant_pic_cnt_present_flag = false;	
 };
 
 class H264SliceHeader
@@ -315,10 +312,8 @@ public:
 
 	bool Decode(const BYTE* buffer, DWORD bufferSize, const H264SeqParameterSet& sps)
 	{	
-		//SHould be done otherway, like modifying the BitReader to escape the input NAL, but anyway.. duplicate memory
-		Buffer escaped = NalUnescapeRbsp(buffer, bufferSize);
-		BufferReader reader(escaped);
-		BitReader r(reader);
+		RbspReader reader(buffer, bufferSize);
+		RbspBitReader r(reader);
 		
 		try
 		{

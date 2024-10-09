@@ -535,6 +535,22 @@ inline void SyncWriteUint128(__uint128_t *dst, __uint128_t value)
 }
 
 /**
+ * Convert timestamp from one clock rate to another
+ * 
+ * @param ts The input timestamp
+ * @param originalRate The clock rate of the input timestamp
+ * @param targetRate The target clock rate
+ * 
+ * @return The timestamp basing on the target clock rate
+ */
+template<typename T>
+static constexpr T ConvertTimestampClockRate(T ts, uint64_t originalRate, uint64_t targetRate)
+{
+	static_assert(sizeof(T) >= 8);
+	return originalRate == targetRate ? ts : (ts * T(targetRate) / T(originalRate));
+}
+
+/**
  * @brief Format string
  * 
  * @param fmt Format with specificers
@@ -546,7 +562,10 @@ inline std::string FormatString(const char* fmt, ...)
 	va_list ap;
 	va_start(ap, fmt);
 	auto sz = std::vsnprintf(nullptr, 0, fmt, ap);
+	va_end(ap);
+	
 	std::vector<char> tmp(sz + 1);
+	va_start(ap, fmt);
 	sz = std::vsnprintf(tmp.data(), tmp.size(), fmt, ap);
 	va_end(ap);
 	

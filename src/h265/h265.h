@@ -7,7 +7,7 @@
 #include "config.h"
 #include "math.h"
 #include "log.h"
-#include "bitstream/BitReader.h"
+#include "h264/H26xNal.h"
 
 /**
  * Table 7-1 – NAL unit	type codes and NAL unit	type classes in	T-REC-H.265-201802
@@ -216,7 +216,7 @@ public:
 		}
 	}
 
-	bool Decode(BitReader& r);
+	bool Decode(RbspBitReader& r);
 	// getter
 	BYTE GetProfileSpace() const { return profile_space; }
 	BYTE GetProfileIdc() const { return profile_idc; }
@@ -282,7 +282,7 @@ class H265ProfileTierLevel
 {
 public:
 	H265ProfileTierLevel();
-	bool Decode(BitReader& r, bool profilePresentFlag, BYTE	maxNumSubLayersMinus1);
+	bool Decode(RbspBitReader& r, bool profilePresentFlag, BYTE	maxNumSubLayersMinus1);
 	BYTE GetGeneralProfileSpace() const { return general_profile_tier_level.GetProfileSpace(); }
 	BYTE GetGeneralProfileIdc() const { return general_profile_tier_level.GetProfileIdc(); }
 	bool GetGeneralTierFlag() const { return general_profile_tier_level.GetTierFlag(); }

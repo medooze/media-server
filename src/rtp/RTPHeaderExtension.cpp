@@ -1,4 +1,4 @@
-#include "rtp/RTPHeaderExtension.h"
+ #include "rtp/RTPHeaderExtension.h"
 #include "log.h"
 
 #include <cmath>
@@ -502,11 +502,17 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 		//ERROR
 		return Warning("-RTPHeaderExtension::Serialize() | Not enought size [size:%d]\n", size);
 
-	//TODO:: Check max id 
-	
-
 	//Try with 1 byte header length first
 	int headerLength = 1;
+
+	//Check if any of the ids is too big
+	if (hasRId && rid.length() > 0x0f)
+		headerLength = 2;
+	else if (hasRepairedId && repairedId.length() > 0x0f)
+		headerLength = 2;
+	else if (hasMediaStreamId && mid.length() > 0x0f)
+		headerLength = 2;
+			
 
 	//Write the header later
 	DWORD len = 4;

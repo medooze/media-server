@@ -1,10 +1,10 @@
 #include "TestCommon.h"
-#include "audiodecoder.h"
+#include "AudioDecoderWorker.h"
 #include "AudioPipe.h"
-#include "./helper/audioAVPacketGenerator.h"
-#include <future>
+#include "./helper/TestAudioDecodingHelper.h"
 
 static constexpr int AAC_FRAME_SIZE = 1024;
+
 
 TEST(TestAACCodec, AACDecode)
 {
@@ -22,7 +22,7 @@ TEST(TestAACCodec, AACDecode)
 		sampleFmt,
 		channelLayout,
 		AV_CODEC_ID_AAC};
-	AudioAVPacketGenerator avGenerator(params, numSamples, freqInHz, sampleRate);
+	AudioPacketGenerator avGenerator(params, numSamples, freqInHz, sampleRate);
 
 	if(avGenerator.IsValidSampleFormat(sampleFmt))
 	{
@@ -32,7 +32,6 @@ TEST(TestAACCodec, AACDecode)
 		int numDecodedSamples = 0;
 		const uint8_t config[5] = {0x11, 0x90, 0x56, 0xe5, 0x00};
 		AudioCodec::Type type = AudioCodec::GetCodecForName("AAC");
-
 		// generate encoded packets to feed to audioDecoder
 		std::queue<AVPacket*> inputPackets = avGenerator.GenerateAVPackets(amplitude);
 		// create a dummy packet to avoid deadlock situation, used to signal pthread cond variable in audioPipe.PlayBuffer() called in decoding process
@@ -50,32 +49,35 @@ TEST(TestAACCodec, AACDecode)
 		// pushing audio frame through worker.onMediaFrame() has run asynchronously, 
 		// otherwise deadlock would occur due to indefinite wait pthread cond variable in audio pipe
 		auto fut = std::async(std::launch::async, [&] {
+			int pts = 0;
 			for(int i=0;i<numPackets;i++)
 			{
 				auto packet = inputPackets.front();
 				auto frame = std::make_unique<AudioFrame>(type);
+				frame->SetTimestamp(pts);
 				frame->SetNumChannels(numChannels);
 				frame->SetClockRate(params.sampleRate);
 				frame->AppendMedia(packet->data, packet->size);
 				worker.onMediaFrame(*frame);
+				pts += AAC_FRAME_SIZE;
 				av_packet_free(&packet);
 				inputPackets.pop();
 			};
-
 			auto frame = std::make_unique<AudioFrame>(type);
 			frame->AppendMedia(dummy->data, dummy->size);
 			worker.onMediaFrame(*frame);
-			
 		});
+
 		for (int i = 0; i < numPackets; ++i)
 		{
-			int len = audPipe.RecBuffer(outLoc, AAC_FRAME_SIZE);
+			auto audioBuffer = audPipe.RecBuffer(AAC_FRAME_SIZE);
+			memcpy(outLoc, (SWORD*)audioBuffer->GetData(), AAC_FRAME_SIZE*sizeof(int16_t)*numChannels);
 			outLoc+=AAC_FRAME_SIZE*numChannels;
-			numDecodedSamples+=len;
+			numDecodedSamples+=(audioBuffer->GetNumSamples());
 		}
 
 		ASSERT_EQ(numDecodedSamples, (numAACFrames+1)*AAC_FRAME_SIZE) << "decoded samples and expected num decoded samples are of unequal length";
-		double channel[numDecodedSamples];
+		float channel[numDecodedSamples];
 		for(int ch = 0; ch < numChannels; ++ch)
 		{
 			for(int i=0;i<numDecodedSamples;++i)

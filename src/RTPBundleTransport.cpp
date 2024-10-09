@@ -80,7 +80,7 @@ void RTPBundleTransport::SetRawTx(int32_t ifindex, unsigned int sndbuf, bool ski
 	if (skipQdisc && setsockopt(fd, SOL_PACKET, PACKET_QDISC_BYPASS, &skipQdiscInt, sizeof(skipQdiscInt)) < 0)
 		throw std::system_error(std::error_code(errno, std::system_category()), "failed setting QDISC_BYPASS");
 
-	loop.Async([=, fd = std::move(fd)](std::chrono::milliseconds) {
+	loop.AsyncUnsafe([=, fd = std::move(fd)](std::chrono::milliseconds) {
 		loop.SetRawTx(fd, header, defaultRoute);
 	});
 }
@@ -88,7 +88,7 @@ void RTPBundleTransport::SetRawTx(int32_t ifindex, unsigned int sndbuf, bool ski
 
 void RTPBundleTransport::RTPBundleTransport::ClearRawTx()
 {
-	loop.Async([=](std::chrono::milliseconds) { 
+	loop.AsyncUnsafe([=](std::chrono::milliseconds) { 
 		loop.ClearRawTx(); 
 	}); 
 }
@@ -146,7 +146,7 @@ RTPBundleTransport::Connection::shared RTPBundleTransport::AddICETransport(const
 	}
 	
 	//Create new ICE transport
-	auto transport = std::make_shared<DTLSICETransport>(this,loop,loop.GetPacketPool());
+	auto transport = DTLSICETransport::Create(this,loop,loop.GetPacketPool());
 	
 	//Set SRTP protection profiles
 	std::string profiles = properties.GetProperty("srtpProtectionProfiles","");
@@ -169,7 +169,7 @@ RTPBundleTransport::Connection::shared RTPBundleTransport::AddICETransport(const
 	auto connection = std::make_shared<Connection>(username,transport,properties.GetProperty("disableSTUNKeepAlive", false));
 	
 	//Synchronized
-	loop.Async([=](auto now){
+	loop.AsyncUnsafe([=](auto now){
 		//Add it
 		connections[username] = connection;
 		//Start it
@@ -186,7 +186,7 @@ int RTPBundleTransport::RemoveICETransport(const std::string &username)
 	Log("-RTPBundleTransport::RemoveICETransport() [username:%s]\n",username.c_str());
   
 	//Synchronized
-	loop.Async([=](auto now){
+	loop.AsyncUnsafe([=](auto now){
 
 		//Get transport
 		auto connectionIterator = connections.find(username);
@@ -244,7 +244,7 @@ bool RTPBundleTransport::RestartICETransport(const std::string& username, const 
 	}
 
 	//Synchronized
-	loop.Async([=](auto now) {
+	loop.AsyncUnsafe([=](auto now) {
 
 		//Get transport
 		auto connectionIterator = connections.find(username);
@@ -350,7 +350,7 @@ int RTPBundleTransport::Init()
 		//Start receiving
 		loop.StartWithFd(socket);
 		//Create ice timer
-		iceTimer = loop.CreateTimer([=](std::chrono::milliseconds now){ this->onTimer(now); });
+		iceTimer = loop.CreateTimerUnsafe([=](std::chrono::milliseconds now){ this->onTimer(now); });
 		//Set name for debug
 		iceTimer->SetName("RTPBundleTransport - ice");
 		//Done
@@ -424,7 +424,7 @@ int RTPBundleTransport::Init(int port)
 	loop.StartWithFd(socket);
 	
 	//Create ice timer
-	iceTimer = loop.CreateTimer([=](std::chrono::milliseconds now){ this->onTimer(now); });
+	iceTimer = loop.CreateTimerUnsafe([=](std::chrono::milliseconds now){ this->onTimer(now); });
 	//Set name for debug
 	iceTimer->SetName("RTPBundleTransport - ice");
 
@@ -724,7 +724,7 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 void RTPBundleTransport::SetCandidateRawTxData(const std::string& ip, uint16_t port, uint32_t selfAddr, const std::string& dstLladdr)
 {
 	PacketHeader::FlowRoutingInfo rawTxData = { selfAddr, MacAddress::Parse(dstLladdr) };
-	loop.Async([=](auto now){
+	loop.AsyncUnsafe([=](auto now){
 		std::string remote = ip + ":" + std::to_string(port);
 
 		auto it = candidates.find(remote);
@@ -748,7 +748,7 @@ int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const cha
 	auto ip = std::string(host);
 	
 	//Execute Sync
-	loop.Async([=](auto now){
+	loop.AsyncUnsafe([=](auto now){
 		//Check if we have an ICE transport for that username
 		auto it = connections.find(username);
 

@@ -3,11 +3,11 @@
 #include "g711/g711codec.h"
 #include "gsm/gsmcodec.h"
 #include "speex/speexcodec.h"
-#include "opus/opusencoder.h"
-#include "opus/opusdecoder.h"
+#include "opus/OpusEncoder.h"
+#include "opus/OpusDecoder.h"
 #include "g722/g722codec.h"
-#include "aac/aacencoder.h"
-#include "aac/aacdecoder.h"
+#include "aac/AACEncoder.h"
+#include "aac/AACDecoder.h"
 #include "mp3/MP3Decoder.h"
 
 

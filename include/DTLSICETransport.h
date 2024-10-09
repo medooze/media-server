@@ -37,7 +37,8 @@ class DTLSICETransport :
 	public RTPSender,
 	public RTPReceiver,
 	public DTLSConnection::Listener,
-	public ICERemoteCandidate::Listener
+	public ICERemoteCandidate::Listener,
+	public TimeServiceWrapper<DTLSICETransport>
 {
 public:
 	using shared = std::shared_ptr<DTLSICETransport>;
@@ -68,8 +69,12 @@ public:
 		virtual int Send(const ICERemoteCandidate *candiadte, Packet&& buffer, const std::optional<std::function<void(std::chrono::milliseconds)>>& callback = std::nullopt) = 0;
 	};
 
-public:
+private:
+	// Private constructor to prevent creating without TimeServiceWrapper::Create() factory
+	friend class TimeServiceWrapper<DTLSICETransport>;
 	DTLSICETransport(Sender *sender,TimeService& timeService, ObjectPool<Packet>& packetPool);
+
+public:
 	virtual ~DTLSICETransport();
 	
 	void Start();
@@ -126,8 +131,6 @@ public:
 	
 	DWORD GetRTT() const { return rtt; }
 	
-	TimeService& GetTimeService() { return timeService; }
-	
 	void SetListener(const Listener::shared& listener);
 
 private:
@@ -162,12 +165,11 @@ private:
 	
 private:
 	Sender*		sender = nullptr;
-	TimeService&	timeService;
 	ObjectPool<Packet>& packetPool;
 	datachannels::impl::Endpoint endpoint;
 	datachannels::Endpoint::Options dcOptions;
 	Listener::shared listener;
-	DTLSConnection	dtls;
+	std::shared_ptr<DTLSConnection>	dtls;
 	DTLSState	state = DTLSState::New;
 	Maps		sendMaps;
 	Maps		recvMaps;

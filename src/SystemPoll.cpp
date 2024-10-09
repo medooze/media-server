@@ -1,6 +1,7 @@
 #include "SystemPoll.h"
 #include "config.h"
 #include "tools.h"
+#include "log.h"
 
 #include <cassert>
 #include <sys/poll.h>
@@ -9,9 +10,30 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-bool SystemPoll::AddFd(PollFd::Category category, int fd)
+SystemPoll::SystemPoll()
 {
-	if (fd == FD_INVALID) return false;
+	if (!SystemPoll::AddFd(signalling.GetFd()))
+	{
+		throw std::runtime_error("Failed to add signaling fd to event poll\n");
+	}
+	
+	if (!SystemPoll::SetEventMask(signalling.GetFd(), Poll::Event::In))
+	{
+		throw std::runtime_error("Failed to set event mask\n");
+	}
+}
+
+void SystemPoll::Signal()
+{
+	signalling.Signal();
+}
+
+bool SystemPoll::AddFd(int fd)
+{
+	if (fd == FD_INVALID)
+	{
+		return Error("-SystemPoll::AddFd() | Invalid fd\n");
+	}
 	
 	pollfd syspfd;
 	syspfd.fd = fd;
@@ -20,10 +42,10 @@ bool SystemPoll::AddFd(PollFd::Category category, int fd)
 	int fsflags = fcntl(syspfd.fd,F_GETFL,0);
 	fsflags |= O_NONBLOCK;
 	
-	if (fcntl(syspfd.fd,F_SETFL,fsflags) < 0)
-		return false;
+	if (auto error = fcntl(syspfd.fd,F_SETFL,fsflags) < 0)
+		return Error("-SystemPoll::AddFd() | Failed to set flag: fd: %d, error: %d\n", syspfd.fd, error);
 	
-	pfds.emplace(PollFd{category, fd}, syspfd);
+	pfds.emplace(fd, syspfd);
 	
 	tempfdsDirty = true;
 	sysfdsDirty = true;
@@ -31,9 +53,9 @@ bool SystemPoll::AddFd(PollFd::Category category, int fd)
 	return true;
 }
 
-bool SystemPoll::RemoveFd(PollFd::Category category, int fd)
+bool SystemPoll::RemoveFd(int fd)
 {
-	bool removed = pfds.erase({category, fd}) > 0;
+	bool removed = pfds.erase(fd) > 0;
 	if (removed)
 	{
 		tempfdsDirty = true;
@@ -42,20 +64,32 @@ bool SystemPoll::RemoveFd(PollFd::Category category, int fd)
 		return true;
 	}
 	
-	return false;
+	return Error("-SystemPoll::RemoveFd() | Failed to erase fd: %d\n", fd);
 }
 
 void SystemPoll::Clear()
 {
 	if (pfds.empty()) return;
 	
-	pfds.clear();
+	// Clear except the signalling fd
+	for (auto it = pfds.begin(); it != pfds.end();)
+	{
+		if (it->first == signalling.GetFd())
+		{
+			++it;
+		}
+		else
+		{
+			it = pfds.erase(it);
+		}
+	}
+	
 	tempfdsDirty = true;
 	sysfdsDirty = true;
 }
 
 
-void SystemPoll::ForEachFd(PollFd::Category category, std::function<void(int)> func)
+void SystemPoll::ForEachFd(std::function<void(int)> func)
 {
 	if (tempfdsDirty)
 	{
@@ -70,19 +104,18 @@ void SystemPoll::ForEachFd(PollFd::Category category, std::function<void(int)> f
 	
 	for (auto& fd : tempfds)
 	{
-		if (fd.category == category)
+		if (fd != signalling.GetFd())
 		{
-			func(fd.fd);
+			func(fd);
 		}
 	}
 }
 
-bool SystemPoll::SetEventMask(PollFd::Category category, int fd, uint16_t eventMask)
+bool SystemPoll::SetEventMask(int fd, uint16_t eventMask)
 {
-	PollFd pfd = {category, fd};
-	if (pfds.find(pfd) == pfds.end()) return false;
+	if (pfds.find(fd) == pfds.end())return Error("-SystemPoll::SetEventMask() | fd is not found\n");
 	
-	auto& syspfd = pfds[pfd];
+	auto& syspfd = pfds[fd];
 	syspfd.events = 0;
 	
 	if (eventMask & Event::In)
@@ -100,13 +133,12 @@ bool SystemPoll::SetEventMask(PollFd::Category category, int fd, uint16_t eventM
 	return true;
 }
 
-std::pair<uint16_t, int> SystemPoll::GetEvents(PollFd::Category category, int fd) const
+std::pair<uint16_t, int> SystemPoll::GetEvents(int fd) const
 {
-	PollFd pfd = {category, fd};
-	if (pfds.find(pfd) == pfds.end()) return std::make_pair<>(0, 0);
+	if (pfds.find(fd) == pfds.end()) return std::make_pair<>(0, 0);
 	
 	uint events = 0;
-	uint16_t revents = pfds.at(pfd).revents;
+	uint16_t revents = pfds.at(fd).revents;
 	
 	if ((revents & POLLHUP) || (revents & POLLERR))
 	{
@@ -126,7 +158,7 @@ std::pair<uint16_t, int> SystemPoll::GetEvents(PollFd::Category category, int fd
 	return std::make_pair<>(events, 0);
 }
 
-bool SystemPoll::Wait(uint32_t timeOutMs)
+int SystemPoll::Wait(uint32_t timeOutMs)
 {
 	if (sysfdsDirty)
 	{
@@ -150,15 +182,29 @@ bool SystemPoll::Wait(uint32_t timeOutMs)
 	
 	// Wait for events
 	if (poll(syspfds.data(), syspfds.size(),timeOutMs) < 0)
-		return false;
+		return errno;
 	
 	// Copy back
 	for (size_t i = 0; i < syspfds.size(); i++)
 	{
-		assert(indices[i].fd == syspfds[i].fd);
+		if (syspfds[i].fd == signalling.GetFd())
+		{
+			auto revents = syspfds[i].revents;
+			if ((revents & POLLHUP) || (revents & POLLERR))
+			{
+				signalling.ClearSignal();
+				return errno;
+			}
+			else if (revents & POLLIN)
+			{
+				signalling.ClearSignal();
+			}
+		}
+		
+		assert(indices[i] == syspfds[i].fd);
 		pfds[indices[i]] = syspfds[i];
 	}
 
-	return true;
+	return 0;
 }
 

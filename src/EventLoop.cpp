@@ -171,11 +171,6 @@ bool EventLoop::StartWithLoop(std::function<void(void)> loop)
 	TRACE_EVENT("eventloop", "EventLoop::Start(loop)");
 	Debug("-EventLoop::Start()\n");
 	
-	if (!poll->Setup())
-	{
-		return Error("Error to setup poll\n");
-	}
-	
 	//Block signals to avoid exiting on SIGUSR1
 	blocksignals();
 	
@@ -197,7 +192,7 @@ bool EventLoop::StartWithFd(int fd)
 {
 	poll->Clear();
 	
-	return AddIOFd(fd) && Start();
+	return AddFd(fd) && Start();
 }
 
 bool EventLoop::Start()
@@ -210,11 +205,6 @@ bool EventLoop::Start()
 	//Log
 	TRACE_EVENT("eventloop", "EventLoop::Start()");
 	Debug("-EventLoop::Start() [this:%p]\n", this);
-		
-	if (!poll->Setup())
-	{
-		return Error("Error to setup poll\n");
-	}
 	
 	//Block signals to avoid exiting on SIGUSR1
 	blocksignals();
@@ -263,7 +253,7 @@ bool EventLoop::Stop()
 	
 }
 
-void EventLoop::Async(const std::function<void(std::chrono::milliseconds)>& func)
+void EventLoop::AsyncUnsafe(const std::function<void(std::chrono::milliseconds)>& func)
 {
 	//UltraDebug(">EventLoop::Async()\n");
 
@@ -286,7 +276,7 @@ void EventLoop::Async(const std::function<void(std::chrono::milliseconds)>& func
 	//UltraDebug("<EventLoop::Async()\n");
 }
 
-void EventLoop::Async(const std::function<void(std::chrono::milliseconds)>& func, const std::function<void(std::chrono::milliseconds)>& callback)
+void EventLoop::AsyncUnsafe(const std::function<void(std::chrono::milliseconds)>& func, const std::function<void(std::chrono::milliseconds)>& callback)
 {
 	//UltraDebug(">EventLoop::Async()\n");
 
@@ -311,7 +301,7 @@ void EventLoop::Async(const std::function<void(std::chrono::milliseconds)>& func
 }
 
 
-std::future<void> EventLoop::Future(const std::function<void(std::chrono::milliseconds)>& func)
+std::future<void> EventLoop::FutureUnsafe(const std::function<void(std::chrono::milliseconds)>& func)
 {
 	//UltraDebug(">EventLoop::Future()\n");
 	
@@ -319,7 +309,7 @@ std::future<void> EventLoop::Future(const std::function<void(std::chrono::millis
 	auto promise = std::make_shared<std::promise<void>>();
 
 	//Add an async with callback
-	Async(func, [=](std::chrono::milliseconds) {
+	AsyncUnsafe(func, [=](std::chrono::milliseconds) {
 		//Resolve promise on callbak
 		promise->set_value();
 	});
@@ -330,7 +320,7 @@ std::future<void> EventLoop::Future(const std::function<void(std::chrono::millis
 	return promise->get_future();;
 }
 
-Timer::shared EventLoop::CreateTimer(const std::function<void(std::chrono::milliseconds)>& callback)
+Timer::shared EventLoop::CreateTimerUnsafe(const std::function<void(std::chrono::milliseconds)>& callback)
 {
 	//Create timer without scheduling it
 	auto timer = std::make_shared<TimerImpl>(*this,0ms,callback);
@@ -338,13 +328,13 @@ Timer::shared EventLoop::CreateTimer(const std::function<void(std::chrono::milli
 	return std::static_pointer_cast<Timer>(timer);
 }
 
-Timer::shared EventLoop::CreateTimer(const std::chrono::milliseconds& ms, const std::function<void(std::chrono::milliseconds)>& callback)
+Timer::shared EventLoop::CreateTimerUnsafe(const std::chrono::milliseconds& ms, const std::function<void(std::chrono::milliseconds)>& callback)
 {
 	//Timer without repeat
-	return CreateTimer(ms,0ms,callback);
+	return CreateTimerUnsafe(ms,0ms,callback);
 }
 
-Timer::shared EventLoop::CreateTimer(const std::chrono::milliseconds& ms, const std::chrono::milliseconds& repeat, const std::function<void(std::chrono::milliseconds)>& callback)
+Timer::shared EventLoop::CreateTimerUnsafe(const std::chrono::milliseconds& ms, const std::chrono::milliseconds& repeat, const std::function<void(std::chrono::milliseconds)>& callback)
 {
 	//UltraDebug(">EventLoop::CreateTimer() | CreateTimer in %u\n", ms.count());
 
@@ -355,7 +345,7 @@ Timer::shared EventLoop::CreateTimer(const std::chrono::milliseconds& ms, const 
 	auto next = this->Now() + ms;
 	
 	//Add it async
-	Async([this,timer,next](auto now){
+	AsyncUnsafe([this,timer,next](auto now){
 		//Set next tick
 		timer->next = next;
 
@@ -370,7 +360,7 @@ Timer::shared EventLoop::CreateTimer(const std::chrono::milliseconds& ms, const 
 void EventLoop::TimerImpl::Cancel()
 {
 	//Add it async
-	loop.Async([timer = shared_from_this()](auto now){
+	loop.AsyncUnsafe([timer = shared_from_this()](auto now){
 		//Remove us
 		timer->loop.CancelTimer(timer);
 	});
@@ -384,7 +374,7 @@ void EventLoop::TimerImpl::Again(const std::chrono::milliseconds& ms)
 	auto next = loop.Now() + ms;
 	
 	//Reschedule it async
-	loop.Async([timer = shared_from_this(),next](auto now){
+	loop.AsyncUnsafe([timer = shared_from_this(),next](auto now){
 		//Remove us
 		timer->loop.CancelTimer(timer);
 
@@ -411,7 +401,7 @@ void EventLoop::TimerImpl::Reschedule(const std::chrono::milliseconds& ms, const
 	auto next = loop.Now() + ms;
 
 	//Reschedule it async
-	loop.Async([timer = shared_from_this(), next, repeat](auto now){
+	loop.AsyncUnsafe([timer = shared_from_this(), next, repeat](auto now){
 		//Remove us
 		timer->loop.CancelTimer(timer);
 
@@ -464,26 +454,26 @@ const std::chrono::milliseconds EventLoop::Now()
 	return now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
 }
 
-bool EventLoop::AddIOFd(int fd, std::optional<uint16_t> eventMask)
+bool EventLoop::AddFd(int fd, std::optional<uint16_t> eventMask)
 {
-	if (!poll->AddFd(Poll::PollFd::Category::IO, fd)) return false;
+	if (!poll->AddFd(fd)) return false;
 	
 	if (eventMask.has_value())
 	{
-		return poll->SetEventMask(Poll::PollFd::Category::IO, fd, *eventMask);
+		return poll->SetEventMask(fd, *eventMask);
 	}
 	
 	return true;
 }
 
-bool EventLoop::RemoveIOFd(int fd)
+bool EventLoop::RemoveFd(int fd)
 {
-	return poll->RemoveFd(Poll::PollFd::Category::IO, fd);
+	return poll->RemoveFd(fd);
 }
 
-void EventLoop::ForEachIOFd(const std::function<void(int)>& func)
+void EventLoop::ForEachFd(const std::function<void(int)>& func)
 {
-	poll->ForEachFd(Poll::PollFd::Category::IO, [&func](int fd) {
+	poll->ForEachFd([&func](int fd) {
 		func(fd);
 		return std::nullopt;
 	});
@@ -519,11 +509,11 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 	{
 		//TRACE_EVENT("eventloop", "EventLoop::Run::Iteration");
 		
-		poll->ForEachFd(Poll::PollFd::Category::IO, [this](int fd) {
+		poll->ForEachFd([this](int fd) {
 			
 			auto events = GetPollEventMask(fd);
 			if (events)
-				poll->SetEventMask(Poll::PollFd::Category::IO, fd, *events);
+				poll->SetEventMask(fd, *events);
 		});
 		
 		//Until signaled or one each 10 seconds to prevent deadlocks
@@ -532,33 +522,20 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		//UltraDebug(">EventLoop::Run() | poll timeout:%d timers:%d tasks:%d size:%d\n",timeout,timers.size(),tasks.size_approx(), sizeof(ufds) / sizeof(pollfd));
 
 		//Wait for events
-		if (!poll->Wait(timeout))
+		if (auto error = poll->Wait(timeout) != 0)
 		{
-			Error("Event poll wait failed.\n");
+			Error("Event poll wait failed. code: %d\n", error);
 			SetStopping(ToUType(PredefinedExitCode::WaitError));
 			break;
 		}
 		
+		if (!running) break;
+		
 		//Update now
 		now = Now();
 		
-		//UltraDebug("<EventLoop::Run() | poll timeout:%d timers:%d tasks:%d\n",timeout,timers.size(),tasks.size_approx());
-		
-		poll->ForEachFd(Poll::PollFd::Category::Signaling, [this](int fd) {
-			auto [events, error] = poll->GetEvents(Poll::PollFd::Category::Signaling, fd);
-			// Always clear signal
-			poll->ClearSignal();
-			if (error)
-			{
-				Error("-EventLoop::Run() Error occured on signaling fd: %d\n", error);
-				SetStopping(ToUType(PredefinedExitCode::SignalingError));
-			}
-		});
-		
-		if (!running) break;
-		
-		poll->ForEachFd(Poll::PollFd::Category::IO, [this](int fd) {
-			auto [events, error] = poll->GetEvents(Poll::PollFd::Category::IO, fd);
+		poll->ForEachFd([this](int fd) {
+			auto [events, error] = poll->GetEvents(fd);
 			if (error)
 			{
 				OnPollError(fd, error);

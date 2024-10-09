@@ -105,7 +105,7 @@ private:
 	NetEventLoop rtcpLoop;
 
 	datachannels::impl::Endpoint endpoint;
-	DTLSConnection dtls;
+	std::shared_ptr<DTLSConnection> dtls;
 	bool	encript;
 	bool	decript;
 	srtp_t	send;

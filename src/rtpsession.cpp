@@ -31,8 +31,8 @@
 **************************/
 RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) :
 	transport(this),
-	send(new RTPOutgoingSourceGroup(media, transport.GetTimeService())),
-	recv(new RTPIncomingSourceGroup(media, transport.GetTimeService()))
+	send(RTPOutgoingSourceGroup::Create(media, transport.GetTimeService())),
+	recv(RTPIncomingSourceGroup::Create(media, transport.GetTimeService()))
 {
 	//Store listener
 	this->listener = listener;
@@ -840,6 +840,8 @@ void RTPSession::onRTCPPacket(const BYTE* buffer, DWORD size)
 						break;
 					case RTCPRTPFeedback::TransportWideFeedbackMessage:
 						break;
+					default:
+						break;
 				}
 				break;
 			}
@@ -898,7 +900,7 @@ void RTPSession::onRTCPPacket(const BYTE* buffer, DWORD size)
 							}
 						}
 						break;
-					case RTCPPayloadFeedback::UNKNOWN:
+					default:
 						break;
 				}
 				break;
@@ -1048,7 +1050,7 @@ int RTPSession::RequestFPU()
 	
 	Debug("-RTPSession::RequestFPU()\n");
 	//Execute on the event loop thread and wait
-	transport.GetTimeService().Sync([=](auto now){
+	transport.GetTimeService().SyncUnsafe([=](auto now){
 		//Reset pacekts
 		recv->ResetPackets();
 	});
