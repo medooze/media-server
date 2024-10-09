@@ -28,7 +28,7 @@ PCMUDecoder::~PCMUDecoder()
 AudioFrame::shared PCMUEncoder::Encode(const AudioBuffer::const_shared& audioBuffer)
 {
 	const SWORD *in = audioBuffer->GetData();
-	int inLen = audioBuffer->GetNumSamples() * audioBuffer->GetNumChannels();
+	int inLen = audioBuffer->GetNumSamples();
 	if(!in || inLen<=0) return nullptr;
 	for (int j = 0; j < inLen ;j++)
 	{

@@ -35,6 +35,7 @@ public:
 	virtual DWORD GetNumChannels()		{ return numChannels;	}
 	
 private:
+	static constexpr int quantizationErrToleranceInMs = 5;
 	//Los mutex y condiciones
 	pthread_mutex_t mutex;
 	pthread_cond_t  cond;

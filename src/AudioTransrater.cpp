@@ -65,7 +65,7 @@ void AudioTransrater::Close()
 AudioBuffer::shared AudioTransrater::ProcessBuffer(const AudioBuffer::shared& audioBuffer)
 {
 	auto in = audioBuffer->GetData();
-	auto sizeIn = static_cast<uint32_t>(audioBuffer->GetNumSamples());
+	auto sizeIn = static_cast<uint32_t>(audioBuffer->GetNumSamples()/audioBuffer->GetNumChannels());
 
 	auto bufferSize = static_cast<uint32_t>(std::ceil(static_cast<double>(outputRate) / inputRate * sizeIn));	
 	audioBufferPool.SetSize(bufferSize, audioBuffer->GetNumChannels());

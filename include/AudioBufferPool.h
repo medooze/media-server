@@ -56,7 +56,7 @@ public:
 			buffer = new AudioBuffer(numSamples, numChannels);
 		}
 		//Make sure that it is from same size
-		else if (!buffer || buffer->GetNumSamples()!=numSamples || buffer->GetNumChannels()!=numChannels)
+		else if (!buffer || buffer->GetNumSamples()!=numSamples*numChannels || buffer->GetNumChannels()!=numChannels)
 		{
 			//Delete old one
 			delete (buffer);

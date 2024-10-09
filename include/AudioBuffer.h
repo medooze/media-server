@@ -79,7 +79,7 @@ public:
 		return true;
 	}
 	uint8_t  GetNumChannels() const { return numChannels; }
-	uint16_t GetNumSamples() const { return pcmBuffer.size() / numChannels; }
+	uint16_t GetNumSamples() const { return pcmBuffer.size(); }
 
 private:
 	uint16_t numSamplesPerFrame;

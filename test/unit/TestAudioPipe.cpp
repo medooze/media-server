@@ -311,6 +311,7 @@ TEST(TestAudioPipe, ptsJump)
     int playSampleRate = 48000, recSampleRate = 48000;
     int playFrameSizes[] = {30, 100, 1024};
     int recFrameSizes[] = {50, 100, 960};
+
     int numChannels = 1;
     int initPTS = 21;
     int numAudioBuffers = 37;
@@ -325,14 +326,14 @@ TEST(TestAudioPipe, ptsJump)
     for (int i=0; i < sizeof(playFrameSizes)/sizeof(playFrameSizes[0]);i++)
     {
         playParam = {playSampleRate, numChannels, playFrameSizes[i]};
-        jumpInfo.push({2,  2.5*playFrameSizes[i]});
-        jumpInfo.push({7,  4*playFrameSizes[i]});
-        jumpInfo.push({8,  5.3*playFrameSizes[i]});
-        jumpInfo.push({23, 12*playFrameSizes[i]});
         std::queue<std::pair<int,int>> recJumpInfo;
         for (int j=0; j < sizeof(recFrameSizes)/sizeof(recFrameSizes[0]);j++)
-        {    
-            recParam = {recSampleRate, numChannels, recFrameSizes[j]};                              
+        {  
+            std::cout << "play frame size: " << playFrameSizes[i] << " rec frame size: " << recFrameSizes[j] << std::endl;  
+            recParam = {recSampleRate, numChannels, recFrameSizes[j]};   
+            jumpInfo.push({2,  10/1000.0*recSampleRate+1});
+            jumpInfo.push({7,  3*10/1000.0*recSampleRate+4});
+            jumpInfo.push({23, 5*10/1000.0*recSampleRate+3});                 
             helperCreatePlayPTS(initPTS, playFrameSizes[i], playPTS, jumpInfo);
             recPTS = helperCreateRecPTS(playParam, recParam, playPTS, jumpInfo, recJumpInfo);
             helperTestAudioPipe(playParam, recParam, playPTS, recPTS, recJumpInfo, true);
@@ -345,6 +346,7 @@ TEST(TestAudioPipe, ptsJumpIntegerUpsampling)
     int playSampleRate = 24000, recSampleRate = 48000;
     int playFrameSizes[] = {30, 100, 1024};
     int recFrameSizes[] = {50, 100, 960};
+
     int numChannels = 1;
     int initPTS = 21;
     int numAudioBuffers = 37;
@@ -358,13 +360,13 @@ TEST(TestAudioPipe, ptsJumpIntegerUpsampling)
     for (int i=0; i < sizeof(playFrameSizes)/sizeof(playFrameSizes[0]);i++)
     {
         playParam = {playSampleRate, numChannels, playFrameSizes[i]};
-        jumpInfo.push({2,  2.5*playFrameSizes[i]});
-        jumpInfo.push({7,  4*playFrameSizes[i]});
-        jumpInfo.push({8,  5.3*playFrameSizes[i]});
-        jumpInfo.push({23, 12*playFrameSizes[i]});
         std::queue<std::pair<int,int>> recJumpInfo;
         for (int j=0; j < sizeof(recFrameSizes)/sizeof(recFrameSizes[0]);j++)
         {    
+            std::cout << "play frame size: " << playFrameSizes[i] << ",rec frame size: " << recFrameSizes[j] << std::endl;
+            jumpInfo.push({2,  10/1000.0*recSampleRate+1});
+            jumpInfo.push({7,  3*10/1000.0*recSampleRate+4});
+            jumpInfo.push({23, 5*10/1000.0*recSampleRate+3});
             recParam = {recSampleRate, numChannels, recFrameSizes[j]};                              
             helperCreatePlayPTS(initPTS, playFrameSizes[i], playPTS, jumpInfo);
             recPTS = helperCreateRecPTS(playParam, recParam, playPTS, jumpInfo, recJumpInfo);
@@ -378,6 +380,7 @@ TEST(TestAudioPipe, ptsJumpFractionalUpsampling)
     int playSampleRate = 44100, recSampleRate = 48000;
     int playFrameSizes[] = {1024};
     int recFrameSizes[] = {960, 1920};
+
     int numChannels = 1;
     int initPTS = 21;
     int numAudioBuffers = 37;
@@ -393,13 +396,13 @@ TEST(TestAudioPipe, ptsJumpFractionalUpsampling)
     for (int i=0; i < sizeof(playFrameSizes)/sizeof(playFrameSizes[0]);i++)
     {
         playParam = {playSampleRate, numChannels, playFrameSizes[i]};
-        jumpInfo.push({2,  2.5*playFrameSizes[i]});
-        jumpInfo.push({7,  4*playFrameSizes[i]});
-        jumpInfo.push({8,  5.3*playFrameSizes[i]});
-        jumpInfo.push({23, 12*playFrameSizes[i]});
         std::queue<std::pair<int,int>> recJumpInfo;
         for (int j=0; j < sizeof(recFrameSizes)/sizeof(recFrameSizes[0]);j++)
         {    
+            std::cout << "play frame size: " << playFrameSizes[i] << ",rec frame size: " << recFrameSizes[j] << std::endl;
+            jumpInfo.push({2,  10/1000.0*recSampleRate+1});
+            jumpInfo.push({7,  3*10/1000.0*recSampleRate+4});
+            jumpInfo.push({23, 5*10/1000.0*recSampleRate+3});
             recParam = {recSampleRate, numChannels, recFrameSizes[j]};                              
             helperCreatePlayPTS(initPTS, playFrameSizes[i], playPTS, jumpInfo);
             recPTS = helperCreateRecPTS(playParam, recParam, playPTS, jumpInfo, recJumpInfo);
@@ -413,6 +416,7 @@ TEST(TestAudioPipe, ptsJumpIntegerDownsampling)
     int playSampleRate = 48000, recSampleRate = 24000;
     int playFrameSizes[] = {30, 100, 1024};
     int recFrameSizes[] = {50, 100, 960};
+
     int numChannels = 1;
     int initPTS = 21;
     int numAudioBuffers = 37;
@@ -428,13 +432,13 @@ TEST(TestAudioPipe, ptsJumpIntegerDownsampling)
     for (int i=0; i < sizeof(playFrameSizes)/sizeof(playFrameSizes[0]);i++)
     {
         playParam = {playSampleRate, numChannels, playFrameSizes[i]};
-        jumpInfo.push({2,  2.5*playFrameSizes[i]});
-        jumpInfo.push({7,  4*playFrameSizes[i]});
-        jumpInfo.push({8,  5.3*playFrameSizes[i]});
-        jumpInfo.push({23, 12*playFrameSizes[i]});
         std::queue<std::pair<int,int>> recJumpInfo;
         for (int j=0; j < sizeof(recFrameSizes)/sizeof(recFrameSizes[0]);j++)
-        {    
+        {   
+            std::cout << "play frame size: " << playFrameSizes[i] << ",rec frame size: " << recFrameSizes[j] << std::endl;
+            jumpInfo.push({2,  10/1000.0*playSampleRate+1});
+            jumpInfo.push({7,  3*10/1000.0*playSampleRate+4});
+            jumpInfo.push({23, 5*10/1000.0*playSampleRate+3}); 
             recParam = {recSampleRate, numChannels, recFrameSizes[j]};                              
             helperCreatePlayPTS(initPTS, playFrameSizes[i], playPTS, jumpInfo);
             recPTS = helperCreateRecPTS(playParam, recParam, playPTS, jumpInfo, recJumpInfo);
@@ -448,6 +452,7 @@ TEST(TestAudioPipe, ptsJumpFractionalDownsampling)
     int playSampleRate = 48000, recSampleRate = 44100;
     int playFrameSizes[] = {1024};
     int recFrameSizes[] = {960, 1920};
+
     int numChannels = 1;
     int initPTS = 21;
     int numAudioBuffers = 37;
@@ -463,13 +468,13 @@ TEST(TestAudioPipe, ptsJumpFractionalDownsampling)
     for (int i=0; i < sizeof(playFrameSizes)/sizeof(playFrameSizes[0]);i++)
     {
         playParam = {playSampleRate, numChannels, playFrameSizes[i]};
-        jumpInfo.push({2,  2.5*playFrameSizes[i]});
-        jumpInfo.push({7,  4*playFrameSizes[i]});
-        jumpInfo.push({8,  5.3*playFrameSizes[i]});
-        jumpInfo.push({23, 12*playFrameSizes[i]});
         std::queue<std::pair<int,int>> recJumpInfo;
         for(int j=0; j < sizeof(recFrameSizes)/sizeof(recFrameSizes[0]);j++)
-        {    
+        {   
+            std::cout << "play frame size: " << playFrameSizes[i] << ",rec frame size: " << recFrameSizes[j] << std::endl;
+            jumpInfo.push({2,  10/1000.0*recSampleRate+1});
+            jumpInfo.push({7,  3*10/1000.0*recSampleRate+4});
+            jumpInfo.push({23, 5*10/1000.0*recSampleRate+3});  
             recParam = {recSampleRate, numChannels, recFrameSizes[j]};                              
             helperCreatePlayPTS(initPTS, playFrameSizes[i], playPTS, jumpInfo);
             recPTS = helperCreateRecPTS(playParam, recParam, playPTS, jumpInfo, recJumpInfo);

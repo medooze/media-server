@@ -29,7 +29,7 @@ G722Encoder::G722Encoder(const Properties &properties)
 AudioFrame::shared G722Encoder::Encode(const AudioBuffer::const_shared& audioBuffer)
 {
 	const SWORD *in = audioBuffer->GetData();
-	int inLen = audioBuffer->GetNumSamples() * audioBuffer->GetNumChannels();
+	int inLen = audioBuffer->GetNumSamples();
 	if(!in || inLen<=0) return nullptr;
 	int len = g722_encode(&encoder,audioFrame->GetData(), in, inLen);
 	audioFrame->SetLength(len);

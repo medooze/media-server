@@ -179,12 +179,12 @@ int AudioPipe::PlayBuffer(const AudioBuffer::shared& audioBuffer)
 			return Error("-AudioPipe::PlayBuffer() could not transrate\n");
 		}
 		queue.push_back(resampled);
-		availableNumSamples += resampled->GetNumSamples()*numChannels;
+		availableNumSamples += resampled->GetNumSamples();
 	}
 	else
 	{
 		queue.push_back(audioBuffer);
-		availableNumSamples += audioBuffer->GetNumSamples()*numChannels;
+		availableNumSamples += audioBuffer->GetNumSamples();
 	}
 	//Signal rec
 	pthread_cond_signal(&cond);
@@ -255,24 +255,26 @@ AudioBuffer::shared AudioPipe::RecBuffer(DWORD frameSize)
 	{
 		//Get reference to first buffer in queue 
 		auto& frontAudioBuffer = queue.front();
-		
-		if (frontAudioBuffer->GetTimestamp() > 2 * samples + prevPTS)
+
+		if (frontAudioBuffer->GetTimestamp() >  prevPTS + samples + static_cast<int>(quantizationErrToleranceInMs/1000.0*recordRate))
+		{
+			Warning("-AudioPipe()::RecBuffer() discontinuity detected, prevPTS=%ld, currPTS=%d\n", prevPTS, frontAudioBuffer->GetTimestamp());
 			break;
+		}
 		// Udpate variables for ts discontinuity check
 		prevPTS = frontAudioBuffer->GetTimestamp();
-		samples = frontAudioBuffer->GetNumSamples();
+		samples = frontAudioBuffer->GetNumSamples() / frontAudioBuffer->GetNumChannels();
 
 		//The number of samples to read
-		auto totalSamplesInBuffer =  static_cast<int>(frontAudioBuffer->GetNumSamples() * numChannels);
-		auto neededSamples = std::min(totalSamplesInBuffer, requiredNumSamples - readedSamples);
+		auto neededSamples = std::min(static_cast<int>(frontAudioBuffer->GetNumSamples()), requiredNumSamples - readedSamples);
 		// Read from queued buffer
 		audioBuffer->SetSamples(const_cast<int16_t*>(frontAudioBuffer->GetData()), neededSamples ,readedSamples);
 
 		// If we have not readed all the available samples
-		if (neededSamples < totalSamplesInBuffer) 
+		if (neededSamples < frontAudioBuffer->GetNumSamples()) 
 		{
 			// push leftover to rateBlockBuffer
-			rateBlockBuffer.push((SWORD*)frontAudioBuffer->GetData()+neededSamples, totalSamplesInBuffer-neededSamples);
+			rateBlockBuffer.push((SWORD*)frontAudioBuffer->GetData()+neededSamples, frontAudioBuffer->GetNumSamples()-neededSamples);
 			// update rateBlockBufferPTS
 			rateBlockBufferPTS = frontAudioBuffer->GetTimestamp() + neededSamples/numChannels;
 		}

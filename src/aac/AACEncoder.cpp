@@ -122,7 +122,7 @@ AudioFrame::shared AACEncoder::Encode(const AudioBuffer::const_shared& audioBuff
 	int ret;
 
 	auto in = audioBuffer->GetData();
-	auto inLen = audioBuffer->GetNumSamples() * audioBuffer->GetNumChannels();	
+	auto inLen = audioBuffer->GetNumSamples();	
 
 	if (!inLen)
 		return 0;
