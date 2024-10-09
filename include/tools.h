@@ -535,6 +535,22 @@ inline void SyncWriteUint128(__uint128_t *dst, __uint128_t value)
 }
 
 /**
+ * Convert timestamp from one clock rate to another
+ * 
+ * @param ts The input timestamp
+ * @param originalRate The clock rate of the input timestamp
+ * @param targetRate The target clock rate
+ * 
+ * @return The timestamp basing on the target clock rate
+ */
+template<typename T>
+static constexpr T ConvertTimestampClockRate(T ts, uint64_t originalRate, uint64_t targetRate)
+{
+	static_assert(sizeof(T) >= 8);
+	return originalRate == targetRate ? ts : (ts * T(targetRate) / T(originalRate));
+}
+
+/**
  * @brief Format string
  * 
  * @param fmt Format with specificers
