@@ -91,6 +91,9 @@ bool AACDecoder::SetConfig(const uint8_t* data,const size_t size)
 int AACDecoder::Decode(const AudioFrame::const_shared& audioFrame)
 {
 	//Check we have config
+	if (audioFrame->HasCodecConfig())
+		SetConfig(audioFrame->GetCodecConfigData(), audioFrame->GetCodecConfigSize());
+	
 	if (!inited)
 		return Error("-AACDecoder::Decode() Not inited\n");
 	
