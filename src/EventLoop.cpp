@@ -253,7 +253,7 @@ bool EventLoop::Stop()
 	
 }
 
-void EventLoop::Async(const std::function<void(std::chrono::milliseconds)>& func)
+void EventLoop::AsyncUnsafe(const std::function<void(std::chrono::milliseconds)>& func)
 {
 	//UltraDebug(">EventLoop::Async()\n");
 
@@ -276,7 +276,7 @@ void EventLoop::Async(const std::function<void(std::chrono::milliseconds)>& func
 	//UltraDebug("<EventLoop::Async()\n");
 }
 
-void EventLoop::Async(const std::function<void(std::chrono::milliseconds)>& func, const std::function<void(std::chrono::milliseconds)>& callback)
+void EventLoop::AsyncUnsafe(const std::function<void(std::chrono::milliseconds)>& func, const std::function<void(std::chrono::milliseconds)>& callback)
 {
 	//UltraDebug(">EventLoop::Async()\n");
 
@@ -301,7 +301,7 @@ void EventLoop::Async(const std::function<void(std::chrono::milliseconds)>& func
 }
 
 
-std::future<void> EventLoop::Future(const std::function<void(std::chrono::milliseconds)>& func)
+std::future<void> EventLoop::FutureUnsafe(const std::function<void(std::chrono::milliseconds)>& func)
 {
 	//UltraDebug(">EventLoop::Future()\n");
 	
@@ -309,7 +309,7 @@ std::future<void> EventLoop::Future(const std::function<void(std::chrono::millis
 	auto promise = std::make_shared<std::promise<void>>();
 
 	//Add an async with callback
-	Async(func, [=](std::chrono::milliseconds) {
+	AsyncUnsafe(func, [=](std::chrono::milliseconds) {
 		//Resolve promise on callbak
 		promise->set_value();
 	});
@@ -320,7 +320,7 @@ std::future<void> EventLoop::Future(const std::function<void(std::chrono::millis
 	return promise->get_future();;
 }
 
-Timer::shared EventLoop::CreateTimer(const std::function<void(std::chrono::milliseconds)>& callback)
+Timer::shared EventLoop::CreateTimerUnsafe(const std::function<void(std::chrono::milliseconds)>& callback)
 {
 	//Create timer without scheduling it
 	auto timer = std::make_shared<TimerImpl>(*this,0ms,callback);
@@ -328,13 +328,13 @@ Timer::shared EventLoop::CreateTimer(const std::function<void(std::chrono::milli
 	return std::static_pointer_cast<Timer>(timer);
 }
 
-Timer::shared EventLoop::CreateTimer(const std::chrono::milliseconds& ms, const std::function<void(std::chrono::milliseconds)>& callback)
+Timer::shared EventLoop::CreateTimerUnsafe(const std::chrono::milliseconds& ms, const std::function<void(std::chrono::milliseconds)>& callback)
 {
 	//Timer without repeat
-	return CreateTimer(ms,0ms,callback);
+	return CreateTimerUnsafe(ms,0ms,callback);
 }
 
-Timer::shared EventLoop::CreateTimer(const std::chrono::milliseconds& ms, const std::chrono::milliseconds& repeat, const std::function<void(std::chrono::milliseconds)>& callback)
+Timer::shared EventLoop::CreateTimerUnsafe(const std::chrono::milliseconds& ms, const std::chrono::milliseconds& repeat, const std::function<void(std::chrono::milliseconds)>& callback)
 {
 	//UltraDebug(">EventLoop::CreateTimer() | CreateTimer in %u\n", ms.count());
 
@@ -345,7 +345,7 @@ Timer::shared EventLoop::CreateTimer(const std::chrono::milliseconds& ms, const 
 	auto next = this->Now() + ms;
 	
 	//Add it async
-	Async([this,timer,next](auto now){
+	AsyncUnsafe([this,timer,next](auto now){
 		//Set next tick
 		timer->next = next;
 
@@ -360,7 +360,7 @@ Timer::shared EventLoop::CreateTimer(const std::chrono::milliseconds& ms, const 
 void EventLoop::TimerImpl::Cancel()
 {
 	//Add it async
-	loop.Async([timer = shared_from_this()](auto now){
+	loop.AsyncUnsafe([timer = shared_from_this()](auto now){
 		//Remove us
 		timer->loop.CancelTimer(timer);
 	});
@@ -374,7 +374,7 @@ void EventLoop::TimerImpl::Again(const std::chrono::milliseconds& ms)
 	auto next = loop.Now() + ms;
 	
 	//Reschedule it async
-	loop.Async([timer = shared_from_this(),next](auto now){
+	loop.AsyncUnsafe([timer = shared_from_this(),next](auto now){
 		//Remove us
 		timer->loop.CancelTimer(timer);
 
@@ -401,7 +401,7 @@ void EventLoop::TimerImpl::Reschedule(const std::chrono::milliseconds& ms, const
 	auto next = loop.Now() + ms;
 
 	//Reschedule it async
-	loop.Async([timer = shared_from_this(), next, repeat](auto now){
+	loop.AsyncUnsafe([timer = shared_from_this(), next, repeat](auto now){
 		//Remove us
 		timer->loop.CancelTimer(timer);
 

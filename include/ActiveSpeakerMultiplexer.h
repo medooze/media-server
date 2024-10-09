@@ -7,6 +7,7 @@
 
 
 class ActiveSpeakerMultiplexer :
+	public TimeServiceWrapper<ActiveSpeakerMultiplexer>,
 	public RTPIncomingMediaStream::Listener
 {
 private:
@@ -51,8 +52,14 @@ public:
 		virtual void onActiveSpeakerChanged(uint32_t speakerId, uint32_t multiplexdId) = 0;
 		virtual void onActiveSpeakerRemoved(uint32_t multiplexdId) = 0;
 	};
-public:
+
+protected:
+	// Private constructor to prevent creating without TimeServiceWrapper::Create() factory
+	friend class TimeServiceWrapper<ActiveSpeakerMultiplexer>;
 	ActiveSpeakerMultiplexer(TimeService& timeService, Listener* listener);
+	virtual void OnCreated() override;
+
+public:
 	virtual ~ActiveSpeakerMultiplexer();
 
 	void AddIncomingSourceGroup(RTPIncomingMediaStream::shared incoming, uint32_t id);
@@ -75,7 +82,6 @@ public:
 private:
 	void Process(uint64_t now);
 private:
-	TimeService& timeService;
 	Timer::shared timer;
 	Listener* listener;
 

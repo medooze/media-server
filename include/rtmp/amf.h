@@ -214,7 +214,27 @@ private:
 
 typedef std::map<std::wstring,AMFData*> AMFObjectMap;
 
-class AMFObject : public AMFData
+class AMFNamedPropertiesObject : public AMFData
+{
+public:
+	virtual AMFObjectMap& GetProperties() = 0;
+	virtual void AddProperty(const wchar_t* key, const wchar_t* value) = 0;
+	virtual void AddProperty(const wchar_t* key, const std::wstring& value) = 0;
+	virtual void AddProperty(const wchar_t* key, const wchar_t* value, DWORD length) = 0;
+	virtual void AddProperty(const wchar_t* key, const double value) = 0;
+	virtual void AddProperty(const wchar_t* key, const bool value) = 0;
+	virtual void AddProperty(const wchar_t* key, AMFData* obj) = 0;
+	virtual void AddProperty(const wchar_t* key, const AMFData& obj) = 0;
+	virtual AMFData& GetProperty(const wchar_t* key) = 0;
+	virtual bool HasProperty(const wchar_t* key) const = 0;
+
+	static bool IsNamedPropertiesObject(AMFData* data)
+	{
+		return data->CheckType(AMFData::EcmaArray) || data->CheckType(AMFData::Object);
+	}
+};
+
+class AMFObject : public AMFNamedPropertiesObject
 {
 public:
 	AMFObject();
@@ -224,16 +244,18 @@ public:
 	virtual DWORD Serialize(BYTE* buffer,DWORD size) const override;
 	virtual bool IsParsed() const override;
 	virtual ValueType GetType()  const  override {return Object;};
-	AMFObjectMap& GetProperties();
-	void AddProperty(const wchar_t* key, const wchar_t* value);
-	void AddProperty(const wchar_t* key, const std::wstring& value);
-	void AddProperty(const wchar_t* key, const wchar_t* value, DWORD length);
-	void AddProperty(const wchar_t* key, const double value);
-	void AddProperty(const wchar_t* key, const bool value);
-	void AddProperty(const wchar_t* key, AMFData *obj);
-	void AddProperty(const wchar_t* key, const AMFData &obj);
-	AMFData& GetProperty(const wchar_t* key);
-	bool HasProperty(const wchar_t* key) const;
+
+	virtual AMFObjectMap& GetProperties() override;
+	virtual void AddProperty(const wchar_t* key, const wchar_t* value) override;
+	virtual void AddProperty(const wchar_t* key, const std::wstring& value) override;
+	virtual void AddProperty(const wchar_t* key, const wchar_t* value, DWORD length) override;
+	virtual void AddProperty(const wchar_t* key, const double value) override;
+	virtual void AddProperty(const wchar_t* key, const bool value) override;
+	virtual void AddProperty(const wchar_t* key, AMFData *obj) override;
+	virtual void AddProperty(const wchar_t* key, const AMFData &obj) override;
+	virtual AMFData& GetProperty(const wchar_t* key) override;
+	virtual bool HasProperty(const wchar_t* key) const override;
+
 	virtual void Dump() const override;
 	virtual AMFData* Clone() const override;
 
@@ -252,7 +274,7 @@ private:
 	UTF8Parser utf8parser;
 };
 
-class AMFEcmaArray : public AMFData
+class AMFEcmaArray : public AMFNamedPropertiesObject
 {
 public:
 	AMFEcmaArray();
@@ -263,17 +285,18 @@ public:
 	virtual DWORD GetSize() const override;
 	virtual ValueType GetType()  const  override {return EcmaArray;};
 	virtual void Dump() const override;
-	AMFObjectMap& GetElements();
-	DWORD GetLength() const;
-	void AddProperty(const wchar_t* key, const wchar_t* value);
-	void AddProperty(const wchar_t* key, const wchar_t* value,DWORD length);
-	void AddProperty(const wchar_t* key, const std::wstring& value);
-	void AddProperty(const wchar_t* key, const double value);
-	void AddProperty(const wchar_t* key, bool value);
-	void AddProperty(const wchar_t* key, AMFData *obj);
-	void AddProperty(const wchar_t* key, const AMFData &obj);
-	AMFData& GetProperty(const wchar_t* key);
-	bool HasProperty(const wchar_t* key) const;
+
+	virtual AMFObjectMap& GetProperties() override;
+	virtual void AddProperty(const wchar_t* key, const wchar_t* value) override;
+	virtual void AddProperty(const wchar_t* key, const std::wstring& value) override;
+	virtual void AddProperty(const wchar_t* key, const wchar_t* value, DWORD length) override;
+	virtual void AddProperty(const wchar_t* key, const double value) override;
+	virtual void AddProperty(const wchar_t* key, const bool value) override;
+	virtual void AddProperty(const wchar_t* key, AMFData* obj) override;
+	virtual void AddProperty(const wchar_t* key, const AMFData& obj) override;
+	virtual AMFData& GetProperty(const wchar_t* key) override;
+	virtual bool HasProperty(const wchar_t* key) const override;
+	
 	virtual AMFData* Clone() const override;
 
 private:

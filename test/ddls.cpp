@@ -2,7 +2,7 @@
 #include "rtp.h"
 #include "BitHistory.h"
 #include "DependencyDescriptorLayerSelector.h"
-#include "aac/aacdecoder.h"
+#include "aac/AACDecoder.h"
 
 #include <sstream>
 #include <string>

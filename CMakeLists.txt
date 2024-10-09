@@ -131,8 +131,9 @@ add_library(MediaServerLib
     ${CMAKE_CURRENT_LIST_DIR}/src/VideoLayerSelector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/VideoCodecFactory.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/VideoDecoderWorker.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/audiodecoder.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/audiotransrater.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/AudioDecoderWorker.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/AudioEncoderWorker.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/AudioTransrater.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/AudioPipe.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/AudioCodecFactory.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/Deinterlacer.cpp
@@ -142,6 +143,7 @@ add_library(MediaServerLib
     ${CMAKE_CURRENT_LIST_DIR}/src/crc32calc.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/PCAPFile.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/PCAPReader.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/ActiveSpeakerMultiplexer.cpp
 )
 
 target_include_directories(MediaServerLib PUBLIC
@@ -179,6 +181,7 @@ target_compile_options(MediaServerLib PUBLIC
 
 # Unit test executable
 add_executable(MediaServerUnitTest
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestBitReader.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAACSpecificConfig.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAccumulator.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestCircularBuffer.cpp
@@ -196,6 +199,8 @@ add_executable(MediaServerUnitTest
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAV1.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAV1Bitstream.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAAC.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestOpus.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAudioPipe.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAMFNumber.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestVideoLayersAllocation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestTools.cpp
@@ -203,6 +208,8 @@ add_executable(MediaServerUnitTest
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestFecProbeGenerator.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestSpliceInfoSection.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestH26xNal.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestH26xSPS.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestH26xPPS.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestHEVCBitstream.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestHEVCDescriptor.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/data/FramesArrivalInfo.cpp

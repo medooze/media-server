@@ -11,10 +11,12 @@
 #include "TimeService.h"
 #include "CircularBuffer.h"
 
-struct RTPOutgoingSourceGroup
+struct RTPOutgoingSourceGroup :
+	public TimeServiceWrapper<RTPOutgoingSourceGroup>
 {
 public:
 	using shared = std::shared_ptr<RTPOutgoingSourceGroup>;
+
 public:
 	class Listener 
 	{
@@ -24,16 +26,20 @@ public:
 			virtual void onEnded(const RTPOutgoingSourceGroup* group) = 0;
 		
 	};
-public:
+
+private:
+	// Private constructor to prevent creating without TimeServiceWrapper::Create() factory
+	friend class TimeServiceWrapper<RTPOutgoingSourceGroup>;
 	RTPOutgoingSourceGroup(MediaFrame::Type type,TimeService& timeService);
 	RTPOutgoingSourceGroup(const std::string &mid,MediaFrame::Type type, TimeService& timeService);
+
+public:
 	~RTPOutgoingSourceGroup();
 	
 	void AddListener(Listener* listener);
 	void RemoveListener(Listener* listener);
 	void onPLIRequest(DWORD ssrc);
 	void onREMB(DWORD ssrc,DWORD bitrate);
-	TimeService& GetTimeService()	{ return timeService; }
 	RTPOutgoingSource* GetSource(DWORD ssrc);
 	
 	void UpdateAsync(std::function<void(std::chrono::milliseconds)> callback);
@@ -71,7 +77,6 @@ public:
 	RTPOutgoingSource rtx;
 	QWORD lastUpdated = 0;
 private:	
-	TimeService& timeService;
 	CircularBuffer<RTPPacket::shared, uint16_t, 512> packets;
 	CircularBuffer<QWORD, uint16_t, 512> rtxTimes;
 	std::set<Listener*> listeners;

@@ -85,7 +85,7 @@ DWORD RTPOutgoingSource::NextExtSeqNum()
 void RTPOutgoingSource::Reset()
 {
 	RTPSource::Reset();
-	ssrc			= random();
+	ssrc			= 0;
 	extSeqNum		= random() & 0xFFFF;
 	time			= random();
 	numFrames		= 0;

@@ -161,7 +161,7 @@ struct VideoLayersAllocation
 			//Get rid, num streams
 			videoLayersAllocation->streamIdx = bitreader.Get(2);
 			videoLayersAllocation->numRtpStreams = 1 + bitreader.Get(2);
-			int numActiveLayers = 0;
+			size_t numActiveLayers = 0;
 
 			std::array<std::array<bool, VideoLayersAllocation::MaxSpatialIds>, VideoLayersAllocation::MaxStreams> spatialLayesrMask{};
 
@@ -268,7 +268,7 @@ struct VideoLayersAllocation
 
 				bool allEqual = true;
 				//For all except the first one
-				for (auto i = 1; i < spatialLayesrMask.size() && i < numRtpStreams && allEqual; ++i)
+				for (size_t i = 1; i < spatialLayesrMask.size() && i < numRtpStreams && allEqual; ++i)
 					//Check if 
 					allEqual = std::equal(
 						spatialLayesrMask[0].begin(),

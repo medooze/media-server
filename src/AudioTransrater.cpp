@@ -1,5 +1,5 @@
 #include "log.h"
-#include "audiotransrater.h"
+#include "AudioTransrater.h"
 
 AudioTransrater::AudioTransrater()
 {

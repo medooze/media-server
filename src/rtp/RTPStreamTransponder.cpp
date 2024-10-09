@@ -7,7 +7,7 @@
 
 
 RTPStreamTransponder::RTPStreamTransponder(const RTPOutgoingSourceGroup::shared& outgoing, const RTPSender::shared& sender) :
-	timeService(outgoing->GetTimeService()),
+	TimeServiceWrapper<RTPStreamTransponder>(outgoing->GetTimeService()),
 	outgoing(outgoing),
 	sender(sender)
 {
@@ -27,7 +27,7 @@ void RTPStreamTransponder::ResetIncoming()
 
 void RTPStreamTransponder::SetIncoming(const RTPIncomingMediaStream::shared& incoming, const RTPReceiver::shared& receiver, bool smooth)
 {
-	timeService.Async([=](auto now){
+	AsyncSafe([=](auto now){
 		//Check we are not closed
 		if (!outgoing)
 		{
@@ -135,7 +135,7 @@ void RTPStreamTransponder::Close()
 	//Stop listening
 	if (outgoing) outgoing->RemoveListener(this);
 
-	timeService.Sync([=](auto now) {
+	Sync([=](auto now) {
 		//Stop listening
 		if (incoming) incoming->RemoveListener(this);
 		if (incomingNext) incomingNext->RemoveListener(this);
@@ -164,394 +164,406 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 		return;
 
 	//Run async
-	timeService.Async([=, packet = packet->Clone()](auto now){
+	AsyncSafe([=, packet = packet->Clone()](auto now){
 
-		//If it is from the next transitioning stream
-		if (stream == incomingNext.get())
+		// In theory this check is not necessary as it is already checked in onRTPAsync but 
+		// more encapsulated and safer against future maintainence duplicating it here.
+		if (stream != incomingNext.get() && stream != incoming.get())
 		{
-			//If it is a video packet and not an iframe
-			if (packet->GetMediaType()==MediaFrame::Video && !packet->IsKeyFrame())
-				//Skip
-				return;
-
-			//Remove listener from old stream
-			if (this->incoming)
-				this->incoming->RemoveListener(this);
-
-			//Reset packets
-			reset = true;
-
-			//Transition to new stream and receiver
-			this->incoming = incomingNext;
-			this->receiver = receiverNext;
-			this->incomingNext = nullptr;
-			this->receiverNext = nullptr;
+			return;
 		}
 
-		//Check if it is from the correct stream
-		if (stream != this->incoming.get())
+		onRTPAsync(now, stream, packet);
+	});
+}
+
+void RTPStreamTransponder::onRTPAsync(std::chrono::milliseconds now, const RTPIncomingMediaStream* stream, const RTPPacket::shared& packet)
+{
+	//If it is from the next transitioning stream
+	if (stream == incomingNext.get())
+	{
+		//If it is a video packet and not an iframe
+		if (packet->GetMediaType()==MediaFrame::Video && !packet->IsKeyFrame())
 			//Skip
 			return;
 
-		//If muted
-		if (muted)
-			//Skip
-			return;
+		//Remove listener from old stream
+		if (this->incoming)
+			this->incoming->RemoveListener(this);
 
-		//If forwarding only intra frames and video frame is not intra
-		if (intraOnlyForwarding && packet->GetMediaType() == MediaFrame::Video && !packet->IsKeyFrame())
+		//Reset packets
+		reset = true;
+
+		//Transition to new stream and receiver
+		this->incoming = incomingNext;
+		this->receiver = receiverNext;
+		this->incomingNext = nullptr;
+		this->receiverNext = nullptr;
+	}
+
+	//Check if it is from the correct stream
+	if (stream != this->incoming.get())
+		//Skip
+		return;
+
+	//If muted
+	if (muted)
+		//Skip
+		return;
+
+	//If forwarding only intra frames and video frame is not intra
+	if (intraOnlyForwarding && packet->GetMediaType() == MediaFrame::Video && !packet->IsKeyFrame())
+	{
+		//Drop it
+		dropped++;
+		//Skip
+		return;
+	}
+
+	//Check if it is an empty packet
+	if (!packet->GetMediaLength())
+	{
+		UltraDebug("-RTPStreamTransponder::onRTP() | dropping empty packet\n");
+		//Drop it
+		dropped++;
+		//Exit
+		return;
+	}
+
+	//Check sender
+	if (!sender)
+		//Nothing
+		return;
+
+	//Check if source has changed
+	if (source && packet->GetSSRC()!=source)
+		//We need to reset
+		reset = true;
+
+	//If we need to reset
+	if (reset)
+	{
+		Debug("-StreamTransponder::onRTP() | Reset stream\n");
+		//IF last was not completed
+		if (!lastCompleted && type==MediaFrame::Video)
 		{
-			//Drop it
-			dropped++;
-			//Skip
-			return;
+			//Create new RTP packet
+			RTPPacket::shared rtp = std::make_shared<RTPPacket>(media,codec);
+			//Set data
+			rtp->SetPayloadType(type);
+			rtp->SetSSRC(ssrc);
+			rtp->SetExtSeqNum(lastExtSeqNum++);
+			rtp->SetMark(true);
+			rtp->SetExtTimestamp(lastTimestamp);
+			//Send it
+			if (sender) sender->Enqueue(rtp);
+		}
+		//No source
+		lastCompleted = true;
+		source = 0;
+		//Reset first paquet seq num and timestamp
+		firstExtSeqNum = NoSeqNum;
+		firstTimestamp = NoTimestamp;
+		//Store the last send ones
+		baseExtSeqNum = lastExtSeqNum+1;
+		baseTimestamp = lastTimestamp;
+		//None dropped or added
+		dropped = 0;
+		added = 0;
+		//Not selecting
+		selector = nullptr;
+		//No layer
+		spatialLayerId = LayerInfo::MaxLayerId;
+		temporalLayerId = LayerInfo::MaxLayerId;
+
+		//Reset frame numbers
+		firstFrameNumber = NoFrameNum;
+		baseFrameNumber = lastFrameNumber + 1;
+		frameNumberExtender.Reset();
+
+		//Reseted
+		reset = false;
+	}
+
+	//Update source
+	source = packet->GetSSRC();
+	//Get new seq number
+	DWORD extSeqNum = packet->GetExtSeqNum();
+
+	//Check if it the first received packet
+	if (firstExtSeqNum==NoSeqNum || firstTimestamp==NoTimestamp)
+	{
+		//If we have a time offest from last sent packet
+		if (lastTime)
+		{
+			//Calculate time diff
+			QWORD offset = getTimeDiff(lastTime)/1000;
+			//Get timestamp diff on correct clock rate
+			QWORD diff = offset*packet->GetClockRate()/1000;
+
+			//UltraDebug("-ts offset:%llu diff:%llu baseTimestap:%lu firstTimestamp:%llu lastTimestamp:%llu rate:%llu\n",offset,diff,baseTimestamp,firstTimestamp,lastTimestamp,packet->GetClockRate());
+
+			//convert it to rtp time and add to the last sent timestamp
+			baseTimestamp = lastTimestamp + diff + 1;
 		}
 
-		//Check if it is an empty packet
-		if (!packet->GetMediaLength())
+		//Reset drop counter
+		dropped = 0;
+		//Store seq number
+		firstExtSeqNum = extSeqNum;
+		//Get first timestamp
+		firstTimestamp = packet->GetExtTimestamp();
+
+		UltraDebug("-StreamTransponder::onRTP() | first seq:%u base:%u last:%u ts:%llu baseSeq:%u baseTimestamp:%llu lastTimestamp:%llu\n",firstExtSeqNum,baseExtSeqNum,lastExtSeqNum,firstTimestamp,baseExtSeqNum,baseTimestamp,lastTimestamp);
+	}
+
+	//Ensure it is not before first one
+	if (extSeqNum<firstExtSeqNum)
+		//Exit
+		return;
+
+	//Only for viedo
+	if (packet->GetMediaType()==MediaFrame::Video)
+	{
+		//Check if we don't have one or if we have a selector and it is not from the same codec
+		if (!selector || (BYTE)selector->GetCodec()!=packet->GetCodec())
 		{
-			UltraDebug("-RTPStreamTransponder::onRTP() | dropping empty packet\n");
-			//Drop it
-			dropped++;
-			//Exit
-			return;
-		}
-
-		//Check sender
-		if (!sender)
-			//Nothing
-			return;
-
-		//Check if source has changed
-		if (source && packet->GetSSRC()!=source)
-			//We need to reset
-			reset = true;
-
-		//If we need to reset
-		if (reset)
-		{
-			Debug("-StreamTransponder::onRTP() | Reset stream\n");
-			//IF last was not completed
-			if (!lastCompleted && type==MediaFrame::Video)
-			{
-				//Create new RTP packet
-				RTPPacket::shared rtp = std::make_shared<RTPPacket>(media,codec);
-				//Set data
-				rtp->SetPayloadType(type);
-				rtp->SetSSRC(ssrc);
-				rtp->SetExtSeqNum(lastExtSeqNum++);
-				rtp->SetMark(true);
-				rtp->SetExtTimestamp(lastTimestamp);
-				//Send it
-				if (sender) sender->Enqueue(rtp);
-			}
-			//No source
-			lastCompleted = true;
-			source = 0;
-			//Reset first paquet seq num and timestamp
-			firstExtSeqNum = NoSeqNum;
-			firstTimestamp = NoTimestamp;
-			//Store the last send ones
-			baseExtSeqNum = lastExtSeqNum+1;
-			baseTimestamp = lastTimestamp;
-			//None dropped or added
-			dropped = 0;
-			added = 0;
-			//Not selecting
-			selector = nullptr;
-			//No layer
-			spatialLayerId = LayerInfo::MaxLayerId;
-			temporalLayerId = LayerInfo::MaxLayerId;
-
-			//Reset frame numbers
-			firstFrameNumber = NoFrameNum;
-			baseFrameNumber = lastFrameNumber + 1;
-			frameNumberExtender.Reset();
-
-			//Reseted
-			reset = false;
-		}
-
-		//Update source
-		source = packet->GetSSRC();
-		//Get new seq number
-		DWORD extSeqNum = packet->GetExtSeqNum();
-
-		//Check if it the first received packet
-		if (firstExtSeqNum==NoSeqNum || firstTimestamp==NoTimestamp)
-		{
-			//If we have a time offest from last sent packet
-			if (lastTime)
-			{
-				//Calculate time diff
-				QWORD offset = getTimeDiff(lastTime)/1000;
-				//Get timestamp diff on correct clock rate
-				QWORD diff = offset*packet->GetClockRate()/1000;
-
-				//UltraDebug("-ts offset:%llu diff:%llu baseTimestap:%lu firstTimestamp:%llu lastTimestamp:%llu rate:%llu\n",offset,diff,baseTimestamp,firstTimestamp,lastTimestamp,packet->GetClockRate());
-
-				//convert it to rtp time and add to the last sent timestamp
-				baseTimestamp = lastTimestamp + diff + 1;
-			}
-
-			//Reset drop counter
-			dropped = 0;
-			//Store seq number
-			firstExtSeqNum = extSeqNum;
-			//Get first timestamp
-			firstTimestamp = packet->GetExtTimestamp();
-
-			UltraDebug("-StreamTransponder::onRTP() | first seq:%u base:%u last:%u ts:%llu baseSeq:%u baseTimestamp:%llu lastTimestamp:%llu\n",firstExtSeqNum,baseExtSeqNum,lastExtSeqNum,firstTimestamp,baseExtSeqNum,baseTimestamp,lastTimestamp);
-		}
-
-		//Ensure it is not before first one
-		if (extSeqNum<firstExtSeqNum)
-			//Exit
-			return;
-
-		//Only for viedo
-		if (packet->GetMediaType()==MediaFrame::Video)
-		{
-			//Check if we don't have one or if we have a selector and it is not from the same codec
-			if (!selector || (BYTE)selector->GetCodec()!=packet->GetCodec())
-			{
-				//Create new selector for codec
-				selector.reset(VideoLayerSelector::Create((VideoCodec::Type)packet->GetCodec()));
-				//Set prev layers
-				selector->SelectSpatialLayer(spatialLayerId);
-				selector->SelectTemporalLayer(temporalLayerId);
-			}
-		}
-
-		//Get rtp marking
-		bool mark = packet->GetMark();
-
-		//If we have selector for codec
-		if (selector)
-		{
-			//Select layer
+			//Create new selector for codec
+			selector.reset(VideoLayerSelector::Create((VideoCodec::Type)packet->GetCodec()));
+			//Set prev layers
 			selector->SelectSpatialLayer(spatialLayerId);
 			selector->SelectTemporalLayer(temporalLayerId);
+		}
+	}
 
-			//Select pacekt
-			if (!packet->GetMediaLength() || !selector->Select(packet,mark))
+	//Get rtp marking
+	bool mark = packet->GetMark();
+
+	//If we have selector for codec
+	if (selector)
+	{
+		//Select layer
+		selector->SelectSpatialLayer(spatialLayerId);
+		selector->SelectTemporalLayer(temporalLayerId);
+
+		//Select pacekt
+		if (!packet->GetMediaLength() || !selector->Select(packet,mark))
+		{
+			//One more dropperd
+			dropped++;
+			//If selector is waiting for intra and last PLI was more than 1s ago
+			if (selector->IsWaitingForIntra() && getTimeDiffMS(lastSentPLI)>1E3)
 			{
-				//One more dropperd
-				dropped++;
-				//If selector is waiting for intra and last PLI was more than 1s ago
-				if (selector->IsWaitingForIntra() && getTimeDiffMS(lastSentPLI)>1E3)
-				{
-					//Log
-					//UltraDebug("-RTPStreamTransponder::onRTP() | selector IsWaitingForIntra\n");
-					//Request it again
-					RequestPLI();
-				}
-				//Drop
-				return;
+				//Log
+				//UltraDebug("-RTPStreamTransponder::onRTP() | selector IsWaitingForIntra\n");
+				//Request it again
+				RequestPLI();
 			}
-			//Get current spatial layer id
-			lastSpatialLayerId = selector->GetSpatialLayer();
+			//Drop
+			return;
+		}
+		//Get current spatial layer id
+		lastSpatialLayerId = selector->GetSpatialLayer();
+	}
+
+	//Set normalized seq num
+	extSeqNum = baseExtSeqNum + (extSeqNum - firstExtSeqNum) - dropped + added;
+
+	//Set normailized timestamp
+	uint64_t timestamp = baseTimestamp + (packet->GetExtTimestamp()-firstTimestamp);
+
+	//UPdate media codec and type
+	media = packet->GetMediaType();
+	codec = packet->GetCodec();
+	type  = packet->GetPayloadType();
+
+	//UltraDebug("-ext seq:%lu base:%lu first:%lu current:%lu dropped:%lu added:%d ts:%lu normalized:%llu intra:%d codec=%d\n",extSeqNum,baseExtSeqNum,firstExtSeqNum,packet->GetExtSeqNum(),dropped,added,packet->GetTimestamp(),timestamp,packet->IsKeyFrame(),codec);
+
+	//TODO: this should go into the layer selector??
+	if (codec==VideoCodec::VP8 && packet->vp8PayloadDescriptor)
+	{
+		//Get VP8 description
+		auto& vp8PayloadDescriptor = *packet->vp8PayloadDescriptor;
+
+		//Check if we have a pictId
+		if (vp8PayloadDescriptor.pictureIdPresent)
+		{
+			//If we have not received any yet
+			if (!pictureId)
+			{
+				//Use current as starting point
+				pictureId = vp8PayloadDescriptor.pictureId;
+					
+			} 
+			//If picture id is different than last received one
+			else if (vp8PayloadDescriptor.pictureId != lastSrcPictureId)
+			{
+				//Increase picture id
+				(*pictureId)++;
+			}
+
+			//Update last received pict id
+			lastSrcPictureId = vp8PayloadDescriptor.pictureId;
 		}
 
-		//Set normalized seq num
-		extSeqNum = baseExtSeqNum + (extSeqNum - firstExtSeqNum) - dropped + added;
-
-		//Set normailized timestamp
-		uint64_t timestamp = baseTimestamp + (packet->GetExtTimestamp()-firstTimestamp);
-
-		//UPdate media codec and type
-		media = packet->GetMediaType();
-		codec = packet->GetCodec();
-		type  = packet->GetPayloadType();
-
-		//UltraDebug("-ext seq:%lu base:%lu first:%lu current:%lu dropped:%lu added:%d ts:%lu normalized:%llu intra:%d codec=%d\n",extSeqNum,baseExtSeqNum,firstExtSeqNum,packet->GetExtSeqNum(),dropped,added,packet->GetTimestamp(),timestamp,packet->IsKeyFrame(),codec);
-
-		//TODO: this should go into the layer selector??
-		if (codec==VideoCodec::VP8 && packet->vp8PayloadDescriptor)
+		//Check if we have a new base layer
+		if (vp8PayloadDescriptor.temporalLevelZeroIndexPresent)
 		{
-			//Get VP8 description
-			auto& vp8PayloadDescriptor = *packet->vp8PayloadDescriptor;
+			/*
+				* TL0PICIDX:  8 bits temporal level zero index.TL0PICIDX is a
+				* running index for the temporal base layer frames, i.e., the
+				* frames with TID set to 0.  If TID is larger than 0, TL0PICIDX
+				* indicates on which base - layer frame the current image depends.
+				* TL0PICIDX MUST be incremented when TID is 0.  The index MAY
+				* start at a random value, and it MUST wrap to 0 after reaching
+				* the maximum number 255.  Use of TL0PICIDX depends on the
+				* presence of TID.Therefore, it is RECOMMENDED that the TID be
+				* used whenever TL0PICIDX is.
+			*/
 
-			//Check if we have a pictId
-			if (vp8PayloadDescriptor.pictureIdPresent)
+			//Check if it is the base temporal layer
+			if (vp8PayloadDescriptor.temporalLayerIndex == 0)
 			{
-				//If we have not received any yet
-				if (!pictureId)
+				// If we have not received any tl0 index yet
+				if (!temporalLevelZeroIndex)
 				{
 					//Use current as starting point
-					pictureId = vp8PayloadDescriptor.pictureId;
-					
-				} 
-				//If picture id is different than last received one
-				else if (vp8PayloadDescriptor.pictureId != lastSrcPictureId)
+					temporalLevelZeroIndex = vp8PayloadDescriptor.temporalLevelZeroIndex;
+				}
+				//If it is different than last received tl0 index
+				else if (vp8PayloadDescriptor.temporalLevelZeroIndex != lastSrcTemporalLevelZeroIndex)
 				{
-					//Increase picture id
-					(*pictureId)++;
+					//Increase tl0 index
+					(*temporalLevelZeroIndex)++;
 				}
 
-				//Update last received pict id
-				lastSrcPictureId = vp8PayloadDescriptor.pictureId;
+				//Update last received tl0 index
+				lastSrcTemporalLevelZeroIndex = vp8PayloadDescriptor.temporalLevelZeroIndex;
 			}
 
-			//Check if we have a new base layer
-			if (vp8PayloadDescriptor.temporalLevelZeroIndexPresent)
-			{
-				/*
-				 * TL0PICIDX:  8 bits temporal level zero index.TL0PICIDX is a
-				 * running index for the temporal base layer frames, i.e., the
-				 * frames with TID set to 0.  If TID is larger than 0, TL0PICIDX
-				 * indicates on which base - layer frame the current image depends.
-				 * TL0PICIDX MUST be incremented when TID is 0.  The index MAY
-				 * start at a random value, and it MUST wrap to 0 after reaching
-				 * the maximum number 255.  Use of TL0PICIDX depends on the
-				 * presence of TID.Therefore, it is RECOMMENDED that the TID be
-				 * used whenever TL0PICIDX is.
-				*/
-
-				//Check if it is the base temporal layer
-				if (vp8PayloadDescriptor.temporalLayerIndex == 0)
-				{
-					// If we have not received any tl0 index yet
-					if (!temporalLevelZeroIndex)
-					{
-						//Use current as starting point
-						temporalLevelZeroIndex = vp8PayloadDescriptor.temporalLevelZeroIndex;
-					}
-					//If it is different than last received tl0 index
-					else if (vp8PayloadDescriptor.temporalLevelZeroIndex != lastSrcTemporalLevelZeroIndex)
-					{
-						//Increase tl0 index
-						(*temporalLevelZeroIndex)++;
-					}
-
-					//Update last received tl0 index
-					lastSrcTemporalLevelZeroIndex = vp8PayloadDescriptor.temporalLevelZeroIndex;
-				}
-
-			}
-
-			// Set if we need rewrite the picture ID or tl0 index
-			if (temporalLevelZeroIndex && pictureId && 
-				( vp8PayloadDescriptor.pictureId != *pictureId || vp8PayloadDescriptor.temporalLevelZeroIndex != *temporalLevelZeroIndex)
-			)
-			{
-				//Rewrite ids
-				packet->rewitePictureIds = true;
-
-				//Rewrite picture id
-				vp8PayloadDescriptor.pictureId = *pictureId;
-				//Rewrite tl0 index
-				vp8PayloadDescriptor.temporalLevelZeroIndex = *temporalLevelZeroIndex;
-			}
-
-			//Error("-ext seq:%lu pictureIdPresent:%d rewrite:%d pictId:%d lastPictId:%d origPictId:%d intra:%d mark:%d \n",extSeqNum, vp8PayloadDescriptor.pictureIdPresent, packet->rewitePictureIds, *pictureId, lastSrcPicId, vp8PayloadDescriptor.pictureId : -1, packet->IsKeyFrame(), packet->GetMark());
 		}
 
-		//If we have to append h264 sprop parameters set for the first packet of an iframe
-		if (h264Parameters && codec==VideoCodec::H264 && packet->IsKeyFrame() && (timestamp!=lastTimestamp || firstExtSeqNum==packet->GetExtSeqNum()))
+		// Set if we need rewrite the picture ID or tl0 index
+		if (temporalLevelZeroIndex && pictureId && 
+			( vp8PayloadDescriptor.pictureId != *pictureId || vp8PayloadDescriptor.temporalLevelZeroIndex != *temporalLevelZeroIndex)
+		)
 		{
-			//UltraDebug("-addding h264 sprop\n");
+			//Rewrite ids
+			packet->rewitePictureIds = true;
 
-			//Clone packet
-			auto cloned = h264Parameters->Clone();
-			//Set new seq numbers
-			cloned->SetExtSeqNum(extSeqNum);
-			//Set normailized timestamp
-			cloned->SetExtTimestamp(timestamp);
-			//Set payload type
-			cloned->SetPayloadType(type);
-			//Change ssrc
-			cloned->SetSSRC(ssrc);
-			//Send packet
-			if (sender)
-				//Create clone on sender thread
-				sender->Enqueue(cloned);
-			//Add new packet
-			added ++;
-			extSeqNum ++;
-
-			//UltraDebug("-ext seq:%lu base:%lu first:%lu current:%lu dropped:%lu added:%d ts:%lu normalized:%llu intra:%d codec=%d\n",extSeqNum,baseExtSeqNum,firstExtSeqNum,packet->GetExtSeqNum(),dropped,added,packet->GetTimestamp(),timestamp,packet->IsKeyFrame(),codec);
+			//Rewrite picture id
+			vp8PayloadDescriptor.pictureId = *pictureId;
+			//Rewrite tl0 index
+			vp8PayloadDescriptor.temporalLevelZeroIndex = *temporalLevelZeroIndex;
 		}
 
-		//Dependency descriptor active decodte target mask
-		std::optional<std::vector<bool>> forwaredDecodeTargets;
+		//Error("-ext seq:%lu pictureIdPresent:%d rewrite:%d pictId:%d lastPictId:%d origPictId:%d intra:%d mark:%d \n",extSeqNum, vp8PayloadDescriptor.pictureIdPresent, packet->rewitePictureIds, *pictureId, lastSrcPicId, vp8PayloadDescriptor.pictureId : -1, packet->IsKeyFrame(), packet->GetMark());
+	}
 
-		//If it is AV1
-		if (codec==VideoCodec::AV1 && selector)
-			//Get decode target
-			forwaredDecodeTargets = static_cast<AV1LayerSelector*>(selector.get())->GetForwardedDecodeTargets();
+	//If we have to append h264 sprop parameters set for the first packet of an iframe
+	if (h264Parameters && codec==VideoCodec::H264 && packet->IsKeyFrame() && (timestamp!=lastTimestamp || firstExtSeqNum==packet->GetExtSeqNum()))
+	{
+		//UltraDebug("-addding h264 sprop\n");
 
-		//Continous frame number
-		uint64_t continousFrameNumber = NoFrameNum;
-		//Get frame number if we have dependency descriptor
-		if (packet->HasDependencyDestriptor())
-		{
-			//Get it
-			auto dd = packet->GetDependencyDescriptor();
-
-			//Double check
-			if (dd)
-			{
-				//Extend it
-				frameNumberExtender.Extend(dd->frameNumber);
-				//Get extended frame number
-				uint64_t frameNumber = frameNumberExtender.GetExtSeqNum();
-
-				//If it is first
-				if (firstFrameNumber==NoFrameNum)
-					//Set it
-					firstFrameNumber = frameNumber;
-				//If it is the first frame after reset
-				if (baseFrameNumber==NoFrameNum)
-					//Set it
-					baseFrameNumber = frameNumber;
-				//Calculate a continous frame number
-				continousFrameNumber = baseFrameNumber + frameNumber - firstFrameNumber;
-
-				//UltraDebug("-frameNum first:%llu base:%llu current:%llu(%u) continous=%llu\n", firstFrameNumber, baseFrameNumber, lastFrameNumber, dd->frameNumber, continousFrameNumber);
-			}
-		}
-
-		//Get last send seq num and timestamp
-		lastExtSeqNum = extSeqNum;
-		lastTimestamp = timestamp;
-		//Update last sent time
-		lastTime = getTime();
-
-		//Get last frame number
-		lastFrameNumber = continousFrameNumber;
-
+		//Clone packet
+		auto cloned = h264Parameters->Clone();
 		//Set new seq numbers
-		packet->SetExtSeqNum(extSeqNum);
+		cloned->SetExtSeqNum(extSeqNum);
 		//Set normailized timestamp
-		packet->SetTimestamp(timestamp);
-		//Set mark again
-		packet->SetMark(mark);
+		cloned->SetExtTimestamp(timestamp);
+		//Set payload type
+		cloned->SetPayloadType(type);
 		//Change ssrc
-		packet->SetSSRC(ssrc);
-
-		//If it has a dependency descriptor
-		if (forwaredDecodeTargets && packet->HasTemplateDependencyStructure())
-			//Override mak
-			packet->OverrideActiveDecodeTargets(forwaredDecodeTargets);
-		//If we have a continous frame number
-		if (packet->HasDependencyDestriptor() && continousFrameNumber != NoFrameNum)
-			//Update it
-			packet->OverrideFrameNumber(static_cast<uint16_t>(continousFrameNumber));
-
+		cloned->SetSSRC(ssrc);
 		//Send packet
 		if (sender)
-			//Enqueue it
-			sender->Enqueue(packet);
-	});
+			//Create clone on sender thread
+			sender->Enqueue(cloned);
+		//Add new packet
+		added ++;
+		extSeqNum ++;
+
+		//UltraDebug("-ext seq:%lu base:%lu first:%lu current:%lu dropped:%lu added:%d ts:%lu normalized:%llu intra:%d codec=%d\n",extSeqNum,baseExtSeqNum,firstExtSeqNum,packet->GetExtSeqNum(),dropped,added,packet->GetTimestamp(),timestamp,packet->IsKeyFrame(),codec);
+	}
+
+	//Dependency descriptor active decodte target mask
+	std::optional<std::vector<bool>> forwaredDecodeTargets;
+
+	//If it is AV1
+	if (codec==VideoCodec::AV1 && selector)
+		//Get decode target
+		forwaredDecodeTargets = static_cast<AV1LayerSelector*>(selector.get())->GetForwardedDecodeTargets();
+
+	//Continous frame number
+	uint64_t continousFrameNumber = NoFrameNum;
+	//Get frame number if we have dependency descriptor
+	if (packet->HasDependencyDestriptor())
+	{
+		//Get it
+		auto dd = packet->GetDependencyDescriptor();
+
+		//Double check
+		if (dd)
+		{
+			//Extend it
+			frameNumberExtender.Extend(dd->frameNumber);
+			//Get extended frame number
+			uint64_t frameNumber = frameNumberExtender.GetExtSeqNum();
+
+			//If it is first
+			if (firstFrameNumber==NoFrameNum)
+				//Set it
+				firstFrameNumber = frameNumber;
+			//If it is the first frame after reset
+			if (baseFrameNumber==NoFrameNum)
+				//Set it
+				baseFrameNumber = frameNumber;
+			//Calculate a continous frame number
+			continousFrameNumber = baseFrameNumber + frameNumber - firstFrameNumber;
+
+			//UltraDebug("-frameNum first:%llu base:%llu current:%llu(%u) continous=%llu\n", firstFrameNumber, baseFrameNumber, lastFrameNumber, dd->frameNumber, continousFrameNumber);
+		}
+	}
+
+	//Get last send seq num and timestamp
+	lastExtSeqNum = extSeqNum;
+	lastTimestamp = timestamp;
+	//Update last sent time
+	lastTime = getTime();
+
+	//Get last frame number
+	lastFrameNumber = continousFrameNumber;
+
+	//Set new seq numbers
+	packet->SetExtSeqNum(extSeqNum);
+	//Set normailized timestamp
+	packet->SetTimestamp(timestamp);
+	//Set mark again
+	packet->SetMark(mark);
+	//Change ssrc
+	packet->SetSSRC(ssrc);
+
+	//If it has a dependency descriptor
+	if (forwaredDecodeTargets && packet->HasTemplateDependencyStructure())
+		//Override mak
+		packet->OverrideActiveDecodeTargets(forwaredDecodeTargets);
+	//If we have a continous frame number
+	if (packet->HasDependencyDestriptor() && continousFrameNumber != NoFrameNum)
+		//Update it
+		packet->OverrideFrameNumber(static_cast<uint16_t>(continousFrameNumber));
+
+	//Send packet
+	if (sender)
+		//Enqueue it
+		sender->Enqueue(packet);
 }
 
 void RTPStreamTransponder::onBye(const RTPIncomingMediaStream* stream)
 {
-	timeService.Async([=](auto) {
+	AsyncSafe([=](auto) {
 
 		//If they are the not same
-		if (this->incoming.get() != stream)
+		if (incoming.get() != stream)
 			//DO nothing
 			return;
 
@@ -562,7 +574,9 @@ void RTPStreamTransponder::onBye(const RTPIncomingMediaStream* stream)
 
 void RTPStreamTransponder::onEnded(const RTPIncomingMediaStream* stream)
 {
-	timeService.Async([=](auto){
+	AsyncSafe([=](auto) {
+		// Note: Checks for equality of stream pointer are important to ensure it is still valid on exec!
+
 		//IF it is the current one
 		if (this->incoming.get() == stream)
 		{
@@ -582,11 +596,13 @@ void RTPStreamTransponder::onEnded(const RTPIncomingMediaStream* stream)
 }
 void RTPStreamTransponder::onEnded(const RTPOutgoingSourceGroup* group)
 {
-	timeService.Async([=](auto) {
+	AsyncSafe([=](auto){
+		// Note: Checks for equality of group pointer are important to ensure it is still valid on exec!
+
 		//IF it is the current one
-		if (this->outgoing.get() == group)
+		if (outgoing.get() == group)
 			//No more outgoing
-			this->outgoing = nullptr;
+			outgoing = nullptr;
 	});
 }
 
@@ -594,7 +610,7 @@ void RTPStreamTransponder::onEnded(const RTPOutgoingSourceGroup* group)
 void RTPStreamTransponder::RequestPLI()
 {
 	//Log("-RTPStreamTransponder::RequestPLI() [receiver:%p,incoming:%p]\n",receiver,incoming);
-	timeService.Async([=](auto now) {
+	AsyncSafe([=](auto now) {
 		//Request update on the incoming
 		if (receiver && incoming) receiver->SendPLI(incoming->GetMediaSSRC());
 		//Update last sent pli

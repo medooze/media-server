@@ -2,7 +2,7 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 }
 #include "log.h"
-#include "aacdecoder.h"
+#include "AACDecoder.h"
 #include "aacconfig.h"
 
 
@@ -32,7 +32,7 @@ AACDecoder::AACDecoder()
 
 	//OPEN it
 	if (avcodec_open2(ctx, codec, NULL) < 0)
-	         Error("could not open codec\n");
+	    Error("could not open codec\n");
 	
 	//Create packet
 	packet = av_packet_alloc();
@@ -88,7 +88,7 @@ bool AACDecoder::SetConfig(const uint8_t* data,const size_t size)
 	return true;
 }
 
-int AACDecoder::Decode(const AudioFrame::const_shared& audioFrame, SWORD* out, int outLen)
+int AACDecoder::Decode(const AudioFrame::const_shared& audioFrame)
 {
 	//Check we have config
 	if (!inited)
@@ -104,28 +104,26 @@ int AACDecoder::Decode(const AudioFrame::const_shared& audioFrame, SWORD* out, i
 	
 	//Release side data
 	av_packet_free_side_data(packet);
+	return 1;
+}
 
-	//Copy outout data
-	int len = 0;
-
-	//While we got decoded frames
-	while (avcodec_receive_frame(ctx, frame) >= 0)
+AudioBuffer::shared AACDecoder::GetDecodedAudioFrame()
+{
+	int ret;
+	ret = avcodec_receive_frame(ctx, frame);
+	if (ret < 0)
 	{
-		//Make sure that we have enough data
-		if (outLen < (len + frame->nb_samples) * frame->channels)
-			return Error("-AACDecoder::Decode() | AAC returned too much data [len:%d,samples:%d,channels:%d,outLen:%d]\n", len, frame->nb_samples, frame->channels, outLen);
-
-		//Convert to SWORD
-		for (size_t i = 0; i < frame->nb_samples && (i * frame->channels) < outLen; ++i)
-			//For each channel
-			for (size_t n = 0; n < std::min(frame->channels, 2); ++n)
-				//Interleave
-				out[(len + i) * frame->channels + n] = ((float*)(frame->extended_data[n]))[i] * (1 << 15);
-		//Get number of samples
-		len += frame->nb_samples;
+		if(ret != AVERROR(EAGAIN))
+			Error("-AACDecoder::GetDecodedAudioFrame Error getting decoded frame reason: %d\n", ret);
+		return {};
 	}
+	auto audioBuffer = std::make_shared<AudioBuffer>(frame->nb_samples, frame->channels);
 
-	//Return number of samples
-	return len;
+	int len = audioBuffer->SetPCMData(frame->extended_data, frame->nb_samples);
+
+	if(len<frame->nb_samples) 
+		Error("-AACDecoder::GetDecodedAudioFrame less decoded data copied:actual=%d - should=%d\n", len, frame->nb_samples);
+
+	return audioBuffer;
 }
 
