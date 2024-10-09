@@ -348,7 +348,7 @@ int RTPBundleTransport::Init()
 		//Everything ok
 		Log("-RTPBundleTransport::Init() | Got port [%d]\n",port);
 		//Start receiving
-		loop.Start(socket);
+		loop.StartWithFd(socket);
 		//Create ice timer
 		iceTimer = loop.CreateTimerUnsafe([=](std::chrono::milliseconds now){ this->onTimer(now); });
 		//Set name for debug
@@ -421,7 +421,7 @@ int RTPBundleTransport::Init(int port)
 	//Store local port
 	this->port = port;
 	//Start receiving
-	loop.Start(socket);
+	loop.StartWithFd(socket);
 	
 	//Create ice timer
 	iceTimer = loop.CreateTimerUnsafe([=](std::chrono::milliseconds now){ this->onTimer(now); });

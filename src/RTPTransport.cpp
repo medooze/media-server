@@ -1150,8 +1150,8 @@ int RTPTransport::ReadRTP(const uint8_t* data, const size_t size, const uint32_t
 void RTPTransport::Start()
 {
 	//Start loops
-	rtpLoop.Start(simSocket);
-	rtcpLoop.Start(simRtcpSocket);
+	rtpLoop.StartWithFd(simSocket);
+	rtcpLoop.StartWithFd(simRtcpSocket);
 }
 
 void RTPTransport::Stop()

@@ -5,7 +5,6 @@
 #include <netinet/tcp.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <sys/poll.h>
 
 #include <errno.h>
 #include <unistd.h>
@@ -69,7 +68,7 @@ void free_cpu_set(cpu_set_t* s) {
 }
 #endif
 
-EventLoop::EventLoop()
+EventLoop::EventLoop(std::unique_ptr<Poll> poll) : poll(std::move(poll))
 {
 	Debug("-EventLoop::EventLoop() [this:%p]\n", this);
 }
@@ -139,13 +138,6 @@ bool EventLoop::SetAffinity(std::thread::native_handle_type thread, int cpu)
 
 bool EventLoop::SetAffinity(int cpu)
 {
-#ifdef 	SO_INCOMING_CPU
-	//If got socket
-	if (fd)
-		//Set incoming socket cpu affinity
-		(void)setsockopt(fd, SOL_SOCKET, SO_INCOMING_CPU, &cpu, sizeof(cpu));
-#endif
-
 	//Set event loop thread affinity
 	return EventLoop::SetAffinity(thread.native_handle(), cpu);
 
@@ -168,7 +160,7 @@ bool EventLoop::SetPriority(int priority)
 	return !pthread_setschedparam(thread.native_handle(), priority ? SCHED_FIFO : SCHED_OTHER ,&param);
 }
 
-bool EventLoop::Start(std::function<void(void)> loop)
+bool EventLoop::StartWithLoop(std::function<void(void)> loop)
 {
 	//If already started
 	if (running)
@@ -179,41 +171,31 @@ bool EventLoop::Start(std::function<void(void)> loop)
 	TRACE_EVENT("eventloop", "EventLoop::Start(loop)");
 	Debug("-EventLoop::Start()\n");
 	
-#if __APPLE__
-	//Create pipe
-	if (::pipe(pipe)==-1)
-		//Error
-		return false;
+	//Block signals to avoid exiting on SIGUSR1
+	blocksignals();
 	
-	//Set non blocking
-	fcntl(pipe[0], F_SETFL , O_NONBLOCK);
-	fcntl(pipe[1], F_SETFL , O_NONBLOCK);
-	
-#else
-	pipe[0] = pipe[1] = eventfd(0, EFD_NONBLOCK);
-#endif	
-	//Check values
-	if (pipe[0]==FD_INVALID || pipe[1]==FD_INVALID)
-		//Error
-		return Error("-EventLoop::Start() | could not start pipe [errno:%d]\n",errno);
-			
-	//Store socket
-	this->fd = FD_INVALID;
+	exitCode.reset();
 	
 	//Running
 	running = true;
-
-	//Not signaled
-	signaled.clear();
 	
 	//Start thread and run
-	thread = std::thread(loop);
+	thread = std::thread([loop](){
+		loop();
+	});
 	
 	//Done
 	return true;
 }
 
-bool EventLoop::Start(int fd)
+bool EventLoop::StartWithFd(int fd)
+{
+	poll->Clear();
+	
+	return AddFd(fd) && Start();
+}
+
+bool EventLoop::Start()
 {
 	//If already started
 	if (running)
@@ -221,35 +203,16 @@ bool EventLoop::Start(int fd)
 		return Error("-EventLoop::Start() | Already running\n");
 	
 	//Log
-	TRACE_EVENT("eventloop", "EventLoop::Start(fd)");
-	Debug("-EventLoop::Start() [fd:%d,this:%p]\n",fd,this);
+	TRACE_EVENT("eventloop", "EventLoop::Start()");
+	Debug("-EventLoop::Start() [this:%p]\n", this);
 	
-#if __APPLE__
-	//Create pipe
-	if (::pipe(pipe)==-1)
-		//Error
-		return false;
+	//Block signals to avoid exiting on SIGUSR1
+	blocksignals();
 	
-	//Set non blocking
-	fcntl(pipe[0], F_SETFL , O_NONBLOCK);
-	fcntl(pipe[1], F_SETFL , O_NONBLOCK);
-	
-#else
-	pipe[0] = pipe[1] = eventfd(0, EFD_NONBLOCK);
-#endif	
-	//Check values
-	if (pipe[0]==FD_INVALID || pipe[1]==FD_INVALID)
-		//Error
-		return Error("-EventLoop::Start() | could not start pipe [errno:%d]\n",errno);
-	
-	//Store socket
-	this->fd = fd;
+	exitCode.reset();
 	
 	//Running
 	running = true;
-
-	//Not signaled
-	signaled.clear();
 	
 	//Start thread and run
 	thread = std::thread([this](){ Run(); });
@@ -267,7 +230,7 @@ bool EventLoop::Stop()
 	
 	//Log
 	TRACE_EVENT("eventloop", "EventLoop::Stop");
-	Debug(">EventLoop::Stop() [fd:%d,this:%p]\n",fd,this);
+	Debug(">EventLoop::Stop() [this:%p]\n",this);
 	
 	//Not running
 	running = false;
@@ -282,15 +245,8 @@ bool EventLoop::Stop()
 		thread.join();
 	}
 	
-	//Close pipe
-	if (pipe[0]!=FD_INVALID) close(pipe[0]);
-	if (pipe[1]!=FD_INVALID) close(pipe[1]);
-	
-	//Empyt pipe
-	pipe[0] = pipe[1] = FD_INVALID;
-	
 	//Log
-	Debug("<EventLoop::Stop() [fd:%d]\n",fd);
+	Debug("<EventLoop::Stop()\n");
 	
 	//Done
 	return true;
@@ -461,7 +417,6 @@ void EventLoop::TimerImpl::Reschedule(const std::chrono::milliseconds& ms, const
 
 void EventLoop::CancelTimer(TimerImpl::shared timer)
 {
-
 	//UltraDebug(">EventLoop::CancelTimer() \n");
 
 	//We don't have to repeat this
@@ -499,43 +454,48 @@ const std::chrono::milliseconds EventLoop::Now()
 	return now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
 }
 
+bool EventLoop::AddFd(int fd, std::optional<uint16_t> eventMask)
+{
+	if (!poll->AddFd(fd)) return false;
+	
+	if (eventMask.has_value())
+	{
+		return poll->SetEventMask(fd, *eventMask);
+	}
+	
+	return true;
+}
+
+bool EventLoop::RemoveFd(int fd)
+{
+	return poll->RemoveFd(fd);
+}
+
+void EventLoop::ForEachFd(const std::function<void(int)>& func)
+{
+	poll->ForEachFd([&func](int fd) {
+		func(fd);
+		return std::nullopt;
+	});
+}
+
 void EventLoop::Signal()
 {
 	TRACE_EVENT("eventloop", "EventLoop::Signal");
-	//UltraDebug("-EventLoop::Signal()\r\n");
-	uint64_t one = 1;
-	
+
 	//If we are in the same thread or already signaled and pipe is ok
-	if (std::this_thread::get_id()==thread.get_id() || signaled.test_and_set() || pipe[1] == FD_INVALID)
+	if (std::this_thread::get_id()==thread.get_id())
 		//No need to do anything
 		return;
-	
-	//We have signaled it above
-	//worst case scenario is that race happens between this to points
-	//and that we signal it twice
-	
-	
-	//Write to tbe pipe, and assign to one to avoid warning in compile time
-	one = write(pipe[1],(uint8_t*)&one,sizeof(one));
+		
+	poll->Signal();
 }
 
 void EventLoop::Run(const std::chrono::milliseconds &duration)
 {
 	//Log(">EventLoop::Run() | [%p,running:%d,duration:%llu]\n",this,running,duration.count());
+	OnLoopEnter();
 	
-	//Set values for polling
-	ufds[0].fd = fd;
-	ufds[1].fd = pipe[0];
-	//Set to wait also for write events on pipe for signaling
-	ufds[1].events = POLLIN | POLLERR | POLLHUP;
-
-	//Set non blocking so we can get an error when we are closed by end
-	int fsflags = fcntl(fd,F_GETFL,0);
-	fsflags |= O_NONBLOCK;
-	(void)fcntl(fd,F_SETFL,fsflags);
-
-
-	//Catch all IO errors and do nothing
 	signal(SIGIO,[](int){});
 	
 	//Get now
@@ -548,58 +508,53 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 	while(running && now<=until)
 	{
 		//TRACE_EVENT("eventloop", "EventLoop::Run::Iteration");
-		ufds[0].events = GetPollEvents();
-		//Clear readed events
-		ufds[0].revents = 0;
-		ufds[1].revents = 0;
+		
+		poll->ForEachFd([this](int fd) {
+			
+			auto events = GetPollEventMask(fd);
+			if (events)
+				poll->SetEventMask(fd, *events);
+		});
 		
 		//Until signaled or one each 10 seconds to prevent deadlocks
 		int timeout = GetNextTimeout(10E3, until);
 
 		//UltraDebug(">EventLoop::Run() | poll timeout:%d timers:%d tasks:%d size:%d\n",timeout,timers.size(),tasks.size_approx(), sizeof(ufds) / sizeof(pollfd));
-		
+
 		//Wait for events
+		if (auto error = poll->Wait(timeout) != 0)
 		{
-			//TRACE_EVENT("eventloop", "poll", "timeout", timeout);
-			(void)poll(ufds,sizeof(ufds)/sizeof(pollfd),timeout);
+			Error("Event poll wait failed. code: %d\n", error);
+			SetStopping(ToUType(PredefinedExitCode::WaitError));
+			break;
 		}
+		
+		if (!running) break;
 		
 		//Update now
 		now = Now();
 		
-		//UltraDebug("<EventLoop::Run() | poll timeout:%d timers:%d tasks:%d\n",timeout,timers.size(),tasks.size_approx());
-
-		//Check for cancel
-		if ((ufds[0].revents & POLLHUP) || (ufds[0].revents & POLLERR) || (ufds[1].revents & POLLHUP) || (ufds[1].revents & POLLERR))
-		{
-			//Error
-			Log("-EventLoop::Run() | Pool error event [revents:%d,errno:%d]\n",ufds[0].revents,errno);
-			//Exit
-			break;
-		}
-		
-		//Read first
-		if (ufds[0].revents & POLLIN)
-		{
-			OnPollIn(ufds[0].fd);
-		}
-		
-		//Check read is possible
-		if (ufds[0].revents & POLLOUT)
-		{
-			OnPollOut(ufds[0].fd);
-		}
+		poll->ForEachFd([this](int fd) {
+			auto [events, error] = poll->GetEvents(fd);
+			if (error)
+			{
+				OnPollError(fd, error);
+			}
+			else if (events & Poll::Event::In)
+			{
+				OnPollIn(fd);
+			}
+			else if (events & Poll::Event::Out)
+			{
+				OnPollOut(fd);
+			}
+		});
 		
 		//Process pendint tasks
 		ProcessTasks(now);
 
 		//Timers triggered
 		ProcessTriggers(now);
-		
-		//Read first from signal pipe
-		if (ufds[1].revents & POLLIN)
-			//Clear signal flag
-			ClearSignal();
 		
 		//Update now
 		now = Now();
@@ -608,6 +563,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 	//Run queued tasks before exiting
 	ProcessTasks(now);
 
+	OnLoopExit(exitCode.has_value() ? *exitCode : 0);
 	//Log("<EventLoop::Run()\n");
 }
 
@@ -637,18 +593,6 @@ int EventLoop::GetNextTimeout(int defaultTimeout, const std::chrono::millisecond
 	}
 
 	return std::min(timeout, defaultTimeout);
-}
-
-void EventLoop::ClearSignal()
-{
-	uint64_t data = 0;
-	//Remove pending data on signal pipe
-	while (read(pipe[0], &data, sizeof(uint64_t)) > 0)
-	{
-		//DO nothing
-	}
-	//We are not signaled anymore
-	signaled.clear();
 }
 
 void EventLoop::ProcessTasks(const std::chrono::milliseconds& now)
@@ -726,4 +670,3 @@ void EventLoop::ProcessTriggers(const std::chrono::milliseconds& now)
 	}
 	TRACE_EVENT_END("eventloop");
 }
-

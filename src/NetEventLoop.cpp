@@ -21,6 +21,21 @@ void NetEventLoop::ClearRawTx()
 	rawTx.reset();
 }
 
+bool NetEventLoop::SetAffinity(int cpu)
+{
+#ifdef 	SO_INCOMING_CPU
+	//If got socket
+	EventLoop::ForEachFd([cpu](auto pfd) {
+		if (pfd != FD_INVALID)
+			//Set incoming socket cpu affinity
+			(void)setsockopt(pfd, SOL_SOCKET, SO_INCOMING_CPU, &cpu, sizeof(cpu));
+	});
+#endif
+
+	//Set event loop thread affinity
+	return EventLoop::SetAffinity(cpu);
+
+}
 
 void NetEventLoop::Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet, const std::optional<PacketHeader::FlowRoutingInfo>& rawTxData, const std::optional<std::function<void(std::chrono::milliseconds)>>& callback)
 {
@@ -64,10 +79,10 @@ void NetEventLoop::Send(const uint32_t ipAddr, const uint16_t port, Packet&& pac
 	Signal();
 }
 
-short NetEventLoop::GetPollEvents() const
+std::optional<uint16_t> NetEventLoop::GetPollEventMask(int fd) const
 {
 	//If we have anything to send set to wait also for write events
-	return sending.size_approx() ? POLLIN | POLLOUT | POLLERR | POLLHUP : POLLIN | POLLERR | POLLHUP;
+	return sending.size_approx() ? (Poll::Event::In | Poll::Event::Out) : Poll::Event::In;
 }
 
 void NetEventLoop::OnPollIn(int fd)
@@ -114,7 +129,6 @@ void NetEventLoop::OnPollIn(int fd)
 			if (messages[i].msg_len)
 				//Run callback
 				listener->OnRead(fd, datas[i], messages[i].msg_len, ntohl(froms[i].sin_addr.s_addr), ntohs(froms[i].sin_port));
-
 }
 
 void NetEventLoop::OnPollOut(int fd)
@@ -127,7 +141,6 @@ void NetEventLoop::OnPollOut(int fd)
 	TRACE_EVENT("neteventloop", "NetEventLoop::OnPollOut");
 	//UltraDebug("-EventLoop::Run() | ufds[0].revents & POLLOUT\n");
 
-	
 	//Now send all that we can
 	while (items.size()<MaxMultipleSendingMessages)
 	{
@@ -222,4 +235,10 @@ void NetEventLoop::OnPollOut(int fd)
 	items.clear();
 	//Copy elements to retry
 	std::move(retry.begin(), retry.end(), std::back_inserter(items));
+}
+
+void NetEventLoop::OnPollError(int fd, int errorCode)
+{
+	Error("Error occurred on network fd: %d\n", errorCode);
+	SetStopping(errorCode);
 }
