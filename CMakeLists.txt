@@ -72,6 +72,9 @@ add_library(MediaServerLib
     ${CMAKE_CURRENT_LIST_DIR}/src/mpegts/mpegts.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/mpegts/psi.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/mpegts/SpliceInfoSection.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/mpegts/mpegts.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/mpegts/mpegtscrc32.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/mpegts/psi.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtmp/rtmpserver.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtmp/amf.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtmp/rtmpclientconnection.cpp
@@ -150,6 +153,7 @@ target_include_directories(MediaServerLib PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}/include
     ${CMAKE_CURRENT_LIST_DIR}/src
     ${CMAKE_CURRENT_LIST_DIR}/ext/libdatachannels/src/internal
+    ${CMAKE_CURRENT_LIST_DIR}/ext/crc32c/include
 )
 
 target_link_libraries(MediaServerLib
@@ -190,6 +194,7 @@ add_executable(MediaServerUnitTest
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestFrameDelayCalculator.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestFrameDispatchCoordinator.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestMovingCounter.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestMpegts.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestRTPStreamTransponder.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestSimulcastMediaFrameListener.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestTimestampChecker.cpp
@@ -204,6 +209,7 @@ add_executable(MediaServerUnitTest
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAMFNumber.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestVideoLayersAllocation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestTools.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestCrc32.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestForwardErrorCorrection.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestFecProbeGenerator.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestSpliceInfoSection.cpp
@@ -212,6 +218,7 @@ add_executable(MediaServerUnitTest
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestH26xPPS.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestHEVCBitstream.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestHEVCDescriptor.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestMessagePacketizer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/data/FramesArrivalInfo.cpp
 )
 

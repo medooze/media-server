@@ -1,9 +1,31 @@
 #include "mpegts/mpegts.h"
 #include "log.h"
 #include "bitstream/BitReader.h"
+#include "bitstream/BitWriter.h"
 
 namespace mpegts
 {
+
+void Header::Serialize(BufferWritter& writer) const
+{
+	if (writer.GetLeft() < GetSize())
+		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
+		
+	BitWriter bitwriter(writer, 4);
+	bitwriter.Put(8, syncByte);
+	bitwriter.Put(1, transportErrorIndication);
+	bitwriter.Put(1, payloadUnitStartIndication);
+	bitwriter.Put(1, transportPriority);
+	bitwriter.Put(13, packetIdentifier);
+	bitwriter.Put(2, transportScramblingControl);
+	bitwriter.Put(2, adaptationFieldControl);
+	bitwriter.Put(4, continuityCounter);
+}
+
+size_t Header::GetSize() const
+{
+	return 4;
+}
 
 Header Header::Parse(BufferReader& reader)
 {
@@ -29,10 +51,10 @@ Header Header::Parse(BufferReader& reader)
 									'10' (0x80) = Scrambled with even key
 									'11' (0xC0) = Scrambled with odd key
 
-	Adaptation field control		2	0x30		01 – no adaptation field, payload only,
-									10 – adaptation field only, no payload,
-									11 – adaptation field followed by payload,
-									00 – RESERVED for future use [11]
+	Adaptation field control		2	0x30		01 - no adaptation field, payload only,
+									10 - adaptation field only, no payload,
+									11 - adaptation field followed by payload,
+									00 - RESERVED for future use [11]
 
 	Continuity counter			4	0xf		Sequence number of payload packets (0x00 to 0x0F) within each stream (except PID 8191)
 									Incremented per-PID, only when a payload flag is set.
@@ -69,10 +91,48 @@ void Header::Dump() const
 }
 
 
+void AdaptationField::Serialize(BufferWritter& writer) const
+{
+	if (writer.GetLeft() < GetSize())
+		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
+	
+	if (opcrFlag || splicingPointFlag || transportPrivateDataFlag || adaptationFieldExtensionFlag)
+	{
+		throw std::runtime_error("The field is not implemented for encoding");
+	}
+	
+	writer.Set1(GetSize() - 1);
+	
+	BitWriter bitwriter(writer, 1);
+	
+	bitwriter.Put(1, discontinuityIndicator);
+	bitwriter.Put(1, randomAccessIndicator);
+	bitwriter.Put(1, elementaryStreamPriorityIndicator);
+	bitwriter.Put(1, pcrFlag);
+	bitwriter.Put(1, opcrFlag);
+	bitwriter.Put(1, splicingPointFlag);
+	bitwriter.Put(1, transportPrivateDataFlag);
+	bitwriter.Put(1, adaptationFieldExtensionFlag);
+	
+	if (pcr)
+	{
+		assert(pcrFlag);
+		writer.Set1(uint8_t(*pcr >> 25));
+		writer.Set1(uint8_t(*pcr >> 17));
+		writer.Set1(uint8_t(*pcr >> 9));
+		writer.Set1(uint8_t(*pcr >> 1));
+		writer.Set1(uint8_t(*pcr << 7 | 0x7e));
+		writer.Set1(0);
+	}
+}
+
+size_t AdaptationField::GetSize() const
+{
+	return 1 + 1 + (pcr ? 6 : 0);
+}
 
 AdaptationField AdaptationField::Parse(BufferReader& reader)
 {
-
 	if (reader.GetLeft() < 1)
 		throw std::runtime_error("Not enought data to read mpegts adaptation field length");
 
@@ -165,6 +225,22 @@ Packet Packet::Parse(BufferReader& reader)
 namespace pes
 {
 
+void Header::Serialize(BufferWritter& writer) const
+{
+	if (writer.GetLeft() < GetSize())
+		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
+	
+	writer.Set3(packetStartCodePrefix);
+	writer.Set1(streamId);
+	writer.Set2(packetLength);
+}
+
+size_t Header::GetSize() const
+{
+	return 6;
+}
+
+
 Header Header::Parse(BufferReader& reader)
 {
 	if (reader.GetLeft() < 6)
@@ -184,6 +260,79 @@ Header Header::Parse(BufferReader& reader)
 	header.packetLength = reader.Get2();
 
 	return header;
+}
+
+void HeaderExtension::Serialize(BufferWritter& writer) const
+{
+	if (writer.GetLeft() < GetSize())
+		throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
+		
+	if (escrFlag || rateFlag || trickModeFlag || aditionalInfoFlag || crcFlag || extensionFlag)
+		throw std::runtime_error("The field is not implemented for encoding");
+	
+	BitWriter bitwriter(writer, 3);
+	
+	bitwriter.Put(2, markerBits);
+	bitwriter.Put(2, scramblingControl);
+	bitwriter.Put(1, priority);
+	bitwriter.Put(1, dataAlignmentIndicator);
+	bitwriter.Put(1, copyright);
+	bitwriter.Put(1, original);
+	bitwriter.Put(2, ptsdtsIndicator);
+	bitwriter.Put(1, escrFlag);
+	bitwriter.Put(1, rateFlag);
+	bitwriter.Put(1, trickModeFlag);
+	bitwriter.Put(1, aditionalInfoFlag);
+	bitwriter.Put(1, crcFlag);
+	bitwriter.Put(1, extensionFlag);
+	bitwriter.Put(8, GetSize() - 3);
+	
+	assert(ptsdtsIndicator != PTSDTSIndicator::Forbiden);
+	
+	if (ptsdtsIndicator == PTSDTSIndicator::Both)
+	{
+		assert(pts && dts);
+		
+		{
+			BitWriter bitwriter(writer, 5);
+			bitwriter.Put(4, 0x3);
+			bitwriter.Put(3, (*pts >> 30) & 0x7);
+			bitwriter.Put(1, 0x1);
+			bitwriter.Put(15, (*pts >> 15) & 0x7fff);
+			bitwriter.Put(1, 0x1);
+			bitwriter.Put(15, (*pts) & 0x7fff);
+			bitwriter.Put(1, 0x1);
+		}
+		
+		{
+			BitWriter bitwriter(writer, 5);
+			bitwriter.Put(4, 0x1);
+			bitwriter.Put(3, (*dts >> 30) & 0x7);
+			bitwriter.Put(1, 0x1);
+			bitwriter.Put(15, (*dts >> 15) & 0x7fff);
+			bitwriter.Put(1, 0x1);
+			bitwriter.Put(15, (*dts) & 0x7fff);
+			bitwriter.Put(1, 0x1);
+		}
+	}
+	else if (ptsdtsIndicator == PTSDTSIndicator::OnlyPTS)
+	{
+		BitWriter bitwriter(writer, 5);
+		bitwriter.Put(4, 0x2);
+		bitwriter.Put(3, (*pts >> 30) & 0x7);
+		bitwriter.Put(1, 0x1);
+		bitwriter.Put(15, (*pts >> 15) & 0x7fff);
+		bitwriter.Put(1, 0x1);
+		bitwriter.Put(15, (*pts) & 0x7fff);
+		bitwriter.Put(1, 0x1);
+	}
+	
+	writer.PadTo(writer.GetLength() + stuffingCount, 0xff);
+}
+
+size_t HeaderExtension::GetSize() const
+{
+	return 3 + (pts ? 5 : 0) + (dts ? 5 : 0) + stuffingCount;
 }
 
 HeaderExtension HeaderExtension::Parse(BufferReader& reader)
@@ -219,7 +368,7 @@ HeaderExtension HeaderExtension::Parse(BufferReader& reader)
 	headerExtension.scramblingControl	= bitreader.Get(2);
 	headerExtension.priority		= bitreader.Get(1);
 	headerExtension.dataAlignmentIndicator	= bitreader.Get(1);
-	headerExtension.copyrigth		= bitreader.Get(1);
+	headerExtension.copyright		= bitreader.Get(1);
 	headerExtension.original		= bitreader.Get(1);
 	headerExtension.ptsdtsIndicator		= (PTSDTSIndicator)bitreader.Get(2);
 	headerExtension.escrFlag		= bitreader.Get(1);
@@ -228,7 +377,7 @@ HeaderExtension HeaderExtension::Parse(BufferReader& reader)
 	headerExtension.aditionalInfoFlag	= bitreader.Get(1);
 	headerExtension.crcFlag			= bitreader.Get(1);
 	headerExtension.extensionFlag		= bitreader.Get(1);
-	headerExtension.remainderHeaderLength	= bitreader.Get(8);
+	auto remainderHeaderLength		= bitreader.Get(8);
 
 	//Done reading
 	bitreader.Flush();
@@ -281,7 +430,7 @@ HeaderExtension HeaderExtension::Parse(BufferReader& reader)
 	}
 
 	//Skip the rest of the header
-	reader.GoTo(pos + headerExtension.remainderHeaderLength);
+	reader.GoTo(pos + remainderHeaderLength);
 
 	return headerExtension;
 }
@@ -337,6 +486,38 @@ Packet Packet::Parse(BufferReader& reader)
 
 namespace adts
 {
+	void Header::Serialize(BufferWritter& writer) const
+	{
+		if (writer.GetLeft() < GetSize())
+			throw std::runtime_error("Not enough data in function " + std::string(__FUNCTION__));
+		
+		BitWriter bitwriter(writer, GetSize());
+		
+		bitwriter.Put(12, syncWord);
+		bitwriter.Put(1, version);
+		bitwriter.Put(2, layer);
+		bitwriter.Put(1, protectionAbsence);
+		bitwriter.Put(2, objectTypeMinus1);
+		bitwriter.Put(4, samplingFrequency);
+		bitwriter.Put(1, priv);
+		bitwriter.Put(3, channelConfiguration);
+		bitwriter.Put(1, originality);
+		bitwriter.Put(1, home);
+		bitwriter.Put(1, copyright);
+		bitwriter.Put(1, copyrightStart);
+		bitwriter.Put(13, frameLength);
+		bitwriter.Put(11, bufferFullness);
+		bitwriter.Put(2, numberOfFramesMinus1);
+		
+		if (!protectionAbsence)
+			bitwriter.Put(16, crc);
+	}
+	
+	size_t Header::GetSize() const
+	{
+		return 7 + (protectionAbsence ? 0 : 2);
+	}
+
 	Header Header::Parse(BufferReader& reader)
 	{
 		//Ensure we have enought data for the header
@@ -371,20 +552,20 @@ namespace adts
 		header.version			 = bitreader.Get(1);
 		header.layer			 = bitreader.Get(2);
 		header.protectionAbsence	 = bitreader.Get(1);
-		header.objectType		 = bitreader.Get(2) + 1;
+		header.objectTypeMinus1		 = bitreader.Get(2);
 		header.samplingFrequency	 = bitreader.Get(4);
 		header.priv			 = bitreader.Get(1);
 		header.channelConfiguration	 = bitreader.Get(3);
 		header.originality		 = bitreader.Get(1);
 		header.home			 = bitreader.Get(1);
-		header.copyrigth		 = bitreader.Get(1);
-		header.copyrigthStart		 = bitreader.Get(1);
+		header.copyright		 = bitreader.Get(1);
+		header.copyrightStart		 = bitreader.Get(1);
 		header.frameLength		 = bitreader.Get(13);
 		header.bufferFullness		 = bitreader.Get(11);
-		header.numberOfFrames		 = bitreader.Get(2) + 1;
+		header.numberOfFramesMinus1	 = bitreader.Get(2);
 
 		if (!header.protectionAbsence)
-			header.crc		 = reader.Get2();
+			header.crc		 = bitreader.Get(16);
 
 		//Done reading
 		bitreader.Flush();

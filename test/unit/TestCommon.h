@@ -1,8 +1,10 @@
 #ifndef TESTCOMMON_H
 #define TESTCOMMON_H
 
-#include <include/gtest/gtest.h>
 #include "TimeService.h"
+#include "tools.h"
+
+#include <include/gtest/gtest.h>
 #include <memory>
 #include <queue>
 
