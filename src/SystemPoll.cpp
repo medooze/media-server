@@ -1,6 +1,7 @@
 #include "SystemPoll.h"
 #include "config.h"
 #include "tools.h"
+#include "log.h"
 
 #include <cassert>
 #include <sys/poll.h>
@@ -29,7 +30,10 @@ void SystemPoll::Signal()
 
 bool SystemPoll::AddFd(int fd)
 {
-	if (fd == FD_INVALID) return false;
+	if (fd == FD_INVALID)
+	{
+		return Error("-SystemPoll::AddFd() | Invalid fd\n");
+	}
 	
 	pollfd syspfd;
 	syspfd.fd = fd;
@@ -38,8 +42,8 @@ bool SystemPoll::AddFd(int fd)
 	int fsflags = fcntl(syspfd.fd,F_GETFL,0);
 	fsflags |= O_NONBLOCK;
 	
-	if (fcntl(syspfd.fd,F_SETFL,fsflags) < 0)
-		return false;
+	if (auto error = fcntl(syspfd.fd,F_SETFL,fsflags) < 0)
+		return Error("-SystemPoll::AddFd() | Failed to set flag: fd: %d, error: %d\n", syspfd.fd, error);
 	
 	pfds.emplace(fd, syspfd);
 	
@@ -60,7 +64,7 @@ bool SystemPoll::RemoveFd(int fd)
 		return true;
 	}
 	
-	return false;
+	return Error("-SystemPoll::RemoveFd() | Failed to erase fd: %d\n", fd);
 }
 
 void SystemPoll::Clear()
@@ -109,7 +113,7 @@ void SystemPoll::ForEachFd(std::function<void(int)> func)
 
 bool SystemPoll::SetEventMask(int fd, uint16_t eventMask)
 {
-	if (pfds.find(fd) == pfds.end()) return false;
+	if (pfds.find(fd) == pfds.end())return Error("-SystemPoll::SetEventMask() | fd is not found\n");
 	
 	auto& syspfd = pfds[fd];
 	syspfd.events = 0;

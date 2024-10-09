@@ -546,7 +546,10 @@ inline std::string FormatString(const char* fmt, ...)
 	va_list ap;
 	va_start(ap, fmt);
 	auto sz = std::vsnprintf(nullptr, 0, fmt, ap);
+	va_end(ap);
+	
 	std::vector<char> tmp(sz + 1);
+	va_start(ap, fmt);
 	sz = std::vsnprintf(tmp.data(), tmp.size(), fmt, ap);
 	va_end(ap);
 	
