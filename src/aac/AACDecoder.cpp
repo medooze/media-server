@@ -63,6 +63,7 @@ AACDecoder::~AACDecoder()
 
 bool AACDecoder::SetConfig(const uint8_t* data,const size_t size)
 {
+	if (inited) return true;
 	AACSpecificConfig config;
 	
 	Debug("-AACDecoder::SetConfig()\n");
@@ -83,7 +84,6 @@ bool AACDecoder::SetConfig(const uint8_t* data,const size_t size)
 	memcpy(side,data,size);
 	//We are inited
 	inited = true;
-	
 	//Done
 	return true;
 }
@@ -93,10 +93,7 @@ int AACDecoder::Decode(const AudioFrame::const_shared& audioFrame)
 	//Check we have config
 	if (audioFrame->HasCodecConfig())
 		SetConfig(audioFrame->GetCodecConfigData(), audioFrame->GetCodecConfigSize());
-	
-	if (!inited)
-		return Error("-AACDecoder::Decode() Not inited\n");
-	
+
 	//Set data
 	packet->data = audioFrame ? (uint8_t*)audioFrame->GetData() : nullptr;
 	packet->size = audioFrame ? audioFrame->GetLength() : 0;

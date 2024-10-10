@@ -3,7 +3,7 @@ extern "C" {
 }
 #include "log.h"
 #include "MP3Decoder.h"
-
+#include "MP3Config.h"
 
 
 MP3Decoder::MP3Decoder()
@@ -34,9 +34,6 @@ MP3Decoder::MP3Decoder()
 	packet = av_packet_alloc();
 	//Allocate frame
 	frame = av_frame_alloc();
-	
-	//Get the number of samples
-	numFrameSamples = 1024;
 }
 
 MP3Decoder::~MP3Decoder()
@@ -59,14 +56,24 @@ MP3Decoder::~MP3Decoder()
 
 bool MP3Decoder::SetConfig(const uint8_t* data,const size_t size)
 {
+	if (inited) return true;
+	MP3Config config;
 	
-
+	Debug("-MP3Decoder::SetConfig()\n");
+	
+	//Decode it
+	if (!config.Decode(data, size))
+		//Error
+		return false;
 	//Set side data pon packet
 	uint8_t *side = av_packet_new_side_data(packet, AV_PKT_DATA_NEW_EXTRADATA, size);
 	//Copy it
 	memcpy(side,data,size);
 	//We are inited
 	inited = true;
+
+	ctx->channels = config.GetChannels();
+	ctx->sample_rate = config.GetRate();
 	
 	//Done
 	return true;
@@ -78,9 +85,6 @@ int MP3Decoder::Decode(const AudioFrame::const_shared& audioFrame)
 	//Check we have config
 	if (audioFrame->HasCodecConfig())
 		SetConfig(audioFrame->GetCodecConfigData(), audioFrame->GetCodecConfigSize());
-	
-	if (!inited)
-		return Error("-MP3Decoder::Decode() Not inited\n");
 
 	//Set data
 	packet->data = audioFrame ? (uint8_t*)audioFrame->GetData() : nullptr;
