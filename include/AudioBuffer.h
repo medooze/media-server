@@ -85,7 +85,7 @@ private:
 	uint16_t numSamplesPerFrame;
 	uint8_t  numChannels;
 	uint64_t ts = 0;
-	uint16_t clockRate = 0;
+	uint32_t clockRate = 0;
 	std::vector<int16_t> pcmBuffer;
 };
 

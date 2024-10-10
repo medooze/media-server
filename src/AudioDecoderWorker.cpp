@@ -1,7 +1,6 @@
 #include "AudioDecoderWorker.h"
 #include "media.h"
 #include "aac/AACDecoder.h"
-#include "mp3/MP3Decoder.h"
 #include "AudioCodecFactory.h"
 
 AudioDecoderWorker::~AudioDecoderWorker()
@@ -182,6 +181,7 @@ int AudioDecoderWorker::Decode()
 
 			if(!audioDecoder->Decode(frame))
 				continue;
+			auto audioFramePTS = frame->GetTimestamp();
 			while (auto audioBuffer = audioDecoder->GetDecodedAudioFrame())
 			{
 				//Check if we have a different channel count
@@ -201,7 +201,8 @@ int AudioDecoderWorker::Decode()
 					}
 				}
 
-				audioBuffer->SetTimestamp(frame->GetTimestamp());
+				audioBuffer->SetTimestamp(audioFramePTS);
+				audioFramePTS += audioBuffer->GetNumSamples()/audioBuffer->GetNumChannels();
 				audioBuffer->SetClockRate(frame->GetClockRate());
 				//For each output
 				for (auto output : outputs)
