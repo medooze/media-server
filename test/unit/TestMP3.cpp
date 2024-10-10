@@ -72,7 +72,7 @@ TEST(TestMP3Codec, MP3Decode)
 			auto audioBuffer = audPipe.RecBuffer(MP3_FRAME_SIZE);
 			memcpy(outLoc, (SWORD*)audioBuffer->GetData(), MP3_FRAME_SIZE*sizeof(int16_t)*numChannels);
 			outLoc+=MP3_FRAME_SIZE*numChannels;
-			numDecodedSamples+=(audioBuffer->GetNumSamples());
+			numDecodedSamples+=(audioBuffer->GetNumSamples()/audioBuffer->GetNumChannels());
 		}
 
 		ASSERT_EQ(numDecodedSamples, (numMP3Frames)*MP3_FRAME_SIZE) << "decoded samples and expected num decoded samples are of unequal length";
