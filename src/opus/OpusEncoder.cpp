@@ -87,7 +87,7 @@ AudioFrame::shared OpusEncoder::Encode(const AudioBuffer::const_shared& audioBuf
 	if (!enc) return {};
 	auto in = audioBuffer->GetData();
 	// inLen = frame size per channel;
-	int inLen = audioBuffer->GetNumSamples();
+	int inLen = audioBuffer->GetNumSamples() / audioBuffer->GetNumChannels();
 	int len = opus_encode(enc, in, inLen , audioFrame->GetData(), audioFrame->GetMaxMediaLength());
 
 	if( len < 0)

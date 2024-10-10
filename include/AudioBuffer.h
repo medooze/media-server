@@ -25,21 +25,24 @@ public:
 	void	 SetClockRate(DWORD clockRate) { this->clockRate = clockRate; }
 
 	const int16_t* GetData() const { return pcmBuffer.data(); }
-
-	uint16_t SetSamples(int16_t* in, uint16_t numSamples)
+	uint16_t SetSamples(int16_t* in, uint16_t numSamples, size_t offset=0)
 	{
 		if (!in)
 			return Error("AudioBuffer::SetSamples() empty input buffer\n");
 
-		uint16_t totalResampled = numSamples * numChannels;
-		if (totalResampled != pcmBuffer.size())
-		{
-			Debug("AudioBuffer::SetSamples buffer resized, resized to =%d\n", totalResampled);
-			pcmBuffer.resize(totalResampled);
-		}
-
-		memcpy((int16_t*)pcmBuffer.data(), in, sizeof(int16_t) * totalResampled);
+		if (numSamples > pcmBuffer.size())
+			return Error("AudioBuffer::SetSamples() not enough buffer size\n");
+		memcpy((int16_t*)pcmBuffer.data()+offset, in, sizeof(int16_t) * numSamples);
 		return numSamples;
+	}
+
+	bool Resize(size_t samples) 
+	{
+		if (samples*numChannels > pcmBuffer.size())
+			return Error("AudioBuffer::Resize() resize to larger size\n");
+
+		pcmBuffer.resize(samples*numChannels);
+		return true;
 	}
 
 	uint16_t SetPCMData(uint8_t** pcmData, uint16_t numSamples)
@@ -76,7 +79,7 @@ public:
 		return true;
 	}
 	uint8_t  GetNumChannels() const { return numChannels; }
-	uint16_t GetNumSamples() const { return pcmBuffer.size() / numChannels; }
+	uint16_t GetNumSamples() const { return pcmBuffer.size(); }
 
 private:
 	uint16_t numSamplesPerFrame;

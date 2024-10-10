@@ -210,7 +210,7 @@ VideoBuffer::shared Deinterlacer::GetNextFrame()
         //TODO: Avoid creating a new buffer and reuse output buffers instead
         
         //Get new frame
-        auto videoBuffer = videoBufferPool.allocate();
+        auto videoBuffer = videoBufferPool.Acquire();
 
         //Set color range
         switch (output->color_range)

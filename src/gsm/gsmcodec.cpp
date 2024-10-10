@@ -26,7 +26,7 @@ AudioFrame::shared GSMEncoder::Encode(const AudioBuffer::const_shared& audioBuff
 {
 
 	const SWORD *in = audioBuffer->GetData();
-	int inLen = audioBuffer->GetNumSamples() * audioBuffer->GetNumChannels();
+	int inLen = audioBuffer->GetNumSamples();
 	if(inLen != numFrameSamples || audioFrame->GetMaxMediaLength() < GSM_FRAME_LENGTH) 
 		return nullptr;
 

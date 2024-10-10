@@ -294,7 +294,7 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 	if (videoBuffer->GetWidth() != videoWidth || videoBuffer->GetHeight() != videoHeight)
 	{
 		//Get new buffer
-		VideoBuffer::shared resized = videoBufferPool.allocate();
+		VideoBuffer::shared resized = videoBufferPool.Acquire();
 
 		//Rescale
 		scaler.Resize(videoBuffer, resized, true);
@@ -408,7 +408,7 @@ size_t VideoPipe::NextFrame(const VideoBuffer::const_shared& videoBuffer)
 void VideoPipe::ClearFrame()
 {
 	//Get new buffer
-	VideoBuffer::shared black = videoBufferPool.allocate();
+	VideoBuffer::shared black = videoBufferPool.Acquire();
 
 	//Paint in black
 	black->Fill(0, (uint8_t)-128, (uint8_t)-128);

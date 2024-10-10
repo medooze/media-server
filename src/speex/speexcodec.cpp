@@ -76,7 +76,7 @@ AudioFrame::shared SpeexEncoder::Encode(const AudioBuffer::const_shared& audioBu
 {
 
 	const SWORD *in = audioBuffer->GetData();
-	int inLen = audioBuffer->GetNumSamples() * audioBuffer->GetNumChannels();
+	int inLen = audioBuffer->GetNumSamples();
 	int outLen = audioFrame->GetMaxMediaLength();
 	if (!in || inLen <= 0)
 		return nullptr;

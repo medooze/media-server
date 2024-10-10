@@ -6,6 +6,7 @@
 #include "AudioTransrater.h"
 #include <AudioBuffer.h>
 #include <limits>
+#include "CircularQueue.h"
 
 
 class AudioPipe : 
@@ -34,11 +35,17 @@ public:
 	virtual DWORD GetNumChannels()		{ return numChannels;	}
 	
 private:
+	static constexpr int quantizationErrToleranceInMs = 5;
 	//Los mutex y condiciones
 	pthread_mutex_t mutex;
 	pthread_cond_t  cond;
+	// track available num samples
+	int availableNumSamples = 0;
+
+	CircularQueue<AudioBuffer::const_shared> queue;
 	//Members
 	fifo<SWORD,48000*4>	rateBlockBuffer;
+	QWORD rateBlockBufferPTS;
 
 	bool			recording = false;
 	bool			playing = false;
@@ -50,7 +57,6 @@ private:
 	DWORD			recordRate = 0;
 	DWORD			nativeRate = 0;
 	DWORD			numChannels = 1;
-	DWORD			cache = 0;
 };
 
 #endif /* AUDIOPIPE_H */

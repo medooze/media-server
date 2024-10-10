@@ -94,7 +94,7 @@ VideoBuffer::shared VP9Decoder::GetFrame()
 	videoBufferPool.SetSize(img->d_w, img->d_h);
 
 	//Get new frame
-	auto videoBuffer = videoBufferPool.allocate();
+	auto videoBuffer = videoBufferPool.Acquire();
 	CopyPresentedTimingInfo(*ref, videoBuffer);
 	//Set color range
 	switch (img->range)
