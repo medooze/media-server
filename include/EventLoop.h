@@ -111,7 +111,6 @@ protected:
 	inline void SetStopping(int code)
 	{
 		exitCode = code;
-		running = false;
 	}
 	
 	/**

@@ -505,7 +505,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 	auto until = duration < std::chrono::milliseconds::max() ? now + duration : std::chrono::milliseconds::max();
 		
 	//Run until ended
-	while(running && now<=until)
+	while(running && !exitCode.has_value() && now<=until)
 	{
 		//TRACE_EVENT("eventloop", "EventLoop::Run::Iteration");
 		
