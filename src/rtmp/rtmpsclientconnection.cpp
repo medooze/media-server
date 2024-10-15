@@ -26,9 +26,11 @@ RTMPClientConnection::ErrorCode RTMPSClientConnection::Start()
 
 int RTMPSClientConnection::Disconnect()
 {
-	RTMPClientConnection::Disconnect();
+	auto result = RTMPClientConnection::Disconnect();
 	
 	tls.Shutdown();
+	
+	return result;
 }
 
 bool RTMPSClientConnection::IsConnectionReady()
