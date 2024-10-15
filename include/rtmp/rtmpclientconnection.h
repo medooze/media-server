@@ -57,7 +57,7 @@ public:
 		{ return SendCommandInternal(streamId, name, params, extra, std::nullopt); }
 	DWORD SendCommand(DWORD streamId, const wchar_t* name, AMFData* params, AMFData* extra, std::function<void(bool, AMFData*, const std::vector<AMFData*>&)> callback)
 		{ return SendCommandInternal(streamId, name, params, extra, std::optional(callback)); }
-	int Disconnect();
+	virtual int Disconnect();
 
 	void  SetUserData(DWORD data) { this->data = data; }
 	DWORD GetUserData() { return data; }
@@ -77,9 +77,10 @@ public:
 	QWORD GetOutBytes() const	{ return outBytes;	}
 
 protected:
+		
+	void Stop();
 	
 	virtual RTMPClientConnection::ErrorCode Start();
-	virtual void Stop();
 	virtual bool IsConnectionReady() { return inited; };
 	virtual void OnReadyToTransfer() {};
 	virtual void ProcessReceivedData(const uint8_t* data, size_t size);
