@@ -33,6 +33,31 @@ TEST(TestH26xSPS, TestParseSPS1)
 	EXPECT_EQ(1, spsParser.direct_8x8_inference_flag);
 	EXPECT_EQ(0, spsParser.frame_cropping_flag);
 
+	  // vui parameters
+	EXPECT_EQ(1,spsParser.vui_parameters_present_flag);
+	EXPECT_EQ(0, spsParser.vuiParams.aspect_ratio_info_present_flag);
+	EXPECT_EQ(0, spsParser.vuiParams.overscan_info_present_flag);
+	EXPECT_EQ(1, spsParser.vuiParams.video_signal_type_present_flag);
+	EXPECT_EQ(5, spsParser.vuiParams.video_format);
+	EXPECT_EQ(1, spsParser.vuiParams.video_full_range_flag);
+	EXPECT_EQ(0, spsParser.vuiParams.colour_description_present_flag);
+	EXPECT_EQ(0, spsParser.vuiParams.chroma_loc_info_present_flag);
+	EXPECT_EQ(1, spsParser.vuiParams.timing_info_present_flag);
+	EXPECT_EQ(1, spsParser.vuiParams.num_units_in_tick);
+	EXPECT_EQ(50, spsParser.vuiParams.time_scale);
+	EXPECT_EQ(0, spsParser.vuiParams.fixed_frame_rate_flag);
+	EXPECT_EQ(0, spsParser.vuiParams.nal_hrd_parameters_present_flag);
+	EXPECT_EQ(0, spsParser.vuiParams.vcl_hrd_parameters_present_flag);
+	EXPECT_EQ(0, spsParser.vuiParams.pic_struct_present_flag);
+	EXPECT_EQ(1, spsParser.vuiParams.bitstream_restriction_flag);
+	EXPECT_EQ(1, spsParser.vuiParams.motion_vectors_over_pic_boundaries_flag);
+	EXPECT_EQ(0, spsParser.vuiParams.max_bytes_per_pic_denom);
+	EXPECT_EQ(0, spsParser.vuiParams.max_bits_per_mb_denom);
+	EXPECT_EQ(10, spsParser.vuiParams.log2_max_mv_length_horizontal);
+	EXPECT_EQ(10, spsParser.vuiParams.log2_max_mv_length_vertical);
+	EXPECT_EQ(0, spsParser.vuiParams.max_num_reorder_frames);
+	EXPECT_EQ(16, spsParser.vuiParams.max_dec_frame_buffering);
+
 }
 
 TEST(TestH26xSPS, TestParseSPS2)
