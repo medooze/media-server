@@ -18,11 +18,11 @@ public:
 		MPEGLayerReserved
 	};
 
-	std::array<DWORD, 3> mpeg1SamplingRates = {44100, 48000, 32000};
-	std::array<DWORD, 16> mpeg1Bitrates = {0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, UINT_MAX};
+	static constexpr std::array<DWORD, 3> Mpeg1SamplingRates = {44100, 48000, 32000};
+	static constexpr std::array<DWORD, 15> Mpeg1Bitrates = {0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320};
 
-	std::array<DWORD, 3> mpeg2SamplingRates = {22050, 24000, 16000};
-	std::array<DWORD, 16> mpeg2Bitrates = {0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160, UINT_MAX};
+	static constexpr std::array<DWORD, 3> Mpeg2SamplingRates = {22050, 24000, 16000};
+	static constexpr std::array<DWORD, 15> Mpeg2Bitrates = {0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160};
 public:
 	
 	MP3Config() = default;
@@ -75,13 +75,13 @@ public:
 			else if (bitrateIdx == 0)
 				return Error("-MP3Config::Decode() free bitrate idx not supported\n");
 			
-			bitrate = audioVersion == MPEGAudioVersion::MPEGVersion1 ? mpeg1Bitrates[bitrateIdx] : mpeg2Bitrates[bitrateIdx];
+			bitrate = audioVersion == MPEGAudioVersion::MPEGVersion1 ? Mpeg1Bitrates[bitrateIdx] : Mpeg2Bitrates[bitrateIdx];
 
 			auto samplingRateIdx = r.Get(2);
 			if (samplingRateIdx >= 3) 
 				return Error("-MP3Config::Decode() invalid sampling rate idx\n");
 
-            samplingRate = audioVersion == MPEGAudioVersion::MPEGVersion1 ? mpeg1SamplingRates[samplingRateIdx] : mpeg2SamplingRates[samplingRateIdx];
+            samplingRate = audioVersion == MPEGAudioVersion::MPEGVersion1 ? Mpeg1SamplingRates[samplingRateIdx] : Mpeg2SamplingRates[samplingRateIdx];
 
 			padding = r.Get(1);
 			if (padding)
