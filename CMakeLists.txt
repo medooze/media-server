@@ -206,6 +206,7 @@ add_executable(MediaServerUnitTest
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAAC.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestMP3.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestOpus.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestMP3Config.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAudioPipe.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAMFNumber.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestVideoLayersAllocation.cpp
