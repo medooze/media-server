@@ -18,17 +18,17 @@ public:
 		MPEGLayerReserved
 	};
 
-	std::array<DWORD, 3> mpeg1Rates = {44100, 48000, 32000};
+	std::array<DWORD, 3> mpeg1SamplingRates = {44100, 48000, 32000};
 	std::array<DWORD, 16> mpeg1Bitrates = {0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, UINT_MAX};
 
-	std::array<DWORD, 3> mpeg2Rates = {22050, 24000, 16000};
+	std::array<DWORD, 3> mpeg2SamplingRates = {22050, 24000, 16000};
 	std::array<DWORD, 16> mpeg2Bitrates = {0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160, UINT_MAX};
 public:
 	
 	MP3Config() = default;
 	MP3Config(DWORD rate, BYTE channels)
 	{
-		this->rate = rate;
+		this->samplingRate = rate;
 		this->channels = channels;
 	}
 
@@ -69,7 +69,7 @@ public:
 			}
 			r.Skip(1);
 
-			bitrateIdx = r.Get(4);
+			auto bitrateIdx = r.Get(4);
 			if (bitrateIdx >= 15) 
 				return Error("-MP3Config::Decode() bitrate idx out of range\n");
 			else if (bitrateIdx == 0)
@@ -77,11 +77,11 @@ public:
 			
 			bitrate = audioVersion == MPEGAudioVersion::MPEGVersion1 ? mpeg1Bitrates[bitrateIdx] : mpeg2Bitrates[bitrateIdx];
 
-			samplingRateIdx = r.Get(2);
+			auto samplingRateIdx = r.Get(2);
 			if (samplingRateIdx >= 3) 
 				return Error("-MP3Config::Decode() invalid sampling rate idx\n");
 
-            rate = audioVersion == MPEGAudioVersion::MPEGVersion1 ? mpeg1Rates[samplingRateIdx] : mpeg2Rates[samplingRateIdx];
+            samplingRate = audioVersion == MPEGAudioVersion::MPEGVersion1 ? mpeg1SamplingRates[samplingRateIdx] : mpeg2SamplingRates[samplingRateIdx];
 
 			padding = r.Get(1);
 			if (padding)
@@ -106,7 +106,7 @@ public:
 		Debug("[MP3Config \n");
 		Debug("\t mpegVersion=%u\n"	, audioVersion);
         Debug("\t mpegLayer=%u\n"	, audioLayer);
-		Debug("\t rate=%u\n"		, rate);
+		Debug("\t rate=%u\n"		, samplingRate);
 		Debug("\t channels=%u\n"	, channels);
 		Debug("\t paddingSize=%u\n"	, paddingSize);
 		Debug("\t frameLength=%u\n"	, frameLength);
@@ -114,7 +114,7 @@ public:
 	}
 	MPEGAudioVersion GetAudioVersion() const {return audioVersion;}
 	MPEGAudioLayer GetAudioLayer() const {return audioLayer;}
-	DWORD GetRate() const		{ return rate;				}
+	DWORD GetRate() const		{ return samplingRate;				}
 	BYTE  GetChannels() const	{ return channels;			}
 	DWORD GetPaddingSize() const	{ return padding ? paddingSize:0; }
 	DWORD GetFrameLength() const	{ return frameLength; }
@@ -123,15 +123,11 @@ public:
 private:
 	MPEGAudioVersion audioVersion = MPEGAudioVersion::MPEGVersionReserved;
 	MPEGAudioLayer audioLayer = MPEGAudioLayer::MPEGLayerReserved;
-
-	BYTE bitrateIdx;
-	BYTE samplingRateIdx;
 	bool padding;
 	BYTE paddingSize;
-
-	DWORD rate		 = 0;
-	DWORD bitrate		 = 0;
-	BYTE channels		 = 0;
+	DWORD samplingRate = 0;
+	DWORD bitrate = 0;
+	BYTE channels = 0;
 	DWORD frameLength = 0;
 };
 #endif	/* MPEGCONFIG_H */

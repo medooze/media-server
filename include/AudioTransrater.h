@@ -23,7 +23,6 @@ private:
 	DWORD outputRate=0;
 	std::optional<QWORD> playPTSOffset;
 	AudioBufferPool audioBufferPool;
-	uint64_t scaleTimestamp(const AudioBuffer::shared& audioBuffer);
 };
 
 #endif
