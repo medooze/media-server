@@ -71,7 +71,7 @@ bool AACDecoder::SetConfig(const uint8_t* data,const size_t size)
 	//Decode it
 	if (!config.Decode(data,size))
 		//Error
-		return false;
+		return Error("AACDecoder::SetConfig() Could not parse AAC config\n");;
 	
 	//Set data
 	ctx->channels		= config.GetChannels();

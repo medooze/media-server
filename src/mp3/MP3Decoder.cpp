@@ -64,7 +64,7 @@ bool MP3Decoder::SetConfig(const uint8_t* data,const size_t size)
 	//Decode it
 	if (!config.Decode(data, size))
 		//Error
-		return false;
+		return Error("MP3Decoder::SetConfig() Could not parse MP3 config\n");;
 	//Set side data pon packet
 	uint8_t *side = av_packet_new_side_data(packet, AV_PKT_DATA_NEW_EXTRADATA, size);
 	//Copy it
