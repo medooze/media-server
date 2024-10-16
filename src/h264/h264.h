@@ -6,6 +6,155 @@
 
 class H264SeqParameterSet
 {
+private:
+	// Constants for VUI parsing
+	static constexpr uint8_t EXTENDED_SAR = 255;
+	const uint8_t H264_PIXEL_ASPECT[17][2] = {
+    {   0,  1 },
+    {   1,  1 },
+    {  12, 11 },
+    {  10, 11 },
+    {  16, 11 },
+    {  40, 33 },
+    {  24, 11 },
+    {  20, 11 },
+    {  32, 11 },
+    {  80, 33 },
+    {  18, 11 },
+    {  15, 11 },
+    {  64, 33 },
+    { 160, 99 },
+    {   4,  3 },
+    {   3,  2 },
+    {   2,  1 }
+	};
+	static constexpr uint8_t CHROMA_SAMPLE_LOC_TYPE_TOP_FIELD_MIN = 0;
+  	static constexpr uint8_t CHROMA_SAMPLE_LOC_TYPE_TOP_FIELD_MAX = 5;
+	static constexpr uint8_t CHROMA_SAMPLE_LOC_TYPE_BOTTOM_FIELD_MIN = 0;
+  	static constexpr uint8_t CHROMA_SAMPLE_LOC_TYPE_BOTTOM_FIELD_MAX = 5;
+
+	bool ParseHRDParams(RbspBitReader &r)
+	{
+		try
+		{
+			
+		}
+		catch(const std::exception& e)
+		{
+			Warning("-H264SeqParameterSet::ParseHRDParams() Failed to parse HRD params\n");
+			return false;
+		}
+		return true;
+		
+	}
+
+	bool DecodeVuiParameters(RbspBitReader &r)
+	{
+		try
+		{
+			vuiParams.aspect_ratio_info_present_flag = r.Get(1);
+			if (vuiParams.aspect_ratio_info_present_flag) 
+			{
+				vuiParams.aspect_ratio_idc = r.Get(8);
+				if (vuiParams.aspect_ratio_idc == EXTENDED_SAR) 
+				{
+					vuiParams.sar_width = r.Get(16);
+					vuiParams.sar_height = r.Get(16);
+				} 
+				else if (vuiParams.aspect_ratio_idc < (sizeof(H264_PIXEL_ASPECT) / sizeof((H264_PIXEL_ASPECT)[0])))
+				{
+					vuiParams.sar_width = H264_PIXEL_ASPECT[vuiParams.aspect_ratio_idc][0];
+					vuiParams.sar_height = H264_PIXEL_ASPECT[vuiParams.aspect_ratio_idc][1];
+				} 
+				else 
+				{
+					Warning("-H264SeqParameterSet::DecodeVuiParameters() Illegal aspect ratio\n");
+				}
+			} 
+			else 
+			{
+				vuiParams.sar_width = 0;
+				vuiParams.sar_width = 0;
+			}
+
+			vuiParams.overscan_info_present_flag = r.Get(1);
+			if (vuiParams.overscan_info_present_flag)
+				vuiParams.overscan_appropriate_flag = r.Get(1);
+			
+			vuiParams.video_signal_type_present_flag = r.Get(1);
+			if (vuiParams.video_signal_type_present_flag)
+			{
+				// video_format  u(3)
+				vuiParams.video_format = r.Get(3);
+				// video_full_range_flag  u(1)
+				vuiParams.video_full_range_flag = r.Get(1);
+				// colour_description_present_flag  u(1)
+				vuiParams.colour_description_present_flag = r.Get(1);
+				if (vuiParams.colour_description_present_flag) 
+				{
+					// colour_primaries  u(8)
+					vuiParams.colour_primaries = r.Get(8);
+					// transfer_characteristics  u(8)
+					vuiParams.transfer_characteristics = r.Get(8);
+					// matrix_coefficients  u(8)
+					vuiParams.matrix_coefficients = r.Get(8);
+				}
+			}
+
+			// chroma_loc_info_present_flag  u(1)
+			vuiParams.chroma_loc_info_present_flag = r.Get(1);
+			if (vuiParams.chroma_loc_info_present_flag) 
+			{
+				// chroma_sample_loc_type_top_field  ue(v)
+				vuiParams.chroma_sample_loc_type_top_field = r.GetExpGolomb();
+
+				if (vuiParams.chroma_sample_loc_type_top_field < CHROMA_SAMPLE_LOC_TYPE_TOP_FIELD_MIN ||
+					vuiParams.chroma_sample_loc_type_top_field > CHROMA_SAMPLE_LOC_TYPE_TOP_FIELD_MAX) 
+				{
+					Warning("-H264SeqParameterSet::DecodeVuiParameters() Invalid chroma sample_loc_type_top_field %u. Not in Range [%u, %u]\n", 
+							vuiParams.chroma_sample_loc_type_top_field, CHROMA_SAMPLE_LOC_TYPE_TOP_FIELD_MIN, CHROMA_SAMPLE_LOC_TYPE_TOP_FIELD_MAX);
+				}
+
+				// chroma_sample_loc_type_bottom_field  ue(v)
+				vuiParams.chroma_sample_loc_type_bottom_field = r.GetExpGolomb();
+				if (vuiParams.chroma_sample_loc_type_bottom_field < CHROMA_SAMPLE_LOC_TYPE_BOTTOM_FIELD_MIN ||
+					vuiParams.chroma_sample_loc_type_bottom_field > CHROMA_SAMPLE_LOC_TYPE_BOTTOM_FIELD_MAX) 
+				{
+					Warning("-H264SeqParameterSet::DecodeVuiParameters() Invalid chroma sample_loc_type_bottom_field %u. Not in Range [%u, %u]\n", 
+							vuiParams.chroma_sample_loc_type_bottom_field, CHROMA_SAMPLE_LOC_TYPE_BOTTOM_FIELD_MIN, CHROMA_SAMPLE_LOC_TYPE_BOTTOM_FIELD_MAX);
+				}
+			}
+
+			// timing_info_present_flag  u(1)
+			vuiParams.timing_info_present_flag = r.Get(1);
+			if (vuiParams.timing_info_present_flag) 
+			{
+				// num_units_in_tick  u(32)
+				vuiParams.num_units_in_tick = r.Get(32);
+				// time_scale  u(32)
+				vuiParams.time_scale = r.Get(32);
+				// fixed_frame_rate_flag  u(1)
+				vuiParams.fixed_frame_rate_flag = r.Get(1);
+			}
+
+			// nal_hrd_parameters_present_flag  u(1)
+			vuiParams.nal_hrd_parameters_present_flag = r.Get(1);
+			if (vuiParams.nal_hrd_parameters_present_flag) 
+			{
+				// hrd_parameters()
+				if (!ParseHRDParams(r))
+					return false;
+			}
+		}
+		catch(const std::exception& e)
+		{
+			Warning("-H264SeqParameterSet::DecodeVuiParameters() Failed to parse VUI params\n");
+			return false;
+		}
+		return true;
+		
+	}
+
 public:
 	bool Decode(const BYTE* buffer,DWORD bufferSize)
 	{
@@ -76,6 +225,7 @@ public:
 			}
 
 			num_ref_frames				= r.GetExpGolomb();
+
 			gaps_in_frame_num_value_allowed_flag	= r.Get(1);
 			pic_width_in_mbs_minus1			= r.GetExpGolomb();
 			pic_height_in_map_units_minus1		= r.GetExpGolomb();
@@ -97,9 +247,12 @@ public:
 				frame_crop_bottom_offset	= r.GetExpGolomb();
 			}
 
-			[[maybe_unused]] auto vui_parameters_present_flag = r.Get(1);
-			
-			//TODO: parse vui
+			vui_parameters_present_flag = r.Get(1);
+			if (vui_parameters_present_flag) 
+			{
+        		if (!DecodeVuiParameters(r))
+					return false;
+    		}
 		}
 		catch (std::exception &e) 
 		{
@@ -180,8 +333,64 @@ public:
 	DWORD			frame_crop_right_offset = 0;
 	DWORD			frame_crop_top_offset = 0;
 	DWORD			frame_crop_bottom_offset = 0;
-	//bool			vui_parameters_present_flag = false;
+	bool			vui_parameters_present_flag = false;
 	bool			separate_colour_plane_flag = 0;
+
+	struct hrdParameters
+	{
+		uint32_t              cpb_cnt_minus1 = 0;
+    	uint32_t              bit_rate_scale = 0;
+    	uint32_t              cpb_size_scale = 0;
+    	std::vector<uint32_t> bit_rate_value_minus1;
+    	std::vector<uint32_t> cpb_size_value_minus1;
+    	std::vector<uint32_t> cbr_flag;
+    	uint32_t              initial_cpb_removal_delay_length_minus1 = 0;
+    	uint32_t              cpb_removal_delay_length_minus1 = 0;
+    	uint32_t              dpb_output_delay_length_minus1 = 0;
+   	    uint32_t              time_offset_length = 0;
+	};
+
+	struct vuiParameters
+	{
+		uint32_t      aspect_ratio_info_present_flag;
+		uint32_t      aspect_ratio_idc;
+		uint32_t      sar_width;
+		uint32_t      sar_height;
+		uint32_t      overscan_info_present_flag = 0;
+    	uint32_t      overscan_appropriate_flag = 0;
+    	uint32_t  	  video_signal_type_present_flag = 0;
+    	uint32_t 	  video_format = 0;
+    	uint32_t 	  video_full_range_flag = 0;
+    	uint32_t  	  colour_description_present_flag = 0;
+    	uint32_t 	  colour_primaries = 0;
+    	uint32_t 	  transfer_characteristics = 0;
+    	uint32_t 	  matrix_coefficients = 0;
+    	uint32_t 	  chroma_loc_info_present_flag = 0;
+    	uint32_t 	  chroma_sample_loc_type_top_field = 0;
+    	uint32_t	  chroma_sample_loc_type_bottom_field = 0;
+    	uint32_t 	  timing_info_present_flag = 0;
+    	uint32_t 	  num_units_in_tick = 0;
+    	uint32_t 	  time_scale = 0;
+    	uint32_t 	  fixed_frame_rate_flag = 0;
+		uint32_t      nal_hrd_parameters_present_flag = 0;
+	    hrdParameters nal_hrd_parameters;
+    	uint32_t      vcl_hrd_parameters_present_flag = 0;
+        hrdParameters vcl_hrd_parameters;
+		uint32_t      low_delay_hrd_flag = 0;
+		uint32_t 	  pic_struct_present_flag = 0;
+		uint32_t 	  bitstream_restriction_flag = 0;
+		uint32_t 	  motion_vectors_over_pic_boundaries_flag = 0;
+		uint32_t 	  max_bytes_per_pic_denom = 0;
+		uint32_t 	  max_bits_per_mb_denom = 0;
+		uint32_t 	  log2_max_mv_length_horizontal = 0;
+		uint32_t 	  log2_max_mv_length_vertical = 0;
+		uint32_t 	  max_num_reorder_frames = 0;
+		uint32_t 	  max_dec_frame_buffering = 0;
+	};
+
+	vuiParameters   vuiParams;
+
+	
 };
 
 class H264PictureParameterSet
