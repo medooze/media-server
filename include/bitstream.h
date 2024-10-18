@@ -112,6 +112,16 @@ public:
 
 	inline void Skip(DWORD n)
 	{
+		while (n>32)
+		{
+			//Consume what is in the cache
+			n -= cached;
+			//Skip cached
+			SkipCached(cached);
+			//Cache next
+			Cache();
+		}
+		
 		if (n>cached)
 		{
 			//Get what is left to skip
