@@ -112,10 +112,8 @@ public:
 
 	inline void Skip(DWORD n)
 	{
-		if (n>32) {
-			//We can't use exceptions so set error flag
-			error = true;
-		} else if (n>cached) {
+		if (n>cached)
+		{
 			//Get what is left to skip
 			BYTE a = n-cached;
 			//Cache next
