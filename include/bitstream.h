@@ -120,6 +120,8 @@ public:
 			SkipCached(cached);
 			//Cache next
 			Cache();
+			
+			if (error) return;
 		}
 		
 		if (n>cached)
