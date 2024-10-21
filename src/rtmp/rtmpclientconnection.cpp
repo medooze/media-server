@@ -206,7 +206,7 @@ void RTMPClientConnection::OnPollIn(int fd)
 	int len = read(fd, buffer, BufferSize);
 	if (len == 0)
 	{
-		Error("-RTMPClientConnection::OnPollIn() Peer closed");
+		Error("-RTMPClientConnection::OnPollIn() Peer closed\n");
 		SetStopping(ToUType(RTMPClientConnection::ErrorCode::PeerClosed));
 	}
 	

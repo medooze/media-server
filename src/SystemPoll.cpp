@@ -142,7 +142,8 @@ std::pair<uint16_t, int> SystemPoll::GetEvents(int fd) const
 	
 	if ((revents & POLLHUP) || (revents & POLLERR))
 	{
-		return std::make_pair<>(0, errno);
+		Error("-SystemPoll::GetEvents() | Error events: 0x%x fd: %d errno: %d\n", revents, fd, errno);
+		return std::make_pair<>(0, -1);
 	}
 	
 	if (revents & POLLIN)
@@ -182,7 +183,10 @@ int SystemPoll::Wait(uint32_t timeOutMs)
 	
 	// Wait for events
 	if (poll(syspfds.data(), syspfds.size(),timeOutMs) < 0)
-		return errno;
+	{
+		Error("-SystemPoll::Wait() | poll() error. errno: %d\n", errno);
+		return -1;
+	}
 	
 	// Copy back
 	for (size_t i = 0; i < syspfds.size(); i++)
@@ -193,7 +197,8 @@ int SystemPoll::Wait(uint32_t timeOutMs)
 			if ((revents & POLLHUP) || (revents & POLLERR))
 			{
 				signalling.ClearSignal();
-				return errno;
+				Error("-SystemPoll::Wait() | Error events: 0x%x fd: %d errno: %d\n", revents, syspfds[i].fd, errno);
+				return -1;
 			}
 			else if (revents & POLLIN)
 			{

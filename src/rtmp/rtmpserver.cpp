@@ -128,7 +128,7 @@ int RTMPServer::Run()
 		if (poll(ufds,1,-1)<0)
 		{
 			//Error
-			Error("-RTMPServer::Run() pool error [fd:%d,errno:%d]\n",ufds[0].fd,errno);
+			Error("-RTMPServer::Run() poll error [fd:%d,errno:%d]\n",ufds[0].fd,errno);
 			//Check if already inited
 			if (!inited)
 				//Exit
@@ -145,7 +145,7 @@ int RTMPServer::Run()
 		if (ufds[0].revents!=POLLIN)
 		{
 			//Error
-			Error("-RTMPServer::Run() poolin error event [event:%d,fd:%d,errno:%d]\n",ufds[0].revents,ufds[0].fd,errno);
+			Error("-RTMPServer::Run() pollin error event [event:%d,fd:%d,errno:%d]\n",ufds[0].revents,ufds[0].fd,errno);
 			//Check if already inited
 			if (!inited)
 				//Exit
