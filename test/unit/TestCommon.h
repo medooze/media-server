@@ -5,6 +5,7 @@
 #include "tools.h"
 
 #include <include/gtest/gtest.h>
+#include <include/gmock/gmock.h>
 #include <memory>
 #include <queue>
 
