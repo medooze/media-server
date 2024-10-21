@@ -142,7 +142,7 @@ std::pair<uint16_t, int> SystemPoll::GetEvents(int fd) const
 	
 	if ((revents & POLLHUP) || (revents & POLLERR))
 	{
-		return std::make_pair<>(0, errno);
+		return std::make_pair<>(0, -1);
 	}
 	
 	if (revents & POLLIN)
