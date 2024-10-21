@@ -378,7 +378,22 @@ public:
 	bool GetSeparateColourPlaneFlag() const { return separate_colour_plane_flag; }
 	bool GetFrameMbsOnlyFlag() const { return frame_mbs_only_flag; }
 	BYTE GetLog2MaxFrameNumMinus4() const { return log2_max_frame_num_minus4; }
-	
+	void DumpHrdParams(const hrdParameters &hrd) const 
+	{
+		Debug("\t\t\tcpb_cnt_minus1=%u\n",	hrd.cpb_cnt_minus1);
+		Debug("\t\t\tbit_rate_scale=%u\n",	hrd.bit_rate_scale);
+		Debug("\t\t\tcpb_size_scale=%u\n",	hrd.cpb_size_scale);
+		for (uint32_t SchedSelIdx = 0; SchedSelIdx <= hrd.cpb_cnt_minus1; SchedSelIdx++)
+		{
+			Debug("\t\t\tbit_rate_value_minus1[%u]=%u\n",	SchedSelIdx, hrd.cpb_size_scale);
+			Debug("\t\t\tcpb_size_value_minus1[%u]=%u\n",	SchedSelIdx, hrd.cpb_size_value_minus1);
+			Debug("\t\t\tcbr_flag[%u]=%u\n",	SchedSelIdx, hrd.cbr_flag);
+		}
+		Debug("\t\t\tinitial_cpb_removal_delay_length_minus1=%u\n",	hrd.initial_cpb_removal_delay_length_minus1);
+		Debug("\t\t\tcpb_removal_delay_length_minus1=%u\n",	hrd.cpb_removal_delay_length_minus1);
+		Debug("\t\t\tdpb_output_delay_length_minus1=%u\n",	hrd.dpb_output_delay_length_minus1);
+		Debug("\t\t\ttime_offset_length=%u\n",	hrd.time_offset_length);
+	}
 	void Dump() const
 	{
 		Debug("[H264SeqParameterSet \n");
@@ -410,6 +425,52 @@ public:
 		Debug("\tframe_crop_top_offset=%u\n",			frame_crop_top_offset);
 		Debug("\tframe_crop_bottom_offset=%u\n",		frame_crop_bottom_offset);
 		Debug("\tseparate_colour_plane_flag=%u\n",		separate_colour_plane_flag);
+		Debug("\t[H264SeqParameterSet VUI params\n");
+		Debug("\t\taspect_ratio_info_present_flag=%u\n", vuiParams.aspect_ratio_info_present_flag);
+		Debug("\t\taspect_ratio_idc=%u\n", vuiParams.aspect_ratio_idc);
+		Debug("\t\tsar_width=%u\n", vuiParams.sar_width);
+		Debug("\t\tsar_height=%u\n", vuiParams.sar_height);
+		Debug("\t\toverscan_info_present_flag=%u\n", vuiParams.overscan_info_present_flag);
+		Debug("\t\toverscan_appropriate_flag=%u\n", vuiParams.overscan_appropriate_flag);
+		Debug("\t\tvideo_signal_type_present_flag=%u\n", vuiParams.video_signal_type_present_flag);
+		Debug("\t\tvideo_format=%u\n", vuiParams.video_format);
+		Debug("\t\tvideo_full_range_flag=%u\n", vuiParams.video_full_range_flag);
+		Debug("\t\tcolour_description_present_flag=%u\n", vuiParams.colour_description_present_flag);
+		Debug("\t\tcolour_primaries=%u\n", vuiParams.colour_primaries);
+		Debug("\t\ttransfer_characteristics=%u\n", vuiParams.transfer_characteristics);
+		Debug("\t\tmatrix_coefficients=%u\n", vuiParams.matrix_coefficients);
+		Debug("\t\tchroma_loc_info_present_flag=%u\n", vuiParams.chroma_loc_info_present_flag);
+		Debug("\t\tchroma_sample_loc_type_top_field=%u\n", vuiParams.chroma_sample_loc_type_top_field);
+		Debug("\t\tchroma_sample_loc_type_bottom_field=%u\n", vuiParams.chroma_sample_loc_type_bottom_field);
+		Debug("\t\ttiming_info_present_flag=%u\n", vuiParams.timing_info_present_flag);
+		Debug("\t\tnum_units_in_tick=%u\n", vuiParams.num_units_in_tick);
+		Debug("\t\ttime_scale=%u\n", vuiParams.time_scale);
+		Debug("\t\tfixed_frame_rate_flag=%u\n", vuiParams.fixed_frame_rate_flag);
+		Debug("\t\tnal_hrd_parameters_present_flag=%u\n", vuiParams.nal_hrd_parameters_present_flag);
+		if (vuiParams.nal_hrd_parameters_present_flag)
+		{
+			Debug("\t\t[H264SeqParameterSet VUI params : NAL HRD params\n");
+			DumpHrdParams(vuiParams.nal_hrd_parameters);
+		}
+		Debug("\t\tvcl_hrd_parameters_present_flag=%u\n", vuiParams.vcl_hrd_parameters_present_flag);
+		if (vuiParams.vcl_hrd_parameters_present_flag)
+		{
+			Debug("\t\t[H264SeqParameterSet VUI params : VCL HRD params\n");
+			DumpHrdParams(vuiParams.vcl_hrd_parameters);
+		}
+		Debug("\t\tlow_delay_hrd_flag=%u\n", vuiParams.low_delay_hrd_flag);
+		Debug("\t\tpic_struct_present_flag=%u\n", vuiParams.pic_struct_present_flag);
+		Debug("\t\tbitstream_restriction_flag=%u\n", vuiParams.bitstream_restriction_flag);
+		if (vuiParams.bitstream_restriction_flag)
+		{
+			Debug("\t\tmotion_vectors_over_pic_boundaries_flag=%u\n", vuiParams.motion_vectors_over_pic_boundaries_flag);
+			Debug("\t\tmax_bytes_per_pic_denom=%u\n", vuiParams.max_bytes_per_pic_denom);
+			Debug("\t\tmax_bits_per_mb_denom=%u\n", vuiParams.max_bits_per_mb_denom);
+			Debug("\t\tlog2_max_mv_length_horizontal=%u\n", vuiParams.log2_max_mv_length_horizontal);
+			Debug("\t\tlog2_max_mv_length_vertical=%u\n", vuiParams.log2_max_mv_length_vertical);
+			Debug("\t\tmax_num_reorder_frames=%u\n", vuiParams.max_num_reorder_frames);
+			Debug("\t\tmax_dec_frame_buffering=%u\n", vuiParams.max_dec_frame_buffering);
+		}
 		Debug("/]\n");
 	}
 	BYTE			profile_idc = 0;
