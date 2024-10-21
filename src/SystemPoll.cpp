@@ -142,7 +142,7 @@ std::pair<uint16_t, int> SystemPoll::GetEvents(int fd) const
 	
 	if ((revents & POLLHUP) || (revents & POLLERR))
 	{
-		Error("-SystemPoll::GetEvents() | Error events: 0x%x errno: %d\n", revents, errno);
+		Error("-SystemPoll::GetEvents() | Error events: 0x%x fd: %d errno: %d\n", revents, fd, errno);
 		return std::make_pair<>(0, -1);
 	}
 	
@@ -197,7 +197,7 @@ int SystemPoll::Wait(uint32_t timeOutMs)
 			if ((revents & POLLHUP) || (revents & POLLERR))
 			{
 				signalling.ClearSignal();
-				Error("-SystemPoll::Wait() | Error events: 0x%x errno: %d\n", revents, errno);
+				Error("-SystemPoll::Wait() | Error events: 0x%x fd: %d errno: %d\n", revents, syspfds[i].fd, errno);
 				return -1;
 			}
 			else if (revents & POLLIN)
