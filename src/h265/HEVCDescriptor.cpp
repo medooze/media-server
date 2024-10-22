@@ -209,18 +209,27 @@ DWORD HEVCDescriptor::Serialize(BYTE* buffer, DWORD bufferLength) const
 	writter.Set1(HEVC_RTP_NALU_Type::VPS);  // bit(1) array_completeness + unsigned int(1) reserved = 0; unsigned int(6) NAL_unit_type;
 	writter.Set2(numOfVideoParameterSets);
 	for (auto& data : vpsData)
+	{
+		writter.Set2(data.GetSize());
 		writter.Set(data);
+	}
 	// SPS
 	writter.Set1(HEVC_RTP_NALU_Type::SPS);  // bit(1) array_completeness + unsigned int(1) reserved = 0; unsigned int(6) NAL_unit_type;
 	writter.Set2(numOfSequenceParameterSets);
 	for (auto& data : spsData)
+	{
+		writter.Set2(data.GetSize());
 		writter.Set(data);
+	}
 
 	// PPS
 	writter.Set1(HEVC_RTP_NALU_Type::PPS);  // bit(1) array_completeness + unsigned int(1) reserved = 0; unsigned int(6) NAL_unit_type;
 	writter.Set2(numOfPictureParameterSets);
 	for (auto& data : ppsData)
+	{
+		writter.Set2(data.GetSize());
 		writter.Set(data);
+	}
 
 	//Finished
 	return writter.GetLength();
