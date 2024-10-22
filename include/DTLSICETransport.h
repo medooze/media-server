@@ -213,6 +213,7 @@ private:
 	volatile bool senderSideEstimationEnabled = true;
 
 	Timer::shared probingTimer;
+	Timer::shared estimateTimeoutTimer;
 	QWORD   lastProbe = 0;
 	QWORD 	initTime = 0;
 	volatile bool started = false;
