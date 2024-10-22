@@ -90,7 +90,7 @@ AudioBuffer::shared AudioTransrater::ProcessBuffer(const AudioBuffer::shared& au
 	auto ptsDiff = audioBuffer->GetTimestamp() - playPTSOffset.value();
 	// scale the pts based on recordRate which is the clockrate for encoded audio
 	// so that the pts stored in audio buffer is always in encoded audio time base
-	uint64_t scaledPTS = std::round<uint64_t>(ptsDiff * (outputRate / (double)inputRate)) + playPTSOffset.value();
+	uint64_t scaledPTS = playPTSOffset.value() + std::lround(ptsDiff * (outputRate / (double)audioBuffer->GetClockRate()));
 	resampledBuffer->SetTimestamp(scaledPTS);
 	resampledBuffer->SetClockRate(outputRate);
 	//OK

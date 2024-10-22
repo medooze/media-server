@@ -123,8 +123,8 @@ public:
 private:
 	MPEGAudioVersion audioVersion = MPEGAudioVersion::MPEGVersionReserved;
 	MPEGAudioLayer audioLayer = MPEGAudioLayer::MPEGLayerReserved;
-	bool padding;
-	BYTE paddingSize;
+	bool padding = false;
+	BYTE paddingSize = 0;
 	DWORD samplingRate = 0;
 	DWORD bitrate = 0;
 	BYTE channels = 0;
