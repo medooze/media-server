@@ -45,10 +45,10 @@ class H264SeqParameterSet
 {
 public:
 	// forward declarations
-	struct vuiParameters;
-	struct hrdParameters;
+	struct VuiParameters;
+	struct HrdParameters;
 
-	bool ParseHRDParams(RbspBitReader &r, hrdParameters &hrd)
+	bool ParseHRDParams(RbspBitReader &r, HrdParameters &hrd)
 	{
 		try
 		{
@@ -109,11 +109,6 @@ public:
 					Warning("-H264SeqParameterSet::DecodeVuiParameters() Illegal aspect ratio\n");
 				}
 			} 
-			else 
-			{
-				vuiParams.sar_width = 0;
-				vuiParams.sar_width = 0;
-			}
 
 			vuiParams.overscan_info_present_flag = r.Get(1);
 			if (vuiParams.overscan_info_present_flag)
@@ -378,7 +373,7 @@ public:
 	bool GetSeparateColourPlaneFlag() const { return separate_colour_plane_flag; }
 	bool GetFrameMbsOnlyFlag() const { return frame_mbs_only_flag; }
 	BYTE GetLog2MaxFrameNumMinus4() const { return log2_max_frame_num_minus4; }
-	void DumpHrdParams(const hrdParameters &hrd) const 
+	void DumpHrdParams(const HrdParameters &hrd) const 
 	{
 		Debug("\t\t\tcpb_cnt_minus1=%u\n",	hrd.cpb_cnt_minus1);
 		Debug("\t\t\tbit_rate_scale=%u\n",	hrd.bit_rate_scale);
@@ -428,8 +423,10 @@ public:
 		Debug("\t[H264SeqParameterSet VUI params\n");
 		Debug("\t\taspect_ratio_info_present_flag=%u\n", vuiParams.aspect_ratio_info_present_flag);
 		Debug("\t\taspect_ratio_idc=%u\n", vuiParams.aspect_ratio_idc);
-		Debug("\t\tsar_width=%u\n", vuiParams.sar_width);
-		Debug("\t\tsar_height=%u\n", vuiParams.sar_height);
+		if (vuiParams.sar_width)
+			Debug("\t\tsar_width=%u\n", vuiParams.sar_width);
+		if (vuiParams.sar_height)
+			Debug("\t\tsar_height=%u\n", vuiParams.sar_height);
 		Debug("\t\toverscan_info_present_flag=%u\n", vuiParams.overscan_info_present_flag);
 		Debug("\t\toverscan_appropriate_flag=%u\n", vuiParams.overscan_appropriate_flag);
 		Debug("\t\tvideo_signal_type_present_flag=%u\n", vuiParams.video_signal_type_present_flag);
@@ -504,7 +501,7 @@ public:
 	bool			vui_parameters_present_flag = false;
 	bool			separate_colour_plane_flag = 0;
 
-	struct hrdParameters
+	struct HrdParameters
 	{
 		uint32_t              cpb_cnt_minus1 = 0;
 		uint32_t              bit_rate_scale = 0;
@@ -518,12 +515,12 @@ public:
 		uint32_t              time_offset_length = 0;
 	};
 
-	struct vuiParameters
+	struct VuiParameters
 	{
 		uint32_t      aspect_ratio_info_present_flag;
 		uint32_t      aspect_ratio_idc;
-		uint32_t      sar_width;
-		uint32_t      sar_height;
+		std::optional<uint32_t>      sar_width = {};
+		std::optional<uint32_t>      sar_height = {};
 		uint32_t      overscan_info_present_flag = 0;
 		uint32_t      overscan_appropriate_flag = 0;
 		uint32_t  	  video_signal_type_present_flag = 0;
@@ -541,9 +538,9 @@ public:
 		uint32_t 	  time_scale = 0;
 		uint32_t 	  fixed_frame_rate_flag = 0;
 		uint32_t      nal_hrd_parameters_present_flag = 0;
-		hrdParameters nal_hrd_parameters;
+		HrdParameters nal_hrd_parameters;
 		uint32_t      vcl_hrd_parameters_present_flag = 0;
-		hrdParameters vcl_hrd_parameters;
+		HrdParameters vcl_hrd_parameters;
 		uint32_t      low_delay_hrd_flag = 0;
 		uint32_t 	  pic_struct_present_flag = 0;
 		uint32_t 	  bitstream_restriction_flag = 0;
@@ -556,7 +553,7 @@ public:
 		uint32_t 	  max_dec_frame_buffering = 0;
 	};
 
-	vuiParameters   vuiParams;
+	VuiParameters   vuiParams;
 
 	
 };
