@@ -142,8 +142,10 @@ public:
 			vui_parameters_present_flag = r.Get(1);
 			if (vui_parameters_present_flag) 
 			{
-				if (!VuiParams.DecodeVuiParameters(r))
+				VuiParameters vuiParams;
+				if (!vuiParams.Decode(r))
 					return false;
+				this->vuiParams = vuiParams;
 			}
 		}
 		catch (std::exception &e) 
@@ -194,8 +196,8 @@ public:
 		Debug("\tframe_crop_top_offset=%u\n",			frame_crop_top_offset);
 		Debug("\tframe_crop_bottom_offset=%u\n",		frame_crop_bottom_offset);
 		Debug("\tseparate_colour_plane_flag=%u\n",		separate_colour_plane_flag);
-		if (vui_parameters_present_flag)
-			VuiParams.DumpVuiParams();
+		if (vuiParams)
+			vuiParams->Dump();
 		Debug("/]\n");
 	}
 	BYTE			profile_idc = 0;
@@ -241,7 +243,7 @@ public:
 		uint32_t              cpb_removal_delay_length_minus1 = 0;
 		uint32_t              dpb_output_delay_length_minus1 = 0;
 		uint32_t              time_offset_length = 0;
-		bool ParseHRDParams(RbspBitReader &r)
+		bool Decode(RbspBitReader &r)
 		{
 			cpb_cnt_minus1 = r.GetExpGolomb();
 			if (cpb_cnt_minus1 < CpbCntMinusOneMin ||
@@ -265,7 +267,7 @@ public:
 			time_offset_length = r.Get(5);
 			return true;
 		}
-		void DumpHrdParams() const 
+		void Dump() const 
 		{
 			Debug("\t\t\tcpb_cnt_minus1=%u\n",	cpb_cnt_minus1);
 			Debug("\t\t\tbit_rate_scale=%u\n",	bit_rate_scale);
@@ -306,9 +308,9 @@ public:
 		uint32_t 	  time_scale = 0;
 		uint32_t 	  fixed_frame_rate_flag = 0;
 		uint32_t      nal_hrd_parameters_present_flag = 0;
-		HrdParameters nal_hrd_parameters;
+		std::optional<HrdParameters> nal_hrd_parameters;
 		uint32_t      vcl_hrd_parameters_present_flag = 0;
-		HrdParameters vcl_hrd_parameters;
+		std::optional<HrdParameters> vcl_hrd_parameters;
 		uint32_t      low_delay_hrd_flag = 0;
 		uint32_t 	  pic_struct_present_flag = 0;
 		uint32_t 	  bitstream_restriction_flag = 0;
@@ -319,7 +321,7 @@ public:
 		uint32_t 	  log2_max_mv_length_vertical = 0;
 		uint32_t 	  max_num_reorder_frames = 0;
 		uint32_t 	  max_dec_frame_buffering = 0;
-		bool DecodeVuiParameters(RbspBitReader &r)
+		bool Decode(RbspBitReader &r)
 		{
 			aspect_ratio_info_present_flag = r.Get(1);
 			if (aspect_ratio_info_present_flag) 
@@ -409,17 +411,21 @@ public:
 			if (nal_hrd_parameters_present_flag) 
 			{
 				// nal hrd_parameters()
-				if (!nal_hrd_parameters.ParseHRDParams(r))
+				HrdParameters hrd;
+				if (!hrd.Decode(r))
 					return false;
+				this->nal_hrd_parameters = hrd;
 			}
 
 			// vcl_hrd_parameters_present_flag  u(1)
 			vcl_hrd_parameters_present_flag = r.Get(1);
 			if (vcl_hrd_parameters_present_flag) 
 			{
+				HrdParameters hrd;
 				// vcl hrd_parameters()
-				if (!vcl_hrd_parameters.ParseHRDParams(r))
+				if (!hrd.Decode(r))
 					return false;
+				this->vcl_hrd_parameters = hrd;
 			}
 
 			if (nal_hrd_parameters_present_flag || vcl_hrd_parameters_present_flag)
@@ -492,7 +498,7 @@ public:
 			return true;
 			
 		}
-		void DumpVuiParams() const
+		void Dump() const
 		{
 			Debug("\t[H264SeqParameterSet VUI params\n");
 			Debug("\t\taspect_ratio_info_present_flag=%u\n", aspect_ratio_info_present_flag);
@@ -518,16 +524,16 @@ public:
 			Debug("\t\ttime_scale=%u\n", time_scale);
 			Debug("\t\tfixed_frame_rate_flag=%u\n", fixed_frame_rate_flag);
 			Debug("\t\tnal_hrd_parameters_present_flag=%u\n", nal_hrd_parameters_present_flag);
-			if (nal_hrd_parameters_present_flag)
+			if (nal_hrd_parameters)
 			{
 				Debug("\t\t[H264SeqParameterSet VUI params : NAL HRD params\n");
-				nal_hrd_parameters.DumpHrdParams();
+				nal_hrd_parameters->Dump();
 			}
 			Debug("\t\tvcl_hrd_parameters_present_flag=%u\n", vcl_hrd_parameters_present_flag);
-			if (vcl_hrd_parameters_present_flag)
+			if (vcl_hrd_parameters)
 			{
 				Debug("\t\t[H264SeqParameterSet VUI params : VCL HRD params\n");
-				vcl_hrd_parameters.DumpHrdParams();
+				vcl_hrd_parameters->Dump();
 			}
 			Debug("\t\tlow_delay_hrd_flag=%u\n", low_delay_hrd_flag);
 			Debug("\t\tpic_struct_present_flag=%u\n", pic_struct_present_flag);
@@ -545,7 +551,7 @@ public:
 		}
 	};
 
-	VuiParameters   VuiParams;
+	std::optional<VuiParameters>   vuiParams;
 
 	
 };

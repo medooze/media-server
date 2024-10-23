@@ -35,28 +35,29 @@ TEST(TestH26xSPS, TestParseSPS1)
 
 	// vui parameters
 	EXPECT_EQ(1,SpsParser.vui_parameters_present_flag);
-	EXPECT_EQ(0, SpsParser.VuiParams.aspect_ratio_info_present_flag);
-	EXPECT_EQ(0, SpsParser.VuiParams.overscan_info_present_flag);
-	EXPECT_EQ(1, SpsParser.VuiParams.video_signal_type_present_flag);
-	EXPECT_EQ(5, SpsParser.VuiParams.video_format);
-	EXPECT_EQ(1, SpsParser.VuiParams.video_full_range_flag);
-	EXPECT_EQ(0, SpsParser.VuiParams.colour_description_present_flag);
-	EXPECT_EQ(0, SpsParser.VuiParams.chroma_loc_info_present_flag);
-	EXPECT_EQ(1, SpsParser.VuiParams.timing_info_present_flag);
-	EXPECT_EQ(1, SpsParser.VuiParams.num_units_in_tick);
-	EXPECT_EQ(50, SpsParser.VuiParams.time_scale);
-	EXPECT_EQ(0, SpsParser.VuiParams.fixed_frame_rate_flag);
-	EXPECT_EQ(0, SpsParser.VuiParams.nal_hrd_parameters_present_flag);
-	EXPECT_EQ(0, SpsParser.VuiParams.vcl_hrd_parameters_present_flag);
-	EXPECT_EQ(0, SpsParser.VuiParams.pic_struct_present_flag);
-	EXPECT_EQ(1, SpsParser.VuiParams.bitstream_restriction_flag);
-	EXPECT_EQ(1, SpsParser.VuiParams.motion_vectors_over_pic_boundaries_flag);
-	EXPECT_EQ(0, SpsParser.VuiParams.max_bytes_per_pic_denom);
-	EXPECT_EQ(0, SpsParser.VuiParams.max_bits_per_mb_denom);
-	EXPECT_EQ(10, SpsParser.VuiParams.log2_max_mv_length_horizontal);
-	EXPECT_EQ(10, SpsParser.VuiParams.log2_max_mv_length_vertical);
-	EXPECT_EQ(0, SpsParser.VuiParams.max_num_reorder_frames);
-	EXPECT_EQ(16, SpsParser.VuiParams.max_dec_frame_buffering);
+	EXPECT_TRUE(SpsParser.vuiParams);
+	EXPECT_EQ(0, SpsParser.vuiParams->aspect_ratio_info_present_flag);
+	EXPECT_EQ(0, SpsParser.vuiParams->overscan_info_present_flag);
+	EXPECT_EQ(1, SpsParser.vuiParams->video_signal_type_present_flag);
+	EXPECT_EQ(5, SpsParser.vuiParams->video_format);
+	EXPECT_EQ(1, SpsParser.vuiParams->video_full_range_flag);
+	EXPECT_EQ(0, SpsParser.vuiParams->colour_description_present_flag);
+	EXPECT_EQ(0, SpsParser.vuiParams->chroma_loc_info_present_flag);
+	EXPECT_EQ(1, SpsParser.vuiParams->timing_info_present_flag);
+	EXPECT_EQ(1, SpsParser.vuiParams->num_units_in_tick);
+	EXPECT_EQ(50, SpsParser.vuiParams->time_scale);
+	EXPECT_EQ(0, SpsParser.vuiParams->fixed_frame_rate_flag);
+	EXPECT_EQ(0, SpsParser.vuiParams->nal_hrd_parameters_present_flag);
+	EXPECT_EQ(0, SpsParser.vuiParams->vcl_hrd_parameters_present_flag);
+	EXPECT_EQ(0, SpsParser.vuiParams->pic_struct_present_flag);
+	EXPECT_EQ(1, SpsParser.vuiParams->bitstream_restriction_flag);
+	EXPECT_EQ(1, SpsParser.vuiParams->motion_vectors_over_pic_boundaries_flag);
+	EXPECT_EQ(0, SpsParser.vuiParams->max_bytes_per_pic_denom);
+	EXPECT_EQ(0, SpsParser.vuiParams->max_bits_per_mb_denom);
+	EXPECT_EQ(10, SpsParser.vuiParams->log2_max_mv_length_horizontal);
+	EXPECT_EQ(10, SpsParser.vuiParams->log2_max_mv_length_vertical);
+	EXPECT_EQ(0, SpsParser.vuiParams->max_num_reorder_frames);
+	EXPECT_EQ(16, SpsParser.vuiParams->max_dec_frame_buffering);
 
 }
 
@@ -100,26 +101,27 @@ TEST(TestH26xSPS, TestParseSPS2)
 
   	// vui_parameters()
 	EXPECT_EQ(1, SpsParser.vui_parameters_present_flag);
-	EXPECT_EQ(1, SpsParser.VuiParams.aspect_ratio_info_present_flag);
-	EXPECT_EQ(1, SpsParser.VuiParams.aspect_ratio_idc);
-	EXPECT_EQ(0, SpsParser.VuiParams.overscan_info_present_flag);
-	EXPECT_EQ(0, SpsParser.VuiParams.video_signal_type_present_flag);
-	EXPECT_EQ(0, SpsParser.VuiParams.chroma_loc_info_present_flag);
-	EXPECT_EQ(1, SpsParser.VuiParams.timing_info_present_flag);
-	EXPECT_EQ(1, SpsParser.VuiParams.num_units_in_tick);
-	EXPECT_EQ(60, SpsParser.VuiParams.time_scale);
-	EXPECT_EQ(0, SpsParser.VuiParams.fixed_frame_rate_flag);
-	EXPECT_EQ(0, SpsParser.VuiParams.nal_hrd_parameters_present_flag);
-	EXPECT_EQ(0, SpsParser.VuiParams.vcl_hrd_parameters_present_flag);
-	EXPECT_EQ(0, SpsParser.VuiParams.pic_struct_present_flag);
-	EXPECT_EQ(1, SpsParser.VuiParams.bitstream_restriction_flag);
-	EXPECT_EQ(1, SpsParser.VuiParams.motion_vectors_over_pic_boundaries_flag);
-	EXPECT_EQ(0, SpsParser.VuiParams.max_bytes_per_pic_denom);
-	EXPECT_EQ(0, SpsParser.VuiParams.max_bits_per_mb_denom);
-	EXPECT_EQ(11, SpsParser.VuiParams.log2_max_mv_length_horizontal);
-	EXPECT_EQ(11, SpsParser.VuiParams.log2_max_mv_length_vertical);
-	EXPECT_EQ(2, SpsParser.VuiParams.max_num_reorder_frames);
-	EXPECT_EQ(16, SpsParser.VuiParams.max_dec_frame_buffering);
+	EXPECT_TRUE(SpsParser.vuiParams);
+	EXPECT_EQ(1, SpsParser.vuiParams->aspect_ratio_info_present_flag);
+	EXPECT_EQ(1, SpsParser.vuiParams->aspect_ratio_idc);
+	EXPECT_EQ(0, SpsParser.vuiParams->overscan_info_present_flag);
+	EXPECT_EQ(0, SpsParser.vuiParams->video_signal_type_present_flag);
+	EXPECT_EQ(0, SpsParser.vuiParams->chroma_loc_info_present_flag);
+	EXPECT_EQ(1, SpsParser.vuiParams->timing_info_present_flag);
+	EXPECT_EQ(1, SpsParser.vuiParams->num_units_in_tick);
+	EXPECT_EQ(60, SpsParser.vuiParams->time_scale);
+	EXPECT_EQ(0, SpsParser.vuiParams->fixed_frame_rate_flag);
+	EXPECT_EQ(0, SpsParser.vuiParams->nal_hrd_parameters_present_flag);
+	EXPECT_EQ(0, SpsParser.vuiParams->vcl_hrd_parameters_present_flag);
+	EXPECT_EQ(0, SpsParser.vuiParams->pic_struct_present_flag);
+	EXPECT_EQ(1, SpsParser.vuiParams->bitstream_restriction_flag);
+	EXPECT_EQ(1, SpsParser.vuiParams->motion_vectors_over_pic_boundaries_flag);
+	EXPECT_EQ(0, SpsParser.vuiParams->max_bytes_per_pic_denom);
+	EXPECT_EQ(0, SpsParser.vuiParams->max_bits_per_mb_denom);
+	EXPECT_EQ(11, SpsParser.vuiParams->log2_max_mv_length_horizontal);
+	EXPECT_EQ(11, SpsParser.vuiParams->log2_max_mv_length_vertical);
+	EXPECT_EQ(2, SpsParser.vuiParams->max_num_reorder_frames);
+	EXPECT_EQ(16, SpsParser.vuiParams->max_dec_frame_buffering);
 
 }
 
@@ -134,7 +136,7 @@ TEST(TestH26xSPS, TestParseSPSVUI1)
 	RbspBitReader r(reader);
 	H264SeqParameterSet::VuiParameters VuiParams;
 
-	bool res = VuiParams.DecodeVuiParameters(r);
+	bool res = VuiParams.Decode(r);
 	EXPECT_EQ(true, res);
 
   	// vui_parameters()
@@ -176,7 +178,7 @@ TEST(TestH26xSPS, TestParseSPSVUI2)
 	RbspBitReader r(reader);
 	H264SeqParameterSet::VuiParameters VuiParams;
 
-	bool res = VuiParams.DecodeVuiParameters(r);
+	bool res = VuiParams.Decode(r);
 	EXPECT_EQ(true, res);
 
   	// vui_parameters()
@@ -221,7 +223,7 @@ TEST(TestH26xSPS, TestParseSPSVUI3)
 	RbspBitReader r(reader);
 	H264SeqParameterSet::VuiParameters VuiParams;
 
-	bool res = VuiParams.DecodeVuiParameters(r);
+	bool res = VuiParams.Decode(r);
 	EXPECT_EQ(true, res);
 
 
@@ -266,7 +268,7 @@ TEST(TestH26xSPS, TestParseSPSVUI4)
 	RbspBitReader r(reader);
 	H264SeqParameterSet::VuiParameters VuiParams;
 
-	bool res = VuiParams.DecodeVuiParameters(r);
+	bool res = VuiParams.Decode(r);
 	EXPECT_EQ(true, res);
 
   	// vui_parameters()
@@ -310,7 +312,7 @@ TEST(TestH26xSPS, TestParseSPSHRD)
 	H264SeqParameterSet::HrdParameters HrdParams;
 
 	// for the unit test it doesn't matter if we pick nal_hrd_parameters or vcl_hrd_parameters
-	bool res = HrdParams.ParseHRDParams(r);
+	bool res = HrdParams.Decode(r);
 	EXPECT_EQ(true, res);
 
   	// hrd_parameters()
