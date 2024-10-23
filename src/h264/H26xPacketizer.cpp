@@ -45,7 +45,6 @@ void H26xPacketizer::EmitNal(VideoFrame& frame, BufferReader nal, std::string& f
 	*
 	* For H.264, R must be 0. For H.265, R is part of the type.
 	*/
-
 	//Start with S = 1, E = 0
 	size_t fuPrefixSize = fuPrefix.size();
 	fuPrefix[fuPrefixSize - 1] &= 0b00'111111;
@@ -54,22 +53,23 @@ void H26xPacketizer::EmitNal(VideoFrame& frame, BufferReader nal, std::string& f
 	//Skip payload nal header
 	nal.Skip(naluHeaderSize);
 	pos += naluHeaderSize;
-	//Split it
-	while (nal.GetLeft())
+	
+	auto numPackets = nal.GetLeft() / (RTPPAYLOADSIZE - fuPrefixSize) + 1;
+	auto packetLen = nal.GetLeft() / numPackets;
+	int mod = nal.GetLeft() % numPackets;
+
+	for (uint32_t i=0; i<numPackets; i++)
 	{
-		int len = std::min<uint32_t>(RTPPAYLOADSIZE - fuPrefixSize, nal.GetLeft());
-		//Read it
-		nal.Skip(len);
-		//If all added
-		if (!nal.GetLeft())
-			//Set end mark
+		auto len = packetLen + (mod>0 ? 1:0);
+		if (i == numPackets-1)
+			//Last fragment, set End bit
 			fuPrefix[fuPrefixSize - 1] |= 0b01'000000;
-		//Add packetization
 		frame.AddRtpPacket(pos, len, (uint8_t*) fuPrefix.data(), fuPrefixSize);
-		//Not first
+		//Clear Start bit
 		fuPrefix[fuPrefixSize - 1] &= 0b01'111111;
-		//Move start
 		pos += len;
+		mod--;
+		nal.Skip(len);
 	}
 }
 
