@@ -228,6 +228,7 @@ target_link_libraries(MediaServerUnitTest
     MediaServerLib
     gtest
     gtest_main
+    gmock
 )
 
 
