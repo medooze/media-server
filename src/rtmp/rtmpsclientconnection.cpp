@@ -9,7 +9,7 @@ RTMPSClientConnection::RTMPSClientConnection(const std::wstring& tag) :
 
 RTMPClientConnection::ErrorCode RTMPSClientConnection::Connect(const char* server, int port, const char* app, RTMPClientConnection::Listener* listener)
 {
-	if (!tls.Initialize())
+	if (!tls.Initialize(server))
 	{
 		Error("Failed to initialise tls.\n");
 		return RTMPClientConnection::ErrorCode::TlsInitError;
@@ -59,6 +59,7 @@ void RTMPSClientConnection::ProcessReceivedData(const uint8_t* data, size_t size
 	switch(ret) 
 	{
 	case TlsClient::TlsClientError::NoError:
+	case TlsClient::TlsClientError::Pending:
 		break;
 	case TlsClient::TlsClientError::HandshakeFailed:
 		Warning("-RTMPClientConnection::ProcessReceivedData() TLS handshake error\n");
