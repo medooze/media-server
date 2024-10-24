@@ -311,7 +311,8 @@ void RTMPConnection::SignalWriteNeeded()
 	pthread_mutex_unlock(&mutex);
 
 	//Signal the pthread this will cause the poll call to exit
-	pthread_kill(thread.native_handle(),SIGIO);
+	if (running)
+		pthread_kill(thread.native_handle(),SIGIO);
 }
 
 DWORD RTMPConnection::SerializeChunkData(BYTE *data,DWORD size)
