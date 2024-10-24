@@ -80,7 +80,7 @@ protected:
 		
 	void Stop();
 	
-	virtual RTMPClientConnection::ErrorCode Start();
+	virtual RTMPClientConnection::ErrorCode Start(const char* hostname);
 	virtual bool IsConnectionReady() { return inited; };
 	virtual void OnReadyToTransfer() {};
 	virtual void ProcessReceivedData(const uint8_t* data, size_t size);
