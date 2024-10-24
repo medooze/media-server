@@ -127,10 +127,10 @@ RTMPClientConnection::ErrorCode RTMPClientConnection::Connect(const char* server
 	this->listener = listener;
 
 	//Start
-	return Start();
+	return Start(server);
 }
 
-RTMPClientConnection::ErrorCode RTMPClientConnection::Start()
+RTMPClientConnection::ErrorCode RTMPClientConnection::Start(const char* hostname)
 {
 	//We are running
 	running = true;

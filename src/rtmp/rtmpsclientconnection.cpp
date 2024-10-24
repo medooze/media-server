@@ -7,9 +7,9 @@ RTMPSClientConnection::RTMPSClientConnection(const std::wstring& tag) :
 	
 }
 
-RTMPClientConnection::ErrorCode RTMPSClientConnection::Start()
+RTMPClientConnection::ErrorCode RTMPSClientConnection::Start(const char* hostname)
 {
-	if (!tls.Initialize())
+	if (!tls.Initialize(hostname))
 	{
 		Error("Failed to initialise tls.\n");
 		return RTMPClientConnection::ErrorCode::TlsInitError;
@@ -21,7 +21,7 @@ RTMPClientConnection::ErrorCode RTMPSClientConnection::Start()
 		return RTMPClientConnection::ErrorCode::TlsHandshakeError;
 	}
 	
-	return RTMPClientConnection::Start();
+	return RTMPClientConnection::Start(hostname);
 }
 
 int RTMPSClientConnection::Disconnect()
@@ -61,6 +61,7 @@ void RTMPSClientConnection::ProcessReceivedData(const uint8_t* data, size_t size
 	switch(ret) 
 	{
 	case TlsClient::TlsClientError::NoError:
+	case TlsClient::TlsClientError::Pending:
 		break;
 	case TlsClient::TlsClientError::HandshakeFailed:
 		Warning("-RTMPClientConnection::ProcessReceivedData() TLS handshake error\n");
