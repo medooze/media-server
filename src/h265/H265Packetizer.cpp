@@ -13,12 +13,12 @@ void H265Packetizer::EmitNal(VideoFrame& frame, BufferReader nal)
 {
 	auto naluHeader = nal.Peek2();
 	BYTE nalUnitType = (naluHeader >> 9) & 0b111111;
-	BYTE nuh_layer_id = (naluHeader >> 3) & 0b111111;
-	BYTE nuh_temporal_id_plus1 = naluHeader & 0b111;
+	BYTE nalLayerId = (naluHeader >> 3) & 0b111111;
+	BYTE nalTemporalIdPlus1 = naluHeader & 0b111;
 
 	const uint16_t nalHeaderFU = ((uint16_t)(HEVC_RTP_NALU_Type::UNSPEC49_FU) << 9)
-		| ((uint16_t)(nuh_layer_id) << 3)
-		| ((uint16_t)(nuh_temporal_id_plus1));
+		| ((uint16_t)(nalLayerId) << 3)
+		| ((uint16_t)(nalTemporalIdPlus1));
 	std::string fuPrefix = {static_cast<char>((nalHeaderFU & 0xff00) >> 8), static_cast<char>(nalHeaderFU & 0xff), (char)nalUnitType};
 	H26xPacketizer::EmitNal(frame, nal, fuPrefix, HEVCParams::RTP_NAL_HEADER_SIZE);
 }
